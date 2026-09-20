@@ -1,0 +1,68 @@
+{
+  "contentHash": "fnv1a32:cfb9a7af",
+  "files": [
+    {
+      "bytes": 2907,
+      "file": "data/the_call_up_2026/duplicate_roster_resolution.json",
+      "sha256": "6a912043d33b08c4e03898cbf45543d13fbf78b484ffed068ffd36f7f7761b46"
+    },
+    {
+      "bytes": 21375984,
+      "file": "data/the_call_up_2026/mlb-milb-2026-production.json",
+      "sha256": "4648579888e79171c1c2e0179ac9c6d1dea54334ae1e6d89649a990a7c945b8e"
+    }
+  ],
+  "productionCoverage": {
+    "affiliateOrganizations": 30,
+    "affiliations": 120,
+    "canonicalPlayers": 5201,
+    "duplicateRosterAppearancesResolved": 10,
+    "interpolatedParkGeometry": 28,
+    "minScheduleGamesPerTeam": 132,
+    "parkSourceCounts": {
+      "mlb_pnc_park_ground_rules": 1,
+      "mlb_stats_venues_interpolated": 28,
+      "mlb_sutter_health_park_guide": 1
+    },
+    "parks": 30,
+    "playersByLevel": {
+      "A": 1179,
+      "AA": 1021,
+      "AAA": 1103,
+      "HIGH_A": 1058,
+      "MLB": 840
+    },
+    "scheduleGames": 10710,
+    "statsByLevelGroup": {
+      "A:fielding": 4153,
+      "A:hitting": 979,
+      "A:pitching": 1328,
+      "AA:fielding": 3514,
+      "AA:hitting": 830,
+      "AA:pitching": 1044,
+      "AAA:fielding": 4104,
+      "AAA:hitting": 926,
+      "AAA:pitching": 1260,
+      "HIGH_A:fielding": 3605,
+      "HIGH_A:hitting": 837,
+      "HIGH_A:pitching": 1090,
+      "MLB:fielding": 2708,
+      "MLB:hitting": 748,
+      "MLB:pitching": 859
+    },
+    "statsRows": 27985,
+    "teamsByLevel": {
+      "A": 30,
+      "AA": 30,
+      "AAA": 30,
+      "HIGH_A": 30,
+      "MLB": 30
+    }
+  },
+  "retrievedAtUtc": "2026-09-20T02:47:23.136672+00:00",
+  "schema": "THE_CALL_UP_PRODUCTION_MANIFEST_V2",
+  "season": 2026,
+  "snapshotDate": "2026-09-20",
+  "source": "MLB Stats API",
+  "validation": "PASS"
+}

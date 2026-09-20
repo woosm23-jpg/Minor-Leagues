@@ -1,0 +1,162 @@
+[
+  {
+    "discarded": [
+      {
+        "level": "AAA",
+        "status": "Rehab Assignment",
+        "teamId": "533"
+      }
+    ],
+    "fullName": "Adley Rutschman",
+    "kept": {
+      "level": "MLB",
+      "status": "Active",
+      "teamId": "111"
+    },
+    "playerId": "668939"
+  },
+  {
+    "discarded": [
+      {
+        "level": "AA",
+        "status": "Injured 7-Day",
+        "teamId": "522"
+      }
+    ],
+    "fullName": "Mark Kolozsvary",
+    "kept": {
+      "level": "AAA",
+      "status": "Injured 60-Day",
+      "teamId": "1410"
+    },
+    "playerId": "656627"
+  },
+  {
+    "discarded": [
+      {
+        "level": "AAA",
+        "status": "Not Yet Reported",
+        "teamId": "541"
+      }
+    ],
+    "fullName": "Easton McGee",
+    "kept": {
+      "level": "AAA",
+      "status": "Active",
+      "teamId": "541"
+    },
+    "playerId": "668834"
+  },
+  {
+    "discarded": [
+      {
+        "level": "HIGH_A",
+        "status": "Rehab Assignment",
+        "teamId": "492"
+      }
+    ],
+    "fullName": "Matt Canterino",
+    "kept": {
+      "level": "AAA",
+      "status": "Injured 60-Day",
+      "teamId": "1960"
+    },
+    "playerId": "683764"
+  },
+  {
+    "discarded": [
+      {
+        "level": "AA",
+        "status": "Injured 60-Day",
+        "teamId": "547"
+      }
+    ],
+    "fullName": "Kevin Made",
+    "kept": {
+      "level": "AA",
+      "status": "Active",
+      "teamId": "547"
+    },
+    "playerId": "691183"
+  },
+  {
+    "discarded": [
+      {
+        "level": "HIGH_A",
+        "status": "Injured 60-Day",
+        "teamId": "443"
+      }
+    ],
+    "fullName": "Joseph King",
+    "kept": {
+      "level": "AA",
+      "status": "Active",
+      "teamId": "440"
+    },
+    "playerId": "683165"
+  },
+  {
+    "discarded": [
+      {
+        "level": "A",
+        "status": "Rehab Assignment",
+        "teamId": "507"
+      }
+    ],
+    "fullName": "Boston Baro",
+    "kept": {
+      "level": "HIGH_A",
+      "status": "Injured 60-Day",
+      "teamId": "453"
+    },
+    "playerId": "805951"
+  },
+  {
+    "discarded": [
+      {
+        "level": "A",
+        "status": "Rehab Assignment",
+        "teamId": "507"
+      }
+    ],
+    "fullName": "Irving Cota",
+    "kept": {
+      "level": "HIGH_A",
+      "status": "Injured 60-Day",
+      "teamId": "453"
+    },
+    "playerId": "806522"
+  },
+  {
+    "discarded": [
+      {
+        "level": "A",
+        "status": "Rehab Assignment",
+        "teamId": "3390"
+      }
+    ],
+    "fullName": "Carlos Castillo",
+    "kept": {
+      "level": "HIGH_A",
+      "status": "Injured 60-Day",
+      "teamId": "477"
+    },
+    "playerId": "807962"
+  },
+  {
+    "discarded": [
+      {
+        "level": "A",
+        "status": "Rehab Assignment",
+        "teamId": "566"
+      }
+    ],
+    "fullName": "Luke Davis",
+    "kept": {
+      "level": "HIGH_A",
+      "status": "Injured 60-Day",
+      "teamId": "427"
+    },
+    "playerId": "701592"
+  }
+]
