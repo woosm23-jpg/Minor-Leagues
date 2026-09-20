@@ -1,37 +1,40 @@
 {
   "schema": "THE_CALL_UP_PHASE_C_MANIFEST_V1",
   "season": 2026,
-  "createdAt": "2026-09-20T10:40:53.946882+00:00",
+  "createdAt": "2026-09-20T12:23:36.562843+00:00",
   "baseSnapshotHash": "fnv1a32:21eb3434",
-  "sha256": "fc0d279e8a6cd82b9a42d67500056fb891b86688f8b614fbe3948ce4d4693ba2",
+  "sha256": "dc6579bfe97c63d00efa9a8849687668096fbf4eb6768970af7d1da5594c8e34",
   "coverage": {
-    "trackingRows": 12101,
-    "trackingPlayers": 1612,
-    "pitchArsenalRows": 9000,
-    "pitchArsenalPlayers": 952,
+    "trackingRows": 14984,
+    "trackingPlayers": 2149,
+    "pitchArsenalRows": 12023,
+    "pitchArsenalPlayers": 1288,
     "trackingByLevel": {
+      "AAA": 2883,
       "MLB": 12101
     },
     "arsenalByLevel": {
+      "AAA": 3023,
       "MLB": 9000
     },
     "trackingByGroup": {
-      "PITCHING_BATTED_BALL": 1999,
-      "PITCHING_LOCATION": 1999,
-      "PITCHING_SWING": 1999,
+      "HITTING_BATTED_BALL": 2155,
+      "HITTING_SWING": 2158,
+      "PITCHING_BATTED_BALL": 2654,
+      "PITCHING_LOCATION": 2654,
+      "PITCHING_SWING": 2654,
       "FIELDING": 1118,
-      "HITTING_BATTED_BALL": 1698,
-      "HITTING_SWING": 1697,
       "RUNNING": 1591
     },
     "mlb_hitters": 1698,
     "mlb_pitchers": 1999,
     "mlb_arsenal_rows": 9000,
-    "aaa_raw_rows": 682656,
-    "aaa_rows_kept": 0,
-    "aaa_hitter_players": 0,
-    "aaa_pitcher_players": 0,
-    "aaa_arsenal_rows": 0
+    "aaa_raw_rows": 667602,
+    "aaa_rows_kept": 667602,
+    "aaa_hitter_players": 785,
+    "aaa_pitcher_players": 1094,
+    "aaa_arsenal_rows": 5072,
+    "aaa_current_players_matched": 1056
   },
   "productionReady": false
 }
