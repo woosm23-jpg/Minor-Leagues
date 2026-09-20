@@ -30,6 +30,18 @@ SPORT_LEVELS = {1: "MLB", 11: "AAA", 12: "AA", 13: "HIGH_A", 14: "A"}
 LEVEL_RANK = {"MLB": 5, "AAA": 4, "AA": 3, "HIGH_A": 2, "A": 1}
 MINOR_LEVELS = ("AAA", "AA", "HIGH_A", "A")
 
+# MLB Stats API omits full five-point fieldInfo geometry for Sutter Health Park
+# (Athletics interim home). MLB.com's official park guide publishes LF/CF/RF as
+# 330/403/325 ft. The two gap values below are deterministic interpolation
+# inputs for the simulation only; the published endpoints remain unchanged.
+KNOWN_PARK_GEOMETRY_FALLBACKS = {
+    "2529": {
+        "name": "Sutter Health Park",
+        "geometry": {"lfLine": 330, "lfGap": 385, "cf": 403, "rfGap": 384, "rfLine": 325},
+        "sourceId": "mlb_sutter_health_park_guide",
+    },
+}
+
 
 def get_json(path: str, params: dict | None = None, retries: int = 5):
     url = f"{BASE}{path}"
@@ -221,17 +233,24 @@ def venue_row(raw: dict, team: dict):
         "rfGap": park_number(f.get("rightCenter")),
         "rfLine": park_number(f.get("rightLine")),
     }
+    venue_id = text(venue.get("id"))
+    source_id = "mlb_stats_venues"
     if any(v is None for v in geometry.values()):
-        return None
+        fallback = KNOWN_PARK_GEOMETRY_FALLBACKS.get(venue_id)
+        if not fallback:
+            return None
+        geometry = dict(fallback["geometry"])
+        source_id = fallback["sourceId"]
+        print(f"[TCU] venue geometry fallback: {fallback['name']} venue={venue_id} geometry={geometry}")
     return {
-        "venueId": text(venue.get("id")),
+        "venueId": venue_id,
         "teamId": team["id"],
         "name": venue.get("name") or team.get("name") or f"Venue {venue.get('id')}",
         "geometry": geometry,
         "wallHeights": {},
         "empiricalFactors": None,
         "carryDistanceFeet": 0,
-        "sourceId": "mlb_stats_venues",
+        "sourceId": source_id,
     }
 
 
@@ -359,6 +378,7 @@ def make_sources(retrieved_at: str):
         {"id": "mlb_stats_stats", "name": "MLB Stats API — standard player stats", "url": f"{BASE}/stats", "retrievedAt": retrieved_at, "notes": f"season={SEASON}; groups=hitting,pitching,fielding"},
         {"id": "mlb_stats_schedule", "name": "MLB Stats API — schedules", "url": f"{BASE}/schedule", "retrievedAt": retrieved_at, "notes": f"season={SEASON}; gameTypes=R"},
         {"id": "mlb_stats_venues", "name": "MLB Stats API — venue field geometry", "url": f"{BASE}/venues/{{venueId}}", "retrievedAt": retrieved_at, "notes": f"season={SEASON}; MLB home venues"},
+        {"id": "mlb_sutter_health_park_guide", "name": "MLB.com — Sutter Health Park guide", "url": "https://www.mlb.com/news/featured/sutter-health-park-guide-capacity-seating-chart-parking-and-more", "retrievedAt": retrieved_at, "notes": "Published dimensions LF 330 ft / CF 403 ft / RF 325 ft; LCF/RCF are deterministic simulation interpolation values because Stats API fieldInfo is incomplete for venue 2529."},
     ]
 
 
