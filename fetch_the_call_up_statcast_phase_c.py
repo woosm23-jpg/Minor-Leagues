@@ -149,7 +149,7 @@ def minors_statcast_url(start_date, end_date):
     # Mirrors baseballr::statcast_search(..., route="statcast-search-minors")
     params = {
         "all":"true", "hfPT":"", "hfAB":"", "hfBBT":"", "hfPR":"", "hfZ":"", "stadium":"",
-        "hfBBL":"", "hfNewZones":"", "hfGT":"R|", "hfC":"", "hfSea":f"{SEASON}|", "hfSit":"",
+        "hfBBL":"", "hfNewZones":"", "hfGT":"R|", "hfLevel":"AAA|", "hfC":"", "hfSea":f"{SEASON}|", "hfSit":"",
         "hfOuts":"", "opponent":"", "pitcher_throws":"", "batter_stands":"", "hfSA":"",
         "player_type":"pitcher", "hfInfield":"", "team":"", "position":"", "hfOutfield":"", "hfRO":"",
         "home_road":"", "game_date_gt":str(start_date), "game_date_lt":str(end_date), "hfFlag":"", "hfPull":"",
@@ -370,6 +370,16 @@ def parse_game_pk(row):
     return str(integer(first(row,"game_pk"),0))
 
 
+def aaa_row_allowed(row, aaa_games):
+    """Trust Savant's explicit AAA endpoint filter when game_pk is omitted.
+
+    Some MiLB Statcast CSV exports leave game_pk blank. When game_pk exists,
+    require it to be one of the AAA schedule games from the validated v2 base.
+    """
+    game_pk = parse_game_pk(row)
+    return game_pk == "0" or game_pk in aaa_games
+
+
 def zone_in(row):
     z=integer(first(row,"zone"),0)
     return 1 <= z <= 9
@@ -427,7 +437,12 @@ def collect_aaa(base, tracking, arsenal):
         rows_seen += len(rows)
         kept=0
         for r in rows:
-            if parse_game_pk(r) not in aaa_games: continue
+            # The minors endpoint is explicitly filtered to AAA via hfLevel.
+            # Some Savant MiLB exports omit game_pk, so gamePk cannot be the
+            # primary level discriminator. Schedule coverage is still used for
+            # the date window and as an optional consistency check when present.
+            if not aaa_row_allowed(r, aaa_games):
+                continue
             kept+=1; rows_aaa+=1
             batter=str(integer(first(r,"batter"),0)); pitcher=str(integer(first(r,"pitcher"),0))
             in_zone=zone_in(r); swing=is_swing(r); whiff=is_whiff(r); bbe=is_bbe(r)
@@ -523,6 +538,8 @@ def collect_aaa(base, tracking, arsenal):
             "location":{"zonePercent":x["zone"]/x["pitches"]} if x["pitches"] else None,
             "samples":{"pitches":x["pitches"],"swings":x["swings"],"whiffs":x["whiffs"]},"sourceId":"baseball_savant_aaa"
         })
+    if aaa_current_ids and rows_aaa == 0:
+        raise RuntimeError("AAA Statcast fetch returned rows but none survived AAA filtering; check hfLevel/game_pk mapping")
     return Counter({"aaa_raw_rows":rows_seen,"aaa_rows_kept":rows_aaa,"aaa_hitter_players":len(hb),"aaa_pitcher_players":len(pl),"aaa_arsenal_rows":len(pa)})
 
 
@@ -561,6 +578,13 @@ def self_test():
     assert zone_in(row) and is_swing(row) and is_whiff(row) and is_bbe(row) and is_barrel(row)
     row2={"zone":"12","description":"ball","type":"B"}
     assert not zone_in(row2) and not is_swing(row2)
+    # AAA endpoint must request the level explicitly, and blank game_pk rows
+    # are allowed because Savant can omit game_pk on MiLB detail exports.
+    q = urllib.parse.parse_qs(urllib.parse.urlparse(minors_statcast_url(date(2026,4,1), date(2026,4,2))).query)
+    assert q.get("hfLevel") == ["AAA|"]
+    assert aaa_row_allowed({"game_pk":""}, {"123"})
+    assert aaa_row_allowed({"game_pk":"123"}, {"123"})
+    assert not aaa_row_allowed({"game_pk":"999"}, {"123"})
     t={}
     merge_tracking(t,"1",2026,"MLB","HITTING_SWING",{"whiffPercent":20},{"swings":100},"x")
     merge_tracking(t,"1",2026,"MLB","HITTING_SWING",{"chasePercent":25},{"chaseOpportunities":80},"x")
@@ -600,7 +624,7 @@ def main():
         "sources":[
             {"id":"baseball_savant_mlb","name":"Baseball Savant MLB leaderboards","retrievedAt":retrieved},
             {"id":"baseball_savant_mlb_pitch_arsenal","name":"Baseball Savant MLB pitch arsenal/movement leaderboards","retrievedAt":retrieved},
-            {"id":"baseball_savant_aaa","name":"Baseball Savant MiLB Statcast detail export (AAA gamePk-filtered)","retrievedAt":retrieved}
+            {"id":"baseball_savant_aaa","name":"Baseball Savant MiLB Statcast detail export (AAA endpoint-filtered; gamePk cross-check when present)","retrievedAt":retrieved}
         ],
         "tracking":tracking_rows,"pitchArsenal":arsenal_rows,"coverage":cov
     }
