@@ -456,12 +456,87 @@ def is_whiff(row):
     return d in WHIFF_DESCRIPTIONS
 
 
+NON_AB_EVENTS = {
+    "walk", "intent_walk", "intentional_walk", "hit_by_pitch",
+    "sac_fly", "sac_bunt", "catcher_interf", "catcher_interference"
+}
+STRIKEOUT_EVENTS = {"strikeout", "strikeout_double_play"}
+
+
 def is_bbe(row):
-    return finite(first(row,"launch_speed"),None) is not None or str(first(row,"type",default="")).upper()=="X"
+    # Statcast can report launch_speed on foul contact. A true batted-ball
+    # event for rate stats is a ball put into play (type X), not merely any
+    # contact with an EV reading. Counting foul EV inflated AAA BBE by ~35%.
+    return str(first(row,"type",default="")).upper()=="X"
+
+
+def terminal_event(row):
+    return str(first(row,"events",default="") or "").strip().lower()
+
+
+def counts_as_at_bat(row):
+    event = terminal_event(row)
+    return bool(event) and event not in NON_AB_EVENTS
+
+
+def xba_ab_value(row):
+    # Raw Savant estimated_ba_using_speedangle exists on tracked contact only.
+    # To make it comparable with MLB leaderboard xBA, fold strikeouts in as 0
+    # and divide by AB-like terminal events with usable tracking evidence.
+    event = terminal_event(row)
+    if event in STRIKEOUT_EVENTS:
+        return 0.0
+    if not counts_as_at_bat(row) or not is_bbe(row):
+        return None
+    return finite(first(row,"estimated_ba_using_speedangle"),None)
 
 
 def is_barrel(row):
-    return integer(first(row,"launch_speed_angle"),0)==6
+    return is_bbe(row) and integer(first(row,"launch_speed_angle"),0)==6
+
+
+
+
+def aaa_expected_bbe_index(base):
+    out = Counter()
+    for row in base.get("stats") or []:
+        if row.get("group") != "hitting" or int(row.get("season") or 0) != SEASON or row.get("level") != "AAA":
+            continue
+        if str(row.get("gameType") or "R") == "S":
+            continue
+        split = row.get("splitContext") or {"type":"TOTAL"}
+        if str(split.get("type") or "TOTAL").upper() != "TOTAL":
+            continue
+        v = row.get("values") or {}
+        ab = integer(v.get("atBats"),0)
+        so = integer(v.get("strikeOuts"),0)
+        sf = integer(v.get("sacFlies"),0)
+        sh = integer(v.get("sacBunts"),0)
+        out[str(row.get("playerId"))] += max(0, ab - so + sf + sh)
+    return out
+
+
+def bbe_coverage_sanity(base, hb, aaa_current_ids):
+    expected = aaa_expected_bbe_index(base)
+    ratios=[]
+    for pid in aaa_current_ids:
+        got = integer((hb.get(pid) or {}).get("bbe"),0)
+        exp = integer(expected.get(pid),0)
+        if got >= 80 and exp >= 80:
+            ratios.append(got/exp)
+    if len(ratios) < 50:
+        raise RuntimeError(f"AAA BBE sanity coverage too small: {len(ratios)} comparable hitters")
+    ratios.sort()
+    def q(p):
+        i=max(0,min(len(ratios)-1,int(round((len(ratios)-1)*p))))
+        return ratios[i]
+    median=q(0.5); p90=q(0.9)
+    print(f"[Phase C] AAA BBE sanity comparable={len(ratios)} medianRatio={median:.3f} p90={p90:.3f}")
+    # Statcast and standard-stat feeds can differ slightly in update timing, but
+    # true in-play BBE cannot systematically be ~2x official balls in play.
+    if not (0.70 <= median <= 1.30) or p90 > 1.45:
+        raise RuntimeError(f"AAA BBE sanity failed: median={median:.3f} p90={p90:.3f}; foul-contact inflation/schema drift suspected")
+    return {"aaaBbeComparableHitters":len(ratios),"aaaBbeMedianRatio":round(median,4),"aaaBbeP90Ratio":round(p90,4)}
 
 
 def collect_aaa(base, tracking, arsenal):
@@ -477,10 +552,10 @@ def collect_aaa(base, tracking, arsenal):
     start = date.fromisoformat(dates[0]); end = min(date.fromisoformat(dates[-1]), date.today())
     print(f"[Phase C] AAA raw aggregation {start}..{end}, gamePks={len(aaa_games)}")
 
-    hb = defaultdict(lambda: {"bbe":0,"max_ev":None,"sum_xba":0.0,"xba_n":0,"barrels":0,"hard":0})
+    hb = defaultdict(lambda: {"bbe":0,"ev_bbe":0,"max_ev":None,"sum_xba":0.0,"xba_n":0,"barrels":0,"barrel_n":0,"hard":0})
     hs = defaultdict(lambda: {"swings":0,"whiffs":0,"chase_opp":0,"chase_swings":0})
     ps = defaultdict(lambda: {"swings":0,"whiffs":0,"chase_opp":0,"chase_swings":0})
-    pb = defaultdict(lambda: {"bbe":0,"hard":0,"barrels":0})
+    pb = defaultdict(lambda: {"bbe":0,"ev_bbe":0,"barrel_n":0,"hard":0,"barrels":0})
     pl = defaultdict(lambda: {"pitches":0,"zone":0,"first":0,"first_strike":0})
     pa = defaultdict(lambda: {"pitches":0,"vel":[],"hx":[],"vz":[],"swings":0,"whiffs":0,"zone":0})
     pitcher_totals = Counter()
@@ -510,15 +585,21 @@ def collect_aaa(base, tracking, arsenal):
                 if not in_zone:
                     hs[batter]["chase_opp"]+=1
                     if swing: hs[batter]["chase_swings"]+=1
+                # xBA is AB-level: terminal strikeouts contribute zero;
+                # tracked balls in play contribute Savant's contact xBA.
+                xba_ab = xba_ab_value(r)
+                if xba_ab is not None:
+                    x=hb[batter]; x["sum_xba"]+=xba_ab; x["xba_n"]+=1
                 if bbe:
                     x=hb[batter]; x["bbe"]+=1
                     ev=finite(first(r,"launch_speed"),None)
                     if ev is not None:
+                        x["ev_bbe"]+=1
                         x["max_ev"] = ev if x["max_ev"] is None else max(x["max_ev"],ev)
                         if ev>=95: x["hard"]+=1
-                    xba=finite(first(r,"estimated_ba_using_speedangle"),None)
-                    if xba is not None: x["sum_xba"]+=xba; x["xba_n"]+=1
-                    if is_barrel(r): x["barrels"]+=1
+                    if first(r,"launch_speed_angle",default="") not in (None,""):
+                        x["barrel_n"]+=1
+                        if is_barrel(r): x["barrels"]+=1
             if pitcher in all_ids and pitcher != "0":
                 pitcher_totals[pitcher]+=1
                 if swing: ps[pitcher]["swings"]+=1
@@ -534,8 +615,12 @@ def collect_aaa(base, tracking, arsenal):
                 if bbe:
                     x=pb[pitcher]; x["bbe"]+=1
                     ev=finite(first(r,"launch_speed"),None)
-                    if ev is not None and ev>=95: x["hard"]+=1
-                    if is_barrel(r): x["barrels"]+=1
+                    if ev is not None:
+                        x["ev_bbe"]+=1
+                        if ev>=95: x["hard"]+=1
+                    if first(r,"launch_speed_angle",default="") not in (None,""):
+                        x["barrel_n"]+=1
+                        if is_barrel(r): x["barrels"]+=1
                 pt=str(first(r,"pitch_type",default="")).upper()
                 if pt:
                     a=pa[(pitcher,pt)]; a["pitches"]+=1
@@ -554,9 +639,10 @@ def collect_aaa(base, tracking, arsenal):
     for pid,x in hb.items():
         if pid not in aaa_current_ids: continue
         merge_tracking(tracking,pid,SEASON,"AAA","HITTING_BATTED_BALL",{
-            "maxExitVelocity":x["max_ev"],"barrelPercent":100*x["barrels"]/x["bbe"] if x["bbe"] else None,
+            "maxExitVelocity":x["max_ev"],"barrelPercent":100*x["barrels"]/x["barrel_n"] if x["barrel_n"] else None,
             "expectedBattingAverage":x["sum_xba"]/x["xba_n"] if x["xba_n"] else None,
-            "hardHitPercent":100*x["hard"]/x["bbe"] if x["bbe"] else None},{"bbe":x["bbe"]},"baseball_savant_aaa")
+            "hardHitPercent":100*x["hard"]/x["ev_bbe"] if x["ev_bbe"] else None},
+            {"bbe":x["bbe"],"evBbe":x["ev_bbe"],"xbaAtBats":x["xba_n"]},"baseball_savant_aaa")
     for pid,x in hs.items():
         if pid not in aaa_current_ids: continue
         merge_tracking(tracking,pid,SEASON,"AAA","HITTING_SWING",{
@@ -572,8 +658,9 @@ def collect_aaa(base, tracking, arsenal):
     for pid,x in pb.items():
         if pid not in aaa_current_ids: continue
         merge_tracking(tracking,pid,SEASON,"AAA","PITCHING_BATTED_BALL",{
-            "hardHitAllowedPercent":100*x["hard"]/x["bbe"] if x["bbe"] else None,
-            "barrelAllowedPercent":100*x["barrels"]/x["bbe"] if x["bbe"] else None},{"bbe":x["bbe"]},"baseball_savant_aaa")
+            "hardHitAllowedPercent":100*x["hard"]/x["ev_bbe"] if x["ev_bbe"] else None,
+            "barrelAllowedPercent":100*x["barrels"]/x["barrel_n"] if x["barrel_n"] else None},
+            {"bbe":x["bbe"],"evBbe":x["ev_bbe"]},"baseball_savant_aaa")
     for pid,x in pl.items():
         if pid not in aaa_current_ids: continue
         merge_tracking(tracking,pid,SEASON,"AAA","PITCHING_LOCATION",{
@@ -598,10 +685,11 @@ def collect_aaa(base, tracking, arsenal):
         })
     if aaa_current_ids and rows_aaa == 0:
         raise RuntimeError("AAA Statcast fetch produced zero rows after successful endpoint probe")
+    bbe_sanity = bbe_coverage_sanity(base, hb, aaa_current_ids)
     tracked_current = len(({*hb.keys()} | {*pl.keys()}) & aaa_current_ids)
     if aaa_current_ids and tracked_current < 50:
         raise RuntimeError(f"AAA Statcast coverage too small: only {tracked_current} current AAA players matched")
-    return Counter({"aaa_raw_rows":rows_seen,"aaa_rows_kept":rows_aaa,"aaa_hitter_players":len(hb),"aaa_pitcher_players":len(pl),"aaa_arsenal_rows":len(pa),"aaa_current_players_matched":tracked_current})
+    return Counter({"aaa_raw_rows":rows_seen,"aaa_rows_kept":rows_aaa,"aaa_hitter_players":len(hb),"aaa_pitcher_players":len(pl),"aaa_arsenal_rows":len(pa),"aaa_current_players_matched":tracked_current,**bbe_sanity})
 
 
 def validate(base, tracking_rows, arsenal_rows):
@@ -635,10 +723,15 @@ def self_test():
     # Percent normalization and AAA pitch aggregation primitives.
     assert percent("34.5") == 34.5
     assert percent("0.345") == 34.5
-    row={"zone":"5","description":"swinging_strike","type":"S","launch_speed":"101.2","launch_speed_angle":"6"}
-    assert zone_in(row) and is_swing(row) and is_whiff(row) and is_bbe(row) and is_barrel(row)
-    row2={"zone":"12","description":"ball","type":"B"}
-    assert not zone_in(row2) and not is_swing(row2)
+    row={"zone":"5","description":"swinging_strike","type":"S","events":"strikeout","launch_speed":"101.2","launch_speed_angle":"6"}
+    assert zone_in(row) and is_swing(row) and is_whiff(row)
+    assert not is_bbe(row) and not is_barrel(row) and xba_ab_value(row) == 0.0
+    in_play={"zone":"5","description":"hit_into_play","type":"X","events":"single","launch_speed":"101.2","launch_speed_angle":"6","estimated_ba_using_speedangle":"0.72"}
+    assert is_bbe(in_play) and is_barrel(in_play) and xba_ab_value(in_play) == 0.72
+    foul={"zone":"5","description":"foul","type":"S","events":"","launch_speed":"104.0","launch_speed_angle":"6","estimated_ba_using_speedangle":"0.80"}
+    assert is_swing(foul) and not is_bbe(foul) and xba_ab_value(foul) is None
+    walk={"zone":"12","description":"ball","type":"B","events":"walk"}
+    assert not zone_in(walk) and not is_swing(walk) and not counts_as_at_bat(walk)
     # MiLB CSV must use Savant's minors=true switch and direct AAA filter.
     q = urllib.parse.parse_qs(urllib.parse.urlparse(minors_statcast_url(date(2026,4,1), date(2026,4,2))).query, keep_blank_values=True)
     assert q.get("minors") == ["true"]
