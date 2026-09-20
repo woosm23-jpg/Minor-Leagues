@@ -416,7 +416,7 @@ def runtime_roster_check(players: list[dict], teams: list[dict]):
         roster = by_team.get(team["id"], [])
         pitchers = [p for p in roster if str(p.get("position") or "").upper() in {"P", "SP", "RP"}]
         hitters = [p for p in roster if p not in pitchers]
-        if len(hitters) < 13 or len(pitchers) < 8:
+        if len(hitters) < 10 or len(pitchers) < 8:
             bad[team["id"]] = {"name": team["name"], "level": team["level"], "hitters": len(hitters), "pitchers": len(pitchers), "total": len(roster)}
     return bad
 
