@@ -40,6 +40,11 @@ KNOWN_PARK_GEOMETRY_FALLBACKS = {
         "geometry": {"lfLine": 330, "lfGap": 385, "cf": 403, "rfGap": 384, "rfLine": 325},
         "sourceId": "mlb_sutter_health_park_guide",
     },
+    "31": {
+        "name": "PNC Park",
+        "geometry": {"lfLine": 325, "lfGap": 389, "cf": 399, "rfGap": 375, "rfLine": 320},
+        "sourceId": "mlb_pnc_park_ground_rules",
+    },
 }
 
 
@@ -237,11 +242,26 @@ def venue_row(raw: dict, team: dict):
     source_id = "mlb_stats_venues"
     if any(v is None for v in geometry.values()):
         fallback = KNOWN_PARK_GEOMETRY_FALLBACKS.get(venue_id)
-        if not fallback:
-            return None
-        geometry = dict(fallback["geometry"])
-        source_id = fallback["sourceId"]
-        print(f"[TCU] venue geometry fallback: {fallback['name']} venue={venue_id} geometry={geometry}")
+        if fallback:
+            geometry = dict(fallback["geometry"])
+            source_id = fallback["sourceId"]
+            print(f"[TCU] venue geometry fallback: {fallback['name']} venue={venue_id} geometry={geometry}")
+        else:
+            # Preserve every API-supplied distance, and fill only missing points.
+            # This prevents one incomplete MLB fieldInfo record from blocking the
+            # production snapshot while keeping the approximation explicit.
+            lf = geometry["lfLine"] if geometry["lfLine"] is not None else 330
+            cf = geometry["cf"] if geometry["cf"] is not None else 400
+            rf = geometry["rfLine"] if geometry["rfLine"] is not None else 330
+            geometry = {
+                "lfLine": lf,
+                "lfGap": geometry["lfGap"] if geometry["lfGap"] is not None else round(lf * 0.30 + cf * 0.70),
+                "cf": cf,
+                "rfGap": geometry["rfGap"] if geometry["rfGap"] is not None else round(rf * 0.30 + cf * 0.70),
+                "rfLine": rf,
+            }
+            source_id = "mlb_stats_venues_interpolated"
+            print(f"[TCU] venue geometry interpolated: {venue.get('name')} venue={venue_id} geometry={geometry}")
     return {
         "venueId": venue_id,
         "teamId": team["id"],
@@ -379,6 +399,8 @@ def make_sources(retrieved_at: str):
         {"id": "mlb_stats_schedule", "name": "MLB Stats API — schedules", "url": f"{BASE}/schedule", "retrievedAt": retrieved_at, "notes": f"season={SEASON}; gameTypes=R"},
         {"id": "mlb_stats_venues", "name": "MLB Stats API — venue field geometry", "url": f"{BASE}/venues/{{venueId}}", "retrievedAt": retrieved_at, "notes": f"season={SEASON}; MLB home venues"},
         {"id": "mlb_sutter_health_park_guide", "name": "MLB.com — Sutter Health Park guide", "url": "https://www.mlb.com/news/featured/sutter-health-park-guide-capacity-seating-chart-parking-and-more", "retrievedAt": retrieved_at, "notes": "Published dimensions LF 330 ft / CF 403 ft / RF 325 ft; LCF/RCF are deterministic simulation interpolation values because Stats API fieldInfo is incomplete for venue 2529."},
+        {"id": "mlb_pnc_park_ground_rules", "name": "MLB.com Pirates — PNC Park ground rules", "url": "https://www.mlb.com/pirates/ballpark/ground-rules", "retrievedAt": retrieved_at, "notes": "Published dimensions LF 325 ft / LCF 389 ft / CF 399 ft / RCF 375 ft / RF 320 ft."},
+        {"id": "mlb_stats_venues_interpolated", "name": "MLB Stats API — incomplete venue geometry interpolation", "url": f"{BASE}/venues/{{venueId}}", "retrievedAt": retrieved_at, "notes": "Fallback only when fieldInfo omits one or more distances. API-supplied values are preserved; missing lines default to 330 ft, center to 400 ft, and missing gaps are a deterministic 30/70 line-to-center interpolation. Count is exposed in the production manifest."},
     ]
 
 
@@ -487,7 +509,7 @@ def main():
         raw = get_json(f"/venues/{team['venueId']}")
         park = venue_row(raw, team)
         if not park:
-            raise RuntimeError(f"MLB venue geometry incomplete: {team['name']} venue={team['venueId']}")
+            raise RuntimeError(f"MLB venue record missing entirely: {team['name']} venue={team['venueId']}")
         parks.append(park)
     parks = unique_by(parks, lambda r: r["venueId"])
     if len(parks) != 30:
@@ -554,6 +576,8 @@ def main():
             "statsByLevelGroup": dict(sorted(stat_counts.items())),
             "scheduleGames": len(schedule),
             "parks": len(parks),
+            "parkSourceCounts": dict(sorted(Counter(p.get("sourceId") for p in parks).items())),
+            "interpolatedParkGeometry": sum(1 for p in parks if p.get("sourceId") == "mlb_stats_venues_interpolated"),
             "minScheduleGamesPerTeam": min(schedule_counts.values()),
         },
         "files": files,
