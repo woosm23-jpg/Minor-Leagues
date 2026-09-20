@@ -146,23 +146,65 @@ def pitch_movement_url(year):
 
 
 def minors_statcast_url(start_date, end_date):
-    # Baseball Savant's MiLB CSV detail route has not consistently honored
-    # hfLevel=AAA even though the browser results page does. Request the
-    # tracked MiLB feed with the level column included, then classify AAA rows
-    # locally using the returned level/team evidence. This avoids the 0-row
-    # failure seen from the server-side AAA filter on 2026-09-20.
+    # Use Baseball Savant's documented/working MiLB CSV shape. The critical
+    # switch is minors=true; without it the /statcast-search-minors/csv route
+    # can ignore/strip MiLB-only filters. Request AAA directly server-side.
     params = {
-        "all":"true", "hfPT":"", "hfAB":"", "hfBBT":"", "hfPR":"", "hfZ":"", "stadium":"",
-        "hfBBL":"", "hfNewZones":"", "hfGT":"R|", "hfLevel":"", "chk_level":"on", "chk_is..tracked":"on",
-        "hfC":"", "hfSea":f"{SEASON}|", "hfSit":"",
-        "hfOuts":"", "opponent":"", "pitcher_throws":"", "batter_stands":"", "hfSA":"",
-        "player_type":"pitcher", "hfInfield":"", "team":"", "position":"", "hfOutfield":"", "hfRO":"",
-        "home_road":"", "game_date_gt":str(start_date), "game_date_lt":str(end_date),
-        "hfFlag":r"is\.\.tracked|", "hfPull":"",
-        "metric_1":"", "hfInn":"", "min_pitches":"0", "min_results":"0", "group_by":"name",
-        "sort_col":"pitches", "player_event_sort":"h_launch_speed", "sort_order":"desc", "min_abs":"0", "type":"details"
+        "all":"true",
+        "type":"details",
+        "minors":"true",
+        "player_type":"batter",
+        "hfGT":"R|",
+        "game_date_gt":str(start_date),
+        "game_date_lt":str(end_date),
+        "hfLevel":"AAA|",
+        "hfSea":f"{SEASON}|",
+        "group_by":"name",
+        "min_pitches":"0",
+        "min_results":"0",
     }
-    return f"{SAVANT}/statcast-search-minors/csv?" + urllib.parse.urlencode(params)
+    return f"{SAVANT}/statcast-search-minors/csv?" + urllib.parse.urlencode(params, safe="|")
+
+
+def probe_aaa_endpoint(base):
+    """Fail fast on the first AAA date before spending ~20 minutes on MLB+AAA.
+
+    Prints actual CSV columns and representative row fields so any future
+    Savant schema drift can be diagnosed from the Actions log in one run.
+    """
+    if not FETCH_AAA:
+        return
+    dates = sorted(str(g.get("date")) for g in base.get("schedule") or [] if g.get("level")=="AAA" and g.get("date"))
+    if not dates:
+        raise RuntimeError("AAA probe: no AAA schedule dates in base snapshot")
+    d = date.fromisoformat(dates[0])
+    rows = csv_rows(minors_statcast_url(d, d), retries=4)
+    print(f"[Phase C] AAA endpoint probe {d}: rows={len(rows)}")
+    if not rows:
+        raise RuntimeError("AAA endpoint probe returned 0 rows; check Savant minors=true/hfLevel query")
+    columns = list(rows[0].keys())
+    print("[Phase C] AAA probe columns=" + ",".join(columns[:140]))
+    sample = rows[0]
+    diagnostic = {k: sample.get(k) for k in (
+        "game_pk","game_date","home_team","away_team","batter","pitcher",
+        "pitch_type","release_speed","description","zone","launch_speed"
+    ) if k in sample}
+    print("[Phase C] AAA probe sample=" + json.dumps(diagnostic, ensure_ascii=False))
+    required = {"batter","pitcher","pitch_type","game_date"}
+    missing = sorted(required - set(columns))
+    if missing:
+        raise RuntimeError("AAA endpoint probe missing required columns: " + ",".join(missing))
+    matched = 0
+    aaa_ids = {str(p.get("id")) for p in base.get("players") or [] if str(p.get("assignedLevel") or p.get("level") or "") == "AAA"}
+    for row in rows:
+        for key in ("batter","pitcher"):
+            pid = str(integer(first(row,key),0))
+            if pid in aaa_ids:
+                matched += 1
+                break
+    print(f"[Phase C] AAA probe current-roster matches={matched}")
+    if matched == 0:
+        raise RuntimeError("AAA endpoint probe returned rows but none match current AAA roster IDs")
 
 
 def load_base():
@@ -428,14 +470,6 @@ def collect_aaa(base, tracking, arsenal):
     all_ids, by_level = player_sets(base)
     aaa_current_ids = by_level.get("AAA",set())
     aaa_games = {str(g.get("gamePk")) for g in base.get("schedule") or [] if g.get("level")=="AAA" and str(g.get("gameType") or "R")=="R"}
-    aaa_team_tokens = set()
-    for t in base.get("teams") or []:
-        if t.get("level") != "AAA":
-            continue
-        for key in ("abbreviation", "name"):
-            token = str(t.get(key) or "").strip().upper()
-            if token:
-                aaa_team_tokens.add(token)
     dates = sorted(str(g.get("date")) for g in base.get("schedule") or [] if g.get("level")=="AAA" and g.get("date"))
     if not aaa_games or not dates:
         print("[Phase C] AAA: no schedule coverage, skipping")
@@ -464,11 +498,9 @@ def collect_aaa(base, tracking, arsenal):
         rows_seen += len(rows)
         kept=0
         for r in rows:
-            # The MiLB CSV route is requested without a server-side level
-            # filter because that filter can return zero rows on the CSV route.
-            # Classify Triple-A locally from validated schedule/level/team data.
-            if not aaa_row_allowed(r, aaa_games, aaa_team_tokens):
-                continue
+            # The endpoint is already explicitly filtered to AAA with
+            # minors=true + hfLevel=AAA|. Trust that server-side filter here;
+            # use player-ID coverage and the fail-fast probe as sanity gates.
             kept+=1; rows_aaa+=1
             batter=str(integer(first(r,"batter"),0)); pitcher=str(integer(first(r,"pitcher"),0))
             in_zone=zone_in(r); swing=is_swing(r); whiff=is_whiff(r); bbe=is_bbe(r)
@@ -565,8 +597,11 @@ def collect_aaa(base, tracking, arsenal):
             "samples":{"pitches":x["pitches"],"swings":x["swings"],"whiffs":x["whiffs"]},"sourceId":"baseball_savant_aaa"
         })
     if aaa_current_ids and rows_aaa == 0:
-        raise RuntimeError("AAA Statcast fetch produced no classifiable AAA rows; check Savant level/team fields")
-    return Counter({"aaa_raw_rows":rows_seen,"aaa_rows_kept":rows_aaa,"aaa_hitter_players":len(hb),"aaa_pitcher_players":len(pl),"aaa_arsenal_rows":len(pa)})
+        raise RuntimeError("AAA Statcast fetch produced zero rows after successful endpoint probe")
+    tracked_current = len(({*hb.keys()} | {*pl.keys()}) & aaa_current_ids)
+    if aaa_current_ids and tracked_current < 50:
+        raise RuntimeError(f"AAA Statcast coverage too small: only {tracked_current} current AAA players matched")
+    return Counter({"aaa_raw_rows":rows_seen,"aaa_rows_kept":rows_aaa,"aaa_hitter_players":len(hb),"aaa_pitcher_players":len(pl),"aaa_arsenal_rows":len(pa),"aaa_current_players_matched":tracked_current})
 
 
 def validate(base, tracking_rows, arsenal_rows):
@@ -604,16 +639,12 @@ def self_test():
     assert zone_in(row) and is_swing(row) and is_whiff(row) and is_bbe(row) and is_barrel(row)
     row2={"zone":"12","description":"ball","type":"B"}
     assert not zone_in(row2) and not is_swing(row2)
-    # MiLB CSV requests the level column but performs AAA classification
-    # locally because Savant's server-side hfLevel filter can yield zero rows.
+    # MiLB CSV must use Savant's minors=true switch and direct AAA filter.
     q = urllib.parse.parse_qs(urllib.parse.urlparse(minors_statcast_url(date(2026,4,1), date(2026,4,2))).query, keep_blank_values=True)
-    assert q.get("hfLevel") == [""] and q.get("chk_level") == ["on"]
-    teams={"TOL","TOLEDO MUD HENS"}
-    assert aaa_row_allowed({"game_pk":"123"}, {"123"}, teams)
-    assert aaa_row_allowed({"game_pk":"", "level":"AAA"}, {"123"}, teams)
-    assert aaa_row_allowed({"game_pk":"", "home_team":"TOL"}, {"123"}, teams)
-    assert not aaa_row_allowed({"game_pk":"999", "level":"AAA"}, {"123"}, teams)
-    assert not aaa_row_allowed({"game_pk":"", "level":"A", "home_team":"DUN"}, {"123"}, teams)
+    assert q.get("minors") == ["true"]
+    assert q.get("hfLevel") == ["AAA|"]
+    assert q.get("type") == ["details"]
+    assert q.get("player_type") == ["batter"]
     t={}
     merge_tracking(t,"1",2026,"MLB","HITTING_SWING",{"whiffPercent":20},{"swings":100},"x")
     merge_tracking(t,"1",2026,"MLB","HITTING_SWING",{"chasePercent":25},{"chaseOpportunities":80},"x")
@@ -627,6 +658,7 @@ def main():
     base=load_base()
     retrieved=datetime.now(timezone.utc).isoformat()
     tracking={}; arsenal=[]
+    probe_aaa_endpoint(base)
     mlb_cov=collect_mlb(base,tracking,arsenal)
     aaa_cov=collect_aaa(base,tracking,arsenal)
     tracking_rows=sorted(tracking.values(),key=lambda r:(r["level"],r["playerId"],r["season"],r["metricGroup"]))
@@ -653,7 +685,7 @@ def main():
         "sources":[
             {"id":"baseball_savant_mlb","name":"Baseball Savant MLB leaderboards","retrievedAt":retrieved},
             {"id":"baseball_savant_mlb_pitch_arsenal","name":"Baseball Savant MLB pitch arsenal/movement leaderboards","retrievedAt":retrieved},
-            {"id":"baseball_savant_aaa","name":"Baseball Savant MiLB Statcast detail export (AAA endpoint-filtered; gamePk cross-check when present)","retrievedAt":retrieved}
+            {"id":"baseball_savant_aaa","name":"Baseball Savant MiLB Statcast detail export (minors=true, AAA endpoint-filtered)","retrievedAt":retrieved}
         ],
         "tracking":tracking_rows,"pitchArsenal":arsenal_rows,"coverage":cov
     }
