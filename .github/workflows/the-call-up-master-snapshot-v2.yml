@@ -1,0 +1,52 @@
+name: THE CALL-UP Master Snapshot v2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'fetch_the_call_up_snapshot_v2.py'
+      - '.github/workflows/the-call-up-master-snapshot-v2.yml'
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      SEASON: '2026'
+      TCU_HISTORY_SEASONS: '2024,2025,2026'
+      TCU_OUT: data/the_call_up_snapshot_v2
+      TCU_FETCH_HITTER_SPLITS: '1'
+      TCU_SPLIT_LEVELS: 'MLB,AAA'
+      TCU_STATS_SLEEP: '0.015'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline self-test
+        run: python fetch_the_call_up_snapshot_v2.py --self-test
+      - name: Fetch Master Snapshot v2
+        run: python fetch_the_call_up_snapshot_v2.py
+      - name: Compress snapshot
+        run: |
+          gzip -9 -c data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json > data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-call-up-master-snapshot-v2-2026
+          path: |
+            data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+            data/the_call_up_snapshot_v2/production_manifest_v2.json
+            data/the_call_up_snapshot_v2/roster_canonicalization_v2.json
+          retention-days: 14
+      - name: Commit compressed validated data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+          git add data/the_call_up_snapshot_v2/production_manifest_v2.json
+          git add data/the_call_up_snapshot_v2/roster_canonicalization_v2.json
+          git diff --cached --quiet || git commit -m 'Add THE CALL-UP Master Snapshot v2 data'
+          git push
