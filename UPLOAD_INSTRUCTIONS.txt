@@ -1,0 +1,16 @@
+Upload these two files to your fork woosm23-jpg/Minor-Leagues preserving the paths exactly:
+
+1) scripts/fetch_the_call_up_2026.py
+2) .github/workflows/the-call-up-2026.yml
+
+After the workflow file is committed, GitHub Actions should run automatically because the workflow listens to push changes on those paths. If it does not, open Actions -> THE CALL-UP 2026 MiLB Snapshot -> Run workflow.
+
+The workflow validates:
+- 30 MLB organizations
+- exactly 30 teams at AAA, AA, High-A (A+), and Single-A (A)
+- all 30 organizations have one affiliate at all four levels
+- every team has a non-trivial full roster
+- hitting/pitching/fielding stats exist at every level
+- schedules exist at every level
+
+On success it commits data/the_call_up_2026/ and uploads an artifact.
