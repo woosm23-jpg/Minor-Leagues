@@ -1,0 +1,88 @@
+name: THE CALL-UP v50 Phase C Validation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'TCU_V50_PHASE_C_VALIDATOR_BUNDLE.zip'
+      - 'data/the_call_up_snapshot_v2/**'
+      - 'data/the_call_up_phase_c/**'
+      - '.github/workflows/the-call-up-v50-phase-c-validation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: the-call-up-v50-phase-c-validation
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Verify required inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f TCU_V50_PHASE_C_VALIDATOR_BUNDLE.zip
+          test -f data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+          test -f data/the_call_up_phase_c/statcast-phase-c-2026.json.gz
+          test -f data/the_call_up_phase_c/phase_c_manifest.json
+
+      - name: Unpack v50 validator
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tcu-v50-validator
+          unzip -q TCU_V50_PHASE_C_VALIDATOR_BUNDLE.zip
+          test -f .tcu-v50-validator/scripts/audit-phase-c.mjs
+
+      - name: Run 5,429-player Phase B vs Phase C audit
+        run: node .tcu-v50-validator/scripts/audit-phase-c.mjs
+
+      - name: Run hard safety gate
+        run: node .tcu-v50-validator/scripts/gate-phase-c.mjs
+
+      - name: Write job summary
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          p='reports/v50-phase-c-actions-audit.json'
+          out=os.environ['GITHUB_STEP_SUMMARY']
+          with open(out,'a',encoding='utf-8') as f:
+              f.write('# THE CALL-UP v50 Phase C validation\n\n')
+              if not os.path.exists(p):
+                  f.write('Audit report was not produced. Check the failed step logs.\n')
+              else:
+                  d=json.load(open(p,encoding='utf-8'))
+                  f.write(f"- Model: `{d.get('modelId')}`\n")
+                  f.write(f"- Players: **{d.get('players')}**\n")
+                  f.write(f"- Tracking rows: **{d.get('trackingRows')}**\n")
+                  f.write(f"- Arsenal rows: **{d.get('pitchArsenalRows')}**\n")
+                  f.write(f"- Runtime: Phase B `{d.get('runtimeMs',{}).get('phaseB')} ms`, Phase C `{d.get('runtimeMs',{}).get('phaseC')} ms`\n")
+                  f.write(f"- OVR delta thresholds: `{json.dumps(d.get('thresholds',{}),ensure_ascii=False)}`\n\n")
+                  f.write('## Largest increases\n')
+                  for x in d.get('topUp',[])[:12]: f.write(f"- {x['name']}: {x['b']} → {x['c']} ({x['delta']:+.2f})\n")
+                  f.write('\n## Largest decreases\n')
+                  for x in d.get('topDown',[])[:12]: f.write(f"- {x['name']}: {x['b']} → {x['c']} ({x['delta']:+.2f})\n")
+          PY
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-call-up-v50-phase-c-validation-report
+          path: reports/v50-phase-c-actions-audit.json
+          if-no-files-found: warn
+          retention-days: 14
