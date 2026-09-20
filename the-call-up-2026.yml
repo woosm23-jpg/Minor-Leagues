@@ -1,0 +1,36 @@
+name: THE CALL-UP 2026 MiLB Snapshot
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'fetch_the_call_up_2026.py'
+      - '.github/workflows/the-call-up-2026.yml'
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      SEASON: '2026'
+      TCU_OUT: data/the_call_up_2026
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch and validate 2026 MiLB data
+        run: python fetch_the_call_up_2026.py
+      - name: Upload snapshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-call-up-milb-2026
+          path: data/the_call_up_2026/
+      - name: Commit validated snapshot
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/the_call_up_2026
+          git diff --cached --quiet || git commit -m 'Add validated THE CALL-UP 2026 MiLB snapshot'
+          git push
