@@ -1,0 +1,37 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_MANIFEST_V3",
+  "snapshotSchema": 2,
+  "season": 2026,
+  "historySeasons": [
+    2024,
+    2025,
+    2026
+  ],
+  "snapshotDate": "2026-09-20",
+  "retrievedAtUtc": "2026-09-20T09:46:33.623675+00:00",
+  "contentHash": "fnv1a32:21eb3434",
+  "coverage": {
+    "teams": 150,
+    "players": 5429,
+    "statsRows": 80606,
+    "hitterSplitRows": 18292,
+    "hitterSplitsRequested": true,
+    "scheduleGames": 10710,
+    "parks": 30,
+    "availability": {
+      "ACTIVE": 4217,
+      "ADMIN_LEAVE": 1,
+      "DEVELOPMENT_LIST": 149,
+      "INJURED_60": 436,
+      "INJURED_FULL_SEASON": 181,
+      "INJURED_SHORT": 366,
+      "NOT_REPORTED": 11,
+      "REHAB": 45,
+      "RESTRICTED": 9,
+      "TEMP_INACTIVE": 14
+    },
+    "on40Man": 1366,
+    "mlbActive": 840,
+    "multiSourcePlayers": 5427
+  }
+}
