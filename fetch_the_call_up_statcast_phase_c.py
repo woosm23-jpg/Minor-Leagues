@@ -146,13 +146,19 @@ def pitch_movement_url(year):
 
 
 def minors_statcast_url(start_date, end_date):
-    # Mirrors baseballr::statcast_search(..., route="statcast-search-minors")
+    # Baseball Savant's MiLB CSV detail route has not consistently honored
+    # hfLevel=AAA even though the browser results page does. Request the
+    # tracked MiLB feed with the level column included, then classify AAA rows
+    # locally using the returned level/team evidence. This avoids the 0-row
+    # failure seen from the server-side AAA filter on 2026-09-20.
     params = {
         "all":"true", "hfPT":"", "hfAB":"", "hfBBT":"", "hfPR":"", "hfZ":"", "stadium":"",
-        "hfBBL":"", "hfNewZones":"", "hfGT":"R|", "hfLevel":"AAA|", "hfC":"", "hfSea":f"{SEASON}|", "hfSit":"",
+        "hfBBL":"", "hfNewZones":"", "hfGT":"R|", "hfLevel":"", "chk_level":"on", "chk_is..tracked":"on",
+        "hfC":"", "hfSea":f"{SEASON}|", "hfSit":"",
         "hfOuts":"", "opponent":"", "pitcher_throws":"", "batter_stands":"", "hfSA":"",
         "player_type":"pitcher", "hfInfield":"", "team":"", "position":"", "hfOutfield":"", "hfRO":"",
-        "home_road":"", "game_date_gt":str(start_date), "game_date_lt":str(end_date), "hfFlag":"", "hfPull":"",
+        "home_road":"", "game_date_gt":str(start_date), "game_date_lt":str(end_date),
+        "hfFlag":r"is\.\.tracked|", "hfPull":"",
         "metric_1":"", "hfInn":"", "min_pitches":"0", "min_results":"0", "group_by":"name",
         "sort_col":"pitches", "player_event_sort":"h_launch_speed", "sort_order":"desc", "min_abs":"0", "type":"details"
     }
@@ -370,14 +376,27 @@ def parse_game_pk(row):
     return str(integer(first(row,"game_pk"),0))
 
 
-def aaa_row_allowed(row, aaa_games):
-    """Trust Savant's explicit AAA endpoint filter when game_pk is omitted.
+def aaa_row_allowed(row, aaa_games, aaa_team_tokens):
+    """Classify a MiLB Statcast detail row as Triple-A from available evidence.
 
-    Some MiLB Statcast CSV exports leave game_pk blank. When game_pk exists,
-    require it to be one of the AAA schedule games from the validated v2 base.
+    Preferred evidence is game_pk against the validated AAA schedule. Savant
+    sometimes omits game_pk on MiLB detail CSVs, so fall back to its optional
+    level column and finally to home/away Triple-A team abbreviations/names.
     """
     game_pk = parse_game_pk(row)
-    return game_pk == "0" or game_pk in aaa_games
+    if game_pk != "0":
+        return game_pk in aaa_games
+
+    level = str(first(row, "level", "level_name", "level_abbreviation", "sport_name", default="") or "").upper()
+    normalized = level.replace("-", "").replace(" ", "")
+    if "AAA" in normalized or "TRIPLEA" in normalized:
+        return True
+
+    for key in ("home_team", "away_team", "home_team_name", "away_team_name", "team", "opponent"):
+        token = str(first(row, key, default="") or "").strip().upper()
+        if token and token in aaa_team_tokens:
+            return True
+    return False
 
 
 def zone_in(row):
@@ -409,6 +428,14 @@ def collect_aaa(base, tracking, arsenal):
     all_ids, by_level = player_sets(base)
     aaa_current_ids = by_level.get("AAA",set())
     aaa_games = {str(g.get("gamePk")) for g in base.get("schedule") or [] if g.get("level")=="AAA" and str(g.get("gameType") or "R")=="R"}
+    aaa_team_tokens = set()
+    for t in base.get("teams") or []:
+        if t.get("level") != "AAA":
+            continue
+        for key in ("abbreviation", "name"):
+            token = str(t.get(key) or "").strip().upper()
+            if token:
+                aaa_team_tokens.add(token)
     dates = sorted(str(g.get("date")) for g in base.get("schedule") or [] if g.get("level")=="AAA" and g.get("date"))
     if not aaa_games or not dates:
         print("[Phase C] AAA: no schedule coverage, skipping")
@@ -437,11 +464,10 @@ def collect_aaa(base, tracking, arsenal):
         rows_seen += len(rows)
         kept=0
         for r in rows:
-            # The minors endpoint is explicitly filtered to AAA via hfLevel.
-            # Some Savant MiLB exports omit game_pk, so gamePk cannot be the
-            # primary level discriminator. Schedule coverage is still used for
-            # the date window and as an optional consistency check when present.
-            if not aaa_row_allowed(r, aaa_games):
+            # The MiLB CSV route is requested without a server-side level
+            # filter because that filter can return zero rows on the CSV route.
+            # Classify Triple-A locally from validated schedule/level/team data.
+            if not aaa_row_allowed(r, aaa_games, aaa_team_tokens):
                 continue
             kept+=1; rows_aaa+=1
             batter=str(integer(first(r,"batter"),0)); pitcher=str(integer(first(r,"pitcher"),0))
@@ -539,7 +565,7 @@ def collect_aaa(base, tracking, arsenal):
             "samples":{"pitches":x["pitches"],"swings":x["swings"],"whiffs":x["whiffs"]},"sourceId":"baseball_savant_aaa"
         })
     if aaa_current_ids and rows_aaa == 0:
-        raise RuntimeError("AAA Statcast fetch returned rows but none survived AAA filtering; check hfLevel/game_pk mapping")
+        raise RuntimeError("AAA Statcast fetch produced no classifiable AAA rows; check Savant level/team fields")
     return Counter({"aaa_raw_rows":rows_seen,"aaa_rows_kept":rows_aaa,"aaa_hitter_players":len(hb),"aaa_pitcher_players":len(pl),"aaa_arsenal_rows":len(pa)})
 
 
@@ -578,13 +604,16 @@ def self_test():
     assert zone_in(row) and is_swing(row) and is_whiff(row) and is_bbe(row) and is_barrel(row)
     row2={"zone":"12","description":"ball","type":"B"}
     assert not zone_in(row2) and not is_swing(row2)
-    # AAA endpoint must request the level explicitly, and blank game_pk rows
-    # are allowed because Savant can omit game_pk on MiLB detail exports.
-    q = urllib.parse.parse_qs(urllib.parse.urlparse(minors_statcast_url(date(2026,4,1), date(2026,4,2))).query)
-    assert q.get("hfLevel") == ["AAA|"]
-    assert aaa_row_allowed({"game_pk":""}, {"123"})
-    assert aaa_row_allowed({"game_pk":"123"}, {"123"})
-    assert not aaa_row_allowed({"game_pk":"999"}, {"123"})
+    # MiLB CSV requests the level column but performs AAA classification
+    # locally because Savant's server-side hfLevel filter can yield zero rows.
+    q = urllib.parse.parse_qs(urllib.parse.urlparse(minors_statcast_url(date(2026,4,1), date(2026,4,2))).query, keep_blank_values=True)
+    assert q.get("hfLevel") == [""] and q.get("chk_level") == ["on"]
+    teams={"TOL","TOLEDO MUD HENS"}
+    assert aaa_row_allowed({"game_pk":"123"}, {"123"}, teams)
+    assert aaa_row_allowed({"game_pk":"", "level":"AAA"}, {"123"}, teams)
+    assert aaa_row_allowed({"game_pk":"", "home_team":"TOL"}, {"123"}, teams)
+    assert not aaa_row_allowed({"game_pk":"999", "level":"AAA"}, {"123"}, teams)
+    assert not aaa_row_allowed({"game_pk":"", "level":"A", "home_team":"DUN"}, {"123"}, teams)
     t={}
     merge_tracking(t,"1",2026,"MLB","HITTING_SWING",{"whiffPercent":20},{"swings":100},"x")
     merge_tracking(t,"1",2026,"MLB","HITTING_SWING",{"chasePercent":25},{"chaseOpportunities":80},"x")
