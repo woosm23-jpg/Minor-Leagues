@@ -49,4 +49,5 @@ jobs:
           git add data/the_call_up_snapshot_v2/production_manifest_v2.json
           git add data/the_call_up_snapshot_v2/roster_canonicalization_v2.json
           git diff --cached --quiet || git commit -m 'Add THE CALL-UP Master Snapshot v2 data'
-          git push
+          git pull --rebase origin main
+          git push origin main
