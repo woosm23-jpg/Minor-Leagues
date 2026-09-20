@@ -95,10 +95,16 @@ def assignment_score(row: dict) -> tuple:
         bucket = 85
     elif status in {DEVELOPMENT_LIST, RESTRICTED, TEMP_INACTIVE, ADMIN_LEAVE, NOT_REPORTED} and level != "MLB":
         bucket = 75
-    elif status in {INJURED_SHORT, INJURED_60, INJURED_FULL_SEASON}:
+    elif status in {INJURED_SHORT, INJURED_60, INJURED_FULL_SEASON} and level != "MLB":
+        # A real MiLB injured assignment beats the organization-wide MLB
+        # fullRoster mirror of the same player/status.
+        bucket = 72
+    elif status in {INJURED_SHORT, INJURED_60, INJURED_FULL_SEASON} and roster_type == "40Man":
         bucket = 70
     elif roster_type == "fullRoster" and level != "MLB":
         bucket = 60
+    elif status in {INJURED_SHORT, INJURED_60, INJURED_FULL_SEASON} and level == "MLB":
+        bucket = 50
     elif roster_type == "40Man":
         bucket = 40
     else:
@@ -116,10 +122,21 @@ def canonicalize_roster(observations: list[dict], team_by_id: dict[str, dict]) -
     for player_id, rows in by_player.items():
         selected = sorted(rows, key=assignment_score, reverse=True)[0]
         mlb_rows = [r for r in rows if r.get("level") == "MLB"]
+        minor_rows = [r for r in rows if r.get("level") != "MLB"]
         active_mlb = [r for r in mlb_rows if r.get("rosterType") == "active" and r.get("availability") == ACTIVE]
+        forty_man_rows = [r for r in mlb_rows if r.get("rosterType") == "40Man"]
         injury_rows = [r for r in rows if r.get("availability") in {INJURED_SHORT, INJURED_60, INJURED_FULL_SEASON}]
         rehab_rows = [r for r in rows if r.get("availability") == REHAB]
-        minor_active = [r for r in rows if r.get("level") != "MLB" and r.get("availability") == ACTIVE]
+        minor_active = [r for r in minor_rows if r.get("availability") == ACTIVE]
+
+        # MLB rosterType=fullRoster is organization-wide bookkeeping, not an MLB
+        # assignment. It can contain complex/rookie players who are outside the
+        # modeled A-through-MLB ladder. If that is the only evidence, exclude the
+        # row instead of inventing an MLB assignment. Keep real Active/40-man/IL
+        # players and anyone with a modeled MiLB assignment.
+        has_mlb_debut = any(r.get("mlbDebutDate") for r in rows)
+        if not minor_rows and not active_mlb and not forty_man_rows and not (injury_rows and has_mlb_debut):
+            continue
 
         org_candidates = [r.get("organizationId") for r in rows if r.get("organizationId")]
         organization_id = next((x for x in org_candidates if x), None)
@@ -133,6 +150,13 @@ def canonicalize_roster(observations: list[dict], team_by_id: dict[str, dict]) -
             # Prefer the longest explicit IL designation when duplicate evidence differs.
             order = {INJURED_FULL_SEASON: 3, INJURED_60: 2, INJURED_SHORT: 1}
             availability = max((r["availability"] for r in injury_rows), key=lambda x: order[x])
+        elif selected.get("level") == "MLB" and not active_mlb:
+            # 40-man bookkeeping without a modeled minor assignment is ownership
+            # evidence only; it must never make a player game-available in MLB.
+            availability = selected.get("availability")
+            if availability == ACTIVE:
+                availability = TEMP_INACTIVE
+            availability = availability or UNKNOWN
         else:
             availability = selected.get("availability") or UNKNOWN
 
@@ -242,6 +266,45 @@ def apply_position_experience(players: list[dict], stats: list[dict]) -> None:
             player["position"] = rows[0]["position"]
 
 
+def validate_live_roster(players: list[dict], teams: list[dict]) -> None:
+    mlb_active = [p for p in players if p.get("mlbActive")]
+    if len(mlb_active) < 600:
+        raise RuntimeError(f"MLB active coverage too small: {len(mlb_active)}")
+
+    false_mlb_active = [p for p in players if p.get("assignedLevel") == "MLB" and p.get("availability") == ACTIVE and not p.get("mlbActive")]
+    if false_mlb_active:
+        sample = [(p.get("id"), p.get("fullName"), p.get("rosterStatus")) for p in false_mlb_active[:12]]
+        raise RuntimeError(f"MLB bookkeeping player became game-available: {sample}")
+
+    full_roster_only = []
+    for p in players:
+        evidence = p.get("rosterEvidence") or []
+        if not evidence:
+            continue
+        only_mlb_full = all(e.get("level") == "MLB" and e.get("rosterType") == "fullRoster" for e in evidence)
+        if only_mlb_full and not p.get("mlbDebutDate"):
+            full_roster_only.append(p)
+    if full_roster_only:
+        sample = [(p.get("id"), p.get("fullName"), p.get("availability")) for p in full_roster_only[:12]]
+        raise RuntimeError(f"organization-only MLB fullRoster players leaked into modeled ladder: {sample}")
+
+    mirrored_minor_injury = []
+    for p in players:
+        evidence = p.get("rosterEvidence") or []
+        has_minor_injury = any(e.get("level") != "MLB" and e.get("availability") in {INJURED_SHORT, INJURED_60, INJURED_FULL_SEASON} for e in evidence)
+        if has_minor_injury and p.get("assignedLevel") == "MLB" and not p.get("on40Man") and not p.get("mlbActive"):
+            mirrored_minor_injury.append(p)
+    if mirrored_minor_injury:
+        sample = [(p.get("id"), p.get("fullName"), p.get("rosterStatus")) for p in mirrored_minor_injury[:12]]
+        raise RuntimeError(f"MiLB injury mirror incorrectly assigned to MLB: {sample}")
+
+    active_team_counts = Counter(str(p.get("assignedTeamId")) for p in players if p.get("mlbActive"))
+    mlb_team_ids = [str(t.get("id")) for t in teams if t.get("level") == "MLB"]
+    thin = {tid: active_team_counts.get(tid, 0) for tid in mlb_team_ids if active_team_counts.get(tid, 0) < 20}
+    if thin:
+        raise RuntimeError(f"MLB active roster coverage too thin: {thin}")
+
+
 def source_catalog(retrieved_at: str) -> list[dict]:
     return [
         {"id": "mlb_stats_teams", "name": "MLB Stats API — teams/affiliates", "url": f"{legacy.BASE}/teams", "retrievedAt": retrieved_at, "notes": f"season={SEASON}; current organizations"},
@@ -280,6 +343,17 @@ def self_test() -> None:
     assert a[0]["teamId"] == "100" and b[0]["teamId"] == "200" and a[0]["level"] == b[0]["level"] == "AAA"
     vr = stat_rows_v2(stat_raw, 11, "hitting", 2026, fallback_team_id="100", split_context={"type": "OPP_PITCHER_HAND", "hand": "R", "sitCode": "vr"})
     assert vr[0]["splitContext"]["hand"] == "R" and vr[0]["splitContext"]["sitCode"] == "vr"
+
+    org_only = [{**base, "id": "2", "teamId": "117", "level": "MLB", "status": "Active", "rosterType": "fullRoster", "organizationId": "117", "availability": ACTIVE, "mlbDebutDate": None}]
+    assert canonicalize_roster(org_only, teams)[0] == [], "MLB fullRoster-only bookkeeping must not become an MLB assignment"
+    org_only_injury = [{**base, "id": "22", "teamId": "117", "level": "MLB", "status": "Injured 60-Day", "rosterType": "fullRoster", "organizationId": "117", "availability": INJURED_60, "mlbDebutDate": None}]
+    assert canonicalize_roster(org_only_injury, teams)[0] == [], "lower-minor injury mirrored through MLB fullRoster must not become MLB IL"
+    real_mlb_il = [{**base, "id": "23", "teamId": "117", "level": "MLB", "status": "Injured 60-Day", "rosterType": "fullRoster", "organizationId": "117", "availability": INJURED_60, "mlbDebutDate": "2025-06-01"}]
+    mlb_il_player = canonicalize_roster(real_mlb_il, teams)[0][0]
+    assert mlb_il_player["assignedLevel"] == "MLB" and mlb_il_player["availability"] == INJURED_60
+    forty_only = [{**base, "id": "3", "teamId": "117", "level": "MLB", "status": "Reassigned to Minors", "rosterType": "40Man", "organizationId": "117", "availability": ACTIVE}]
+    forty_player = canonicalize_roster(forty_only, teams)[0][0]
+    assert forty_player["on40Man"] and not forty_player["mlbActive"] and forty_player["availability"] == TEMP_INACTIVE
     print("SNAPSHOT_V2_SELF_TEST_PASS")
 
 
@@ -367,6 +441,7 @@ def main() -> None:
                     print(f"  stats {stat_season} {level}: teams {team_index}/{len(historical_team_ids)} rows={level_count}")
     stats = legacy.unique_by(stats, lambda r: (r["playerId"], r["season"], r.get("teamId"), r["level"], r["group"], r.get("gameType"), r.get("position"), json.dumps(r.get("splitContext"), sort_keys=True)))
     apply_position_experience(players, stats)
+    validate_live_roster(players, teams)
 
     schedule = []
     for sport_id, level in legacy.SPORT_LEVELS.items():
