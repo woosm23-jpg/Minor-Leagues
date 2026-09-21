@@ -1,0 +1,93 @@
+{
+  "schema": "THE_CALL_UP_V50_1B_PROMOTION_GATE",
+  "pass": true,
+  "verified": true,
+  "source": "Production Snapshot v2",
+  "levelOrder": [
+    "MLB",
+    "AAA",
+    "AA",
+    "HIGH_A",
+    "A"
+  ],
+  "evaluatorRows": [
+    {
+      "fromLevel": "A",
+      "toLevel": "HIGH_A",
+      "decision": "PROMOTE",
+      "incumbentDecision": "DEMOTE",
+      "candidatePerspective": "LOWER_LEVEL_CANDIDATE",
+      "incumbentPerspective": "UPPER_LEVEL_INCUMBENT"
+    },
+    {
+      "fromLevel": "HIGH_A",
+      "toLevel": "AA",
+      "decision": "PROMOTE",
+      "incumbentDecision": "DEMOTE",
+      "candidatePerspective": "LOWER_LEVEL_CANDIDATE",
+      "incumbentPerspective": "UPPER_LEVEL_INCUMBENT"
+    },
+    {
+      "fromLevel": "AA",
+      "toLevel": "AAA",
+      "decision": "PROMOTE",
+      "incumbentDecision": "DEMOTE",
+      "candidatePerspective": "LOWER_LEVEL_CANDIDATE",
+      "incumbentPerspective": "UPPER_LEVEL_INCUMBENT"
+    },
+    {
+      "fromLevel": "AAA",
+      "toLevel": "MLB",
+      "decision": "PROMOTE",
+      "incumbentDecision": "DEMOTE",
+      "candidatePerspective": "AAA_CANDIDATE",
+      "incumbentPerspective": "MLB_INCUMBENT"
+    }
+  ],
+  "movementRows": [
+    {
+      "fromLevel": "A",
+      "toLevel": "HIGH_A",
+      "position": "SS",
+      "promotePlayerId": "user_001",
+      "demotePlayerId": "807267",
+      "events": [
+        "PLAYER_PROMOTED",
+        "PLAYER_DEMOTED"
+      ]
+    },
+    {
+      "fromLevel": "HIGH_A",
+      "toLevel": "AA",
+      "position": "SS",
+      "promotePlayerId": "807267",
+      "demotePlayerId": "800198",
+      "events": [
+        "PLAYER_PROMOTED",
+        "PLAYER_DEMOTED"
+      ]
+    },
+    {
+      "fromLevel": "AA",
+      "toLevel": "AAA",
+      "position": "SS",
+      "promotePlayerId": "800198",
+      "demotePlayerId": "680728",
+      "events": [
+        "PLAYER_PROMOTED",
+        "PLAYER_DEMOTED"
+      ]
+    },
+    {
+      "fromLevel": "AAA",
+      "toLevel": "MLB",
+      "position": "SS",
+      "promotePlayerId": "680728",
+      "demotePlayerId": "672695",
+      "events": [
+        "PLAYER_PROMOTED",
+        "PLAYER_DEMOTED"
+      ]
+    }
+  ]
+}
