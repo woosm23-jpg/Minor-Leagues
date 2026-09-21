@@ -1,0 +1,27 @@
+{
+  "schema": "THE_CALL_UP_V50_2C_PRODUCTION_BROWSER_SMOKE",
+  "pass": true,
+  "standalone": "THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "checks": {
+    "newCareerHome": true,
+    "organizations30": true,
+    "realOrganizations": true,
+    "noCareerCreationFailure": true,
+    "openingDayAutosave": true,
+    "sevenDaysButton": true,
+    "importantEventButton": true,
+    "stoppedOnImportantEvent": true,
+    "proDebutStop": true,
+    "autosaveAfterProgress": true,
+    "pageErrors": 0
+  },
+  "errors": [],
+  "scenarios": [
+    "Production age-20 new career reaches Season Home with autosave",
+    "Production age-21 7-day progress stops on PRO_DEBUT important event"
+  ]
+}

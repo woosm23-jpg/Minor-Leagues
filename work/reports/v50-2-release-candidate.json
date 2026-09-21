@@ -1,0 +1,77 @@
+{
+  "schema": "THE_CALL_UP_V50_2_RELEASE_CANDIDATE",
+  "pass": true,
+  "decision": "RC_READY",
+  "source": "Production Snapshot v2",
+  "version": "v50.2",
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html",
+    "bytes": 66678659,
+    "sha256": "e9ce5d5b01965b3fd20a3fa78e7202ec2dd4dc1ffac9f1a553049f06ad106ce7"
+  },
+  "gates": {
+    "v50_1CurrentMvp": true,
+    "v50_1Standalone": true,
+    "v50_2ProductionDataRuntime": true,
+    "v50_2RolloverEvidence": true,
+    "v50_2MobileBrowserSmoke": true,
+    "v50_2DocsSync": true
+  },
+  "production": {
+    "teams": 150,
+    "players": 5429,
+    "activePlayers": 4217,
+    "statsRows": 80606,
+    "scheduleGames2026": 10710,
+    "organizations": 30,
+    "levels": [
+      "MLB",
+      "AAA",
+      "AA",
+      "HIGH_A",
+      "A"
+    ]
+  },
+  "rollover": {
+    "completed2026": {
+      "year": 2026,
+      "worldGamesCompleted": 10710,
+      "worldGamesTotal": 10710
+    },
+    "next2027": {
+      "year": 2027,
+      "startDate": "2027-03-25",
+      "worldGamesCompleted": 0,
+      "worldGamesTotal": 12150
+    },
+    "ecology": {
+      "retired": 82,
+      "generated": 82,
+      "totalRetired": 82,
+      "totalGenerated": 82
+    },
+    "levelRosterCounts": {
+      "MLB": 840,
+      "AAA": 837,
+      "AA": 804,
+      "HIGH_A": 839,
+      "A": 898
+    },
+    "saveRoundTrip": true,
+    "originalDurationSeconds": 404.6
+  },
+  "browser": {
+    "newCareerHome": true,
+    "organizations30": true,
+    "realOrganizations": true,
+    "noCareerCreationFailure": true,
+    "openingDayAutosave": true,
+    "sevenDaysButton": true,
+    "importantEventButton": true,
+    "stoppedOnImportantEvent": true,
+    "proDebutStop": true,
+    "autosaveAfterProgress": true,
+    "pageErrors": 0
+  },
+  "next": "v51 Contracts / Service Time"
+}

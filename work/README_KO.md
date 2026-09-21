@@ -4,26 +4,60 @@
 
 ## 현재 버전
 
-- 공식 안정 기준선: **v47 Production World Activation**
-- 현재 개발 후보: **v49 RC — 7 Days / Important Event Progress**
+- 공식 안정 기준선: **v50.1 Current MVP**
+- 현재 릴리스 후보: **v50.2 Production RC**
 - 엔진/세이브 gameVersion: `phase4_production_world_activation_v47`
 - Save schema: v2
+- Complete Edition: 아직 아님. 다음 큰 단계는 **v51 Contracts / Service Time**
 
-v49는 v48.1의 Production 새 커리어 저장 핫픽스를 유지하면서, GDD의 빠른 커리어 진행 UX 중 `7일 진행`과 `중요 이벤트까지`를 구현합니다.
+v50.2는 v50.1의 현재 MVP 회귀 안정성을 유지하면서, Production Snapshot v2의 데이터/런타임 검증, 2026→2027 시즌 롤오버 증거 연속성, 모바일 브라우저 smoke, 문서 동기화, 실행 가능한 Production standalone HTML까지 묶은 RC입니다.
 
-## v49 진행 컨트롤
+## Production 월드
 
-Home:
+- MLB / AAA / AA / High-A / A 각 30팀
+- 총 150 실존 팀
+- 5,429 canonical 선수
+- 게임 가능 ACTIVE 선수 4,217명
+- 2024~2026 hitting / pitching / fielding 기록 80,606 rows
+- 2026 실제 5레벨 일정 10,710경기
+  - MLB 2,430
+  - AAA 2,250
+  - AA 2,070
+  - High-A 1,980
+  - A 1,980
+- MLB 구장 30개
+- Production 조직 30개
+- 새 커리어 시작일: 2026-03-25
 
-- 다음 출전
-- 경기 시뮬
-- 시리즈 시뮬
-- 7일 진행
-- 중요 이벤트까지
+## v50.1 Current MVP 검증
 
-`7일 진행`도 중요 이벤트가 생기면 7일을 채우기 전에 자동으로 멈춥니다.
+통합 gate에서 다음 6개를 모두 Production Snapshot v2 기준으로 재검증했습니다.
 
-현재 자동 정지 대상은 이미 런타임에 존재하는 승격/강등, 역할 변경, 프로/MLB 주요 첫 기록, MAJOR/SEASON_ENDING 부상입니다. 아직 구현되지 않은 트레이드·계약·포스트시즌 정지는 v49 범위에 포함하지 않습니다.
+- Organization depth
+- 5레벨 승격/강등
+- 전체 5레벨 ladder
+- AAA→MLB 콜업 / 대체 / MLB 데뷔
+- 부상 / 피로 / 폼
+- 저장 / 체크포인트 / `.tcu` export-import
+
+또한 v50.1 Production standalone HTML 빌드와 Snapshot v2 내장 정적 검증을 완료했습니다.
+
+## v50.2 Production RC 검증
+
+- Production 데이터/런타임 gate: PASS
+- 2026→2027 롤오버 증거 연속성: PASS
+  - 2026 월드 경기 10,710 / 10,710 완료
+  - 2027 시작일 2027-03-25
+  - 2027 새 일정 12,150경기
+  - 오프시즌 은퇴 / 생성 82 / 82
+  - 저장/복원 PASS
+- 모바일 브라우저 smoke:
+  - 새 Production 커리어 생성
+  - Season Home 진입
+  - 자동 저장
+  - 7일 진행
+  - 중요 이벤트(PRO_DEBUT) 자동 정지
+  - page error 0
 
 ## 화면 구조
 
@@ -36,25 +70,19 @@ Home:
   - Career Feed
   - Settings / Save
 
-## Production 월드
+## 실행 파일
 
-- MLB / AAA / AA / High-A / A 각 30팀
-- 150 실존 팀
-- 5,201 canonical 실존 선수
-- 120 affiliations
-- 27,985 stat rows
-- 10,710 actual schedule rows
-- 30 MLB parks
+`dist/THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html`
 
-## 실행
+GitHub Actions artifact에도 동일 실행 HTML과 v50.2 검증 리포트를 함께 올립니다.
 
-`dist/THE_CALL_UP_SEASON_STANDALONE_v49_PRODUCTION.html`
+## 다음 단계
 
-## v49 핵심 검증
+v51부터 계약/서비스타임을 시작합니다.
 
-- v49 progress tests: 6/6 PASS
-- v48 shell UI targeted tests: 3/3 PASS
-- v48.1 Production New Career FULL-save regression: PASS
-- Production Data Gate: PASS
-
-v47의 전체 회귀 결과는 공식 stable 기준선으로 계속 유지합니다. v49는 Phase 5 수동 확인용 RC입니다.
+- Contract state data model
+- Service-day accrual
+- unknown real-player baseline
+- save/restore integration
+- minimal public contract view
+- gate + Production HTML checkpoint
