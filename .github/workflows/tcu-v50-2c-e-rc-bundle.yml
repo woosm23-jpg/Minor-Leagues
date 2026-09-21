@@ -1,0 +1,228 @@
+name: THE CALL-UP v50.2 RC Bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/tcu-v50-2c-e-rc-bundle.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  v50-2-rc-bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify v50.2 bundle baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object work/reports/v50-2a-production-data-runtime.json)" = "9d6e36ffb46617eff2b5e1c24c1d1012071eec22"
+          test "$(git hash-object work/reports/v50-2b-rollover-evidence.json)" = "6f0450478d2a14382da328601fe0f05912b9c684"
+          test "$(git hash-object work/reports/v50-1g-current-mvp-gate.json)" = "5f3785df6af2a4d3977df24bd4563b533a586059"
+          test "$(git hash-object work/reports/v50-1h-production-standalone.json)" = "a41398ace4b6a32ce7e8bb963fd6c9339b777bb4"
+          test "$(git hash-object work/scripts/build-standalone.mjs)" = "4bf75be6ad8dba1706a91b98968c72fcd4656daf"
+          test "$(git hash-object work/scripts/browser-standalone-smoke-v39.py)" = "26410e1552f8e27197ccdd244676d9305f4ad5d3"
+          test "$(git hash-object work/src/api/seasonApi.js)" = "ae3f22620b054788e9d9fae8b5f0c6604445c2f4"
+          test "$(git hash-object work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz)" = "a113be1ff629e68db8ccf8b7603badf1af83766a"
+          test "$(git hash-object work/README_KO.md)" = "7b7d20b78ed49f9062b8a7e0dc54da8b4bbeb807"
+
+          node - <<'NODE'
+          const fs = require('fs');
+          const reports = [
+            ['work/reports/v50-1g-current-mvp-gate.json', 'THE_CALL_UP_V50_1G_CURRENT_MVP_GATE'],
+            ['work/reports/v50-1h-production-standalone.json', 'THE_CALL_UP_V50_1H_PRODUCTION_STANDALONE'],
+            ['work/reports/v50-2a-production-data-runtime.json', 'THE_CALL_UP_V50_2A_PRODUCTION_DATA_RUNTIME'],
+            ['work/reports/v50-2b-rollover-evidence.json', 'THE_CALL_UP_V50_2B_ROLLOVER_EVIDENCE']
+          ];
+          for (const [path, schema] of reports) {
+            const row = JSON.parse(fs.readFileSync(path, 'utf8'));
+            if (row.schema !== schema || row.pass !== true) throw new Error(`${path} is not verified PASS`);
+          }
+          NODE
+
+      - name: Install v50.2 browser smoke and sync Korean docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'aW1wb3J0IGpzb24KaW1wb3J0IHJlCmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aApmcm9tIHBsYXl3cmlnaHQuc3luY19hcGkgaW1wb3J0IHN5bmNfcGxheXdyaWdodAoKcm9vdCA9IFBhdGgoX19maWxlX18pLnJlc29sdmUoKS5wYXJlbnRzWzFdCmh0bWxfcGF0aCA9IHJvb3QgLyAiZGlzdCIgLyAiVEhFX0NBTExfVVBfU0VBU09OX1NUQU5EQUxPTkVfdjUwXzJfUFJPRFVDVElPTi5odG1sIgpyZXBvcnRfcGF0aCA9IHJvb3QgLyAicmVwb3J0cyIgLyAidjUwLTJjLXByb2R1Y3Rpb24tYnJvd3Nlci1zbW9rZS5qc29uIgoKaHRtbCA9IGh0bWxfcGF0aC5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKbGVnYWN5ID0gKHJvb3QgLyAic2NyaXB0cyIgLyAiYnJvd3Nlci1zdGFuZGFsb25lLXNtb2tlLXYzOS5weSIpLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQptYXRjaCA9IHJlLnNlYXJjaChyImZha2VfaWRiID0gcicnJyguKj8pJycnXG5cbnNtb2tlX2h0bWwiLCBsZWdhY3ksIHJlLlMpCmlmIG5vdCBtYXRjaDoKICAgIHJhaXNlIFJ1bnRpbWVFcnJvcigiZmFrZSBJbmRleGVkREIgaGFybmVzcyBub3QgZm91bmQiKQpzbW9rZV9odG1sID0gaHRtbC5yZXBsYWNlKCI8Ym9keT5cbiIsICI8Ym9keT5cbiIgKyBtYXRjaC5ncm91cCgxKSwgMSkKCmRlZiBtYWtlX3BhZ2UoYnJvd3Nlcik6CiAgICBlcnJvcnMgPSBbXQogICAgcGFnZSA9IGJyb3dzZXIubmV3X3BhZ2Uodmlld3BvcnQ9eyJ3aWR0aCI6IDM5MCwgImhlaWdodCI6IDg0NH0pCiAgICBwYWdlLm9uKCJwYWdlZXJyb3IiLCBsYW1iZGEgZXhjOiBlcnJvcnMuYXBwZW5kKHN0cihleGMpKSkKICAgIHBhZ2Uub24oImRpYWxvZyIsIGxhbWJkYSBkaWFsb2c6IGRpYWxvZy5hY2NlcHQoKSkKICAgIHBhZ2Uuc2V0X2NvbnRlbnQoc21va2VfaHRtbCwgd2FpdF91bnRpbD0iZG9tY29udGVudGxvYWRlZCIsIHRpbWVvdXQ9MTgwMDAwKQogICAgcGFnZS53YWl0X2Zvcl9zZWxlY3RvcigiLnNhdmUtc2VsZWN0LWhlcm8iLCB0aW1lb3V0PTYwMDAwKQogICAgcmV0dXJuIHBhZ2UsIGVycm9ycwoKZGVmIGNvbmZpZ3VyZV9uZXdfY2FyZWVyKHBhZ2UsICosIGFnZSwgbmFtZSk6CiAgICBhc3NlcnQgIlRIRSBDQUxMLVVQIiBpbiBwYWdlLmxvY2F0b3IoIi5zYXZlLXNlbGVjdC1oZXJvIikuaW5uZXJfdGV4dCgpCiAgICBwYWdlLmxvY2F0b3IoIltkYXRhLWNhcmVlci1uZXddIikuY2xpY2soKQogICAgcGFnZS53YWl0X2Zvcl9zZWxlY3RvcigiLm5ldy1jYXJlZXItc2NyZWVuIiwgdGltZW91dD02MDAwMCkKCiAgICBwYWdlLmxvY2F0b3IoJ1tkYXRhLWNhcmVlci1vcmctbW9kZV1bdmFsdWU9IkZBVk9SSVRFIl0nKS5jaGVjayhmb3JjZT1UcnVlKQogICAgb3JnX3NlbGVjdCA9IHBhZ2UubG9jYXRvcignW2RhdGEtY2FyZWVyLWZpZWxkPSJmYXZvcml0ZU9yZ2FuaXphdGlvbklkIl0nKQogICAgb3JnX3NlbGVjdC53YWl0X2Zvcih0aW1lb3V0PTYwMDAwKQogICAgdmFsdWVzID0gb3JnX3NlbGVjdC5sb2NhdG9yKCJvcHRpb24iKS5ldmFsdWF0ZV9hbGwoCiAgICAgICAgIihlbHMpID0+IGVscy5tYXAoZSA9PiBlLnZhbHVlKS5maWx0ZXIoQm9vbGVhbikiCiAgICApCiAgICBuYW1lcyA9IG9yZ19zZWxlY3QubG9jYXRvcigib3B0aW9uIikuZXZhbHVhdGVfYWxsKAogICAgICAgICIoZWxzKSA9PiBlbHMubWFwKGUgPT4gZS50ZXh0Q29udGVudC50cmltKCkpLmZpbHRlcihCb29sZWFuKSIKICAgICkKICAgIGlmIGxlbih2YWx1ZXMpICE9IDMwOgogICAgICAgIHJhaXNlIEFzc2VydGlvbkVycm9yKGYiZXhwZWN0ZWQgMzAgUHJvZHVjdGlvbiBvcmdhbml6YXRpb25zLCBnb3Qge2xlbih2YWx1ZXMpfSIpCiAgICBpZiBub3QgYW55KCJBcml6b25hIERpYW1vbmRiYWNrcyIgaW4geCBmb3IgeCBpbiBuYW1lcyk6CiAgICAgICAgcmFpc2UgQXNzZXJ0aW9uRXJyb3IoIkFyaXpvbmEgRGlhbW9uZGJhY2tzIG1pc3NpbmcgZnJvbSBvcmdhbml6YXRpb24gbGlzdCIpCiAgICBpZiBub3QgYW55KCJOZXcgWW9yayBZYW5rZWVzIiBpbiB4IGZvciB4IGluIG5hbWVzKToKICAgICAgICByYWlzZSBBc3NlcnRpb25FcnJvcigiTmV3IFlvcmsgWWFua2VlcyBtaXNzaW5nIGZyb20gb3JnYW5pemF0aW9uIGxpc3QiKQoKICAgIG9yZ19zZWxlY3Quc2VsZWN0X29wdGlvbih2YWx1ZXNbMF0pCiAgICBwYWdlLmxvY2F0b3IoJ1tkYXRhLWNhcmVlci1maWVsZD0ibmFtZSJdJykuZmlsbChuYW1lKQogICAgcGFnZS5sb2NhdG9yKCdbZGF0YS1jYXJlZXItZmllbGQ9ImFnZSJdJykuc2VsZWN0X29wdGlvbihzdHIoYWdlKSkKICAgIHBhZ2UubG9jYXRvcignW2RhdGEtY2FyZWVyLWZpZWxkPSJwcmltYXJ5UG9zaXRpb24iXScpLnNlbGVjdF9vcHRpb24oIkNGIikKICAgIHBhZ2UubG9jYXRvcignW2RhdGEtY2FyZWVyLWZpZWxkPSJhcmNoZXR5cGUiXScpLnNlbGVjdF9vcHRpb24oIkJBTEFOQ0VEIikKICAgIHBhZ2UubG9jYXRvcigiW2RhdGEtY2FyZWVyLWNyZWF0ZS1zdWJtaXRdIikuY2xpY2soKQogICAgcGFnZS53YWl0X2Zvcl9zZWxlY3RvcigiLnNlYXNvbi10aXRsZSIsIHRpbWVvdXQ9MTgwMDAwKQogICAgcGFnZS53YWl0X2Zvcl9mdW5jdGlvbigKICAgICAgICAiKCkgPT4gZG9jdW1lbnQucXVlcnlTZWxlY3RvcignLnNlYXNvbi10aXRsZScpPy50ZXh0Q29udGVudC5pbmNsdWRlcygn7Iuc7KaMIO2ZiCcpIiwKICAgICAgICB0aW1lb3V0PTE4MDAwMCwKICAgICkKICAgIHJldHVybiBuYW1lcwoKY2hlY2tzID0ge30KZXJyb3JzID0gW10KCndpdGggc3luY19wbGF5d3JpZ2h0KCkgYXMgcDoKICAgIGJyb3dzZXIgPSBwLmNocm9taXVtLmxhdW5jaCgKICAgICAgICBoZWFkbGVzcz1UcnVlLAogICAgICAgIGFyZ3M9WyItLW5vLXNhbmRib3giLCAiLS1kaXNhYmxlLWRldi1zaG0tdXNhZ2UiXSwKICAgICkKCiAgICBwYWdlMSwgZXJyb3JzMSA9IG1ha2VfcGFnZShicm93c2VyKQogICAgb3JnX25hbWVzMSA9IGNvbmZpZ3VyZV9uZXdfY2FyZWVyKHBhZ2UxLCBhZ2U9MjAsIG5hbWU9InY1MC4yIOyggOyepSBRQSIpCiAgICBib2R5MSA9IHBhZ2UxLmxvY2F0b3IoImJvZHkiKS5pbm5lcl90ZXh0KCkKICAgIGNoZWNrc1sibmV3Q2FyZWVySG9tZSJdID0gVHJ1ZQogICAgY2hlY2tzWyJvcmdhbml6YXRpb25zMzAiXSA9IGxlbihvcmdfbmFtZXMxKSA9PSAzMAogICAgY2hlY2tzWyJyZWFsT3JnYW5pemF0aW9ucyJdID0gKAogICAgICAgIGFueSgiQXJpem9uYSBEaWFtb25kYmFja3MiIGluIHggZm9yIHggaW4gb3JnX25hbWVzMSkKICAgICAgICBhbmQgYW55KCJOZXcgWW9yayBZYW5rZWVzIiBpbiB4IGZvciB4IGluIG9yZ19uYW1lczEpCiAgICApCiAgICBjaGVja3NbIm5vQ2FyZWVyQ3JlYXRpb25GYWlsdXJlIl0gPSAi7IOIIOy7pOumrOyWtCDsg53shLEg7Iuk7YyoIiBub3QgaW4gYm9keTEKICAgIGNoZWNrc1sib3BlbmluZ0RheUF1dG9zYXZlIl0gPSAi7J6Q64+ZIOyggOyepeuQqCIgaW4gYm9keTEKICAgIGVycm9ycy5leHRlbmQoZXJyb3JzMSkKICAgIHBhZ2UxLmNsb3NlKCkKCiAgICBwYWdlMiwgZXJyb3JzMiA9IG1ha2VfcGFnZShicm93c2VyKQogICAgY29uZmlndXJlX25ld19jYXJlZXIocGFnZTIsIGFnZT0yMSwgbmFtZT0idjUwLjIg7KeE7ZaJIFFBIikKICAgIGNoZWNrc1sic2V2ZW5EYXlzQnV0dG9uIl0gPSBwYWdlMi5sb2NhdG9yKCdbZGF0YS1zZWFzb24tYWN0aW9uPSJTSU1fN19EQVlTIl0nKS5jb3VudCgpID09IDEKICAgIGNoZWNrc1siaW1wb3J0YW50RXZlbnRCdXR0b24iXSA9IHBhZ2UyLmxvY2F0b3IoJ1tkYXRhLXNlYXNvbi1hY3Rpb249IlNJTV9JTVBPUlRBTlQiXScpLmNvdW50KCkgPT0gMQoKICAgIHBhZ2UyLmxvY2F0b3IoJ1tkYXRhLXNlYXNvbi1hY3Rpb249IlNJTV83X0RBWVMiXScpLmNsaWNrKCkKICAgIHBhZ2UyLndhaXRfZm9yX3NlbGVjdG9yKCIucHJvZ3Jlc3Mtc3RvcC1jYXJkIiwgdGltZW91dD0xODAwMDApCiAgICBzdG9wX3RleHQgPSBwYWdlMi5sb2NhdG9yKCIucHJvZ3Jlc3Mtc3RvcC1jYXJkIikuaW5uZXJfdGV4dCgpCiAgICBib2R5MiA9IHBhZ2UyLmxvY2F0b3IoImJvZHkiKS5pbm5lcl90ZXh0KCkKCiAgICBjaGVja3NbInN0b3BwZWRPbkltcG9ydGFudEV2ZW50Il0gPSAi7KSR7JqUIOydtOuypO2KuOyXkOyEnCDsoJXsp4AiIGluIHN0b3BfdGV4dAogICAgY2hlY2tzWyJwcm9EZWJ1dFN0b3AiXSA9ICLtlITroZwg642w67eUIiBpbiBzdG9wX3RleHQKICAgIGNoZWNrc1siYXV0b3NhdmVBZnRlclByb2dyZXNzIl0gPSAi7J6Q64+ZIOyggOyepeuQqCIgaW4gYm9keTIKICAgIGVycm9ycy5leHRlbmQoZXJyb3JzMikKICAgIHBhZ2UyLmNsb3NlKCkKCiAgICBicm93c2VyLmNsb3NlKCkKCmNoZWNrc1sicGFnZUVycm9ycyJdID0gbGVuKGVycm9ycykKcGFzc2VkID0gKAogICAgYWxsKHYgaXMgVHJ1ZSBmb3IgaywgdiBpbiBjaGVja3MuaXRlbXMoKSBpZiBrICE9ICJwYWdlRXJyb3JzIikKICAgIGFuZCBjaGVja3NbInBhZ2VFcnJvcnMiXSA9PSAwCikKCnJlc3VsdCA9IHsKICAgICJzY2hlbWEiOiAiVEhFX0NBTExfVVBfVjUwXzJDX1BST0RVQ1RJT05fQlJPV1NFUl9TTU9LRSIsCiAgICAicGFzcyI6IHBhc3NlZCwKICAgICJzdGFuZGFsb25lIjogaHRtbF9wYXRoLm5hbWUsCiAgICAidmlld3BvcnQiOiB7IndpZHRoIjogMzkwLCAiaGVpZ2h0IjogODQ0fSwKICAgICJjaGVja3MiOiBjaGVja3MsCiAgICAiZXJyb3JzIjogZXJyb3JzLAogICAgInNjZW5hcmlvcyI6IFsKICAgICAgICAiUHJvZHVjdGlvbiBhZ2UtMjAgbmV3IGNhcmVlciByZWFjaGVzIFNlYXNvbiBIb21lIHdpdGggYXV0b3NhdmUiLAogICAgICAgICJQcm9kdWN0aW9uIGFnZS0yMSA3LWRheSBwcm9ncmVzcyBzdG9wcyBvbiBQUk9fREVCVVQgaW1wb3J0YW50IGV2ZW50IgogICAgXQp9CgpyZXBvcnRfcGF0aC53cml0ZV90ZXh0KGpzb24uZHVtcHMocmVzdWx0LCBlbnN1cmVfYXNjaWk9RmFsc2UsIGluZGVudD0yKSArICJcbiIsIGVuY29kaW5nPSJ1dGYtOCIpCnByaW50KGpzb24uZHVtcHMocmVzdWx0LCBlbnN1cmVfYXNjaWk9RmFsc2UsIGluZGVudD0yKSkKaWYgbm90IHBhc3NlZDoKICAgIHJhaXNlIFN5c3RlbUV4aXQoMSkK' | base64 -d > work/scripts/browser-production-v50_2.py
+          echo 'IyBUSEUgQ0FMTC1VUAoK66qo67CU7J28IOyasOyEoCDsi7HquIAg7ZSM66CI7J207Ja0IOyVvOq1rCDsu6TrpqzslrQg7Iuc666s66CI7J207YSwIOqwnOuwnCDtlITroZzsoJ3tirjsnoXri4jri6QuCgojIyDtmITsnqwg67KE7KCECgotIOqzteyLnSDslYjsoJUg6riw7KSA7ISgOiAqKnY1MC4xIEN1cnJlbnQgTVZQKioKLSDtmITsnqwg66a066as7IqkIO2bhOuztDogKip2NTAuMiBQcm9kdWN0aW9uIFJDKioKLSDsl5Tsp4Qv7IS47J2067iMIGdhbWVWZXJzaW9uOiBgcGhhc2U0X3Byb2R1Y3Rpb25fd29ybGRfYWN0aXZhdGlvbl92NDdgCi0gU2F2ZSBzY2hlbWE6IHYyCi0gQ29tcGxldGUgRWRpdGlvbjog7JWE7KeBIOyVhOuLmC4g64uk7J2MIO2BsCDri6jqs4TripQgKip2NTEgQ29udHJhY3RzIC8gU2VydmljZSBUaW1lKioKCnY1MC4y64qUIHY1MC4x7J2YIO2YhOyerCBNVlAg7ZqM6reAIOyViOygleyEseydhCDsnKDsp4DtlZjrqbTshJwsIFByb2R1Y3Rpb24gU25hcHNob3QgdjLsnZgg642w7J207YSwL+ufsO2DgOyehCDqsoDspp0sIDIwMjbihpIyMDI3IOyLnOymjCDroaTsmKTrsoQg7Kad6rGwIOyXsOyGjeyEsSwg66qo67CU7J28IOu4jOudvOyasOyggCBzbW9rZSwg66y47IScIOuPmeq4sO2ZlCwg7Iuk7ZaJIOqwgOuKpe2VnCBQcm9kdWN0aW9uIHN0YW5kYWxvbmUgSFRNTOq5jOyngCDrrLbsnYAgUkPsnoXri4jri6QuCgojIyBQcm9kdWN0aW9uIOyblOuTnAoKLSBNTEIgLyBBQUEgLyBBQSAvIEhpZ2gtQSAvIEEg6rCBIDMw7YyACi0g7LSdIDE1MCDsi6TsobQg7YyACi0gNSw0MjkgY2Fub25pY2FsIOyEoOyImAotIOqyjOyehCDqsIDriqUgQUNUSVZFIOyEoOyImCA0LDIxN+uqhQotIDIwMjR+MjAyNiBoaXR0aW5nIC8gcGl0Y2hpbmcgLyBmaWVsZGluZyDquLDroZ0gODAsNjA2IHJvd3MKLSAyMDI2IOyLpOygnCA166CI67KoIOydvOyglSAxMCw3MTDqsr3quLAKICAtIE1MQiAyLDQzMAogIC0gQUFBIDIsMjUwCiAgLSBBQSAyLDA3MAogIC0gSGlnaC1BIDEsOTgwCiAgLSBBIDEsOTgwCi0gTUxCIOq1rOyepSAzMOqwnAotIFByb2R1Y3Rpb24g7KGw7KeBIDMw6rCcCi0g7IOIIOy7pOumrOyWtCDsi5zsnpHsnbw6IDIwMjYtMDMtMjUKCiMjIHY1MC4xIEN1cnJlbnQgTVZQIOqygOymnQoK7Ya17ZWpIGdhdGXsl5DshJwg64uk7J2MIDbqsJzrpbwg66qo65GQIFByb2R1Y3Rpb24gU25hcHNob3QgdjIg6riw7KSA7Jy866GcIOyerOqygOymne2WiOyKteuLiOuLpC4KCi0gT3JnYW5pemF0aW9uIGRlcHRoCi0gNeugiOuyqCDsirnqsqkv6rCV65OxCi0g7KCE7LK0IDXroIjrsqggbGFkZGVyCi0gQUFB4oaSTUxCIOy9nOyXhSAvIOuMgOyytCAvIE1MQiDrjbDrt5QKLSDrtoDsg4EgLyDtlLzroZwgLyDtj7wKLSDsoIDsnqUgLyDssrTtgaztj6zsnbjtirggLyBgLnRjdWAgZXhwb3J0LWltcG9ydAoK65iQ7ZWcIHY1MC4xIFByb2R1Y3Rpb24gc3RhbmRhbG9uZSBIVE1MIOu5jOuTnOyZgCBTbmFwc2hvdCB2MiDrgrTsnqUg7KCV7KCBIOqygOymneydhCDsmYTro4ztlojsirXri4jri6QuCgojIyB2NTAuMiBQcm9kdWN0aW9uIFJDIOqygOymnQoKLSBQcm9kdWN0aW9uIOuNsOydtO2EsC/rn7Dtg4DsnoQgZ2F0ZTogUEFTUwotIDIwMjbihpIyMDI3IOuhpOyYpOuyhCDspp3qsbAg7Jew7IaN7ISxOiBQQVNTCiAgLSAyMDI2IOyblOuTnCDqsr3quLAgMTAsNzEwIC8gMTAsNzEwIOyZhOujjAogIC0gMjAyNyDsi5zsnpHsnbwgMjAyNy0wMy0yNQogIC0gMjAyNyDsg4gg7J287KCVIDEyLDE1MOqyveq4sAogIC0g7Jik7ZSE7Iuc7KaMIOydgO2HtCAvIOyDneyEsSA4MiAvIDgyCiAgLSDsoIDsnqUv67O17JuQIFBBU1MKLSDrqqjrsJTsnbwg67iM65287Jqw7KCAIHNtb2tlOgogIC0g7IOIIFByb2R1Y3Rpb24g7Luk66as7Ja0IOyDneyEsQogIC0gU2Vhc29uIEhvbWUg7KeE7J6FCiAgLSDsnpDrj5kg7KCA7J6lCiAgLSA37J28IOynhO2WiQogIC0g7KSR7JqUIOydtOuypO2KuChQUk9fREVCVVQpIOyekOuPmSDsoJXsp4AKICAtIHBhZ2UgZXJyb3IgMAoKIyMg7ZmU66m0IOq1rOyhsAoKLSBIb21lCi0gR2FtZQotIFBsYXllcgotIExlYWd1ZQotIE1vcmUKICAtIE9yZ2FuaXphdGlvbiAvIERlcHRoIENoYXJ0CiAgLSBDYXJlZXIgRmVlZAogIC0gU2V0dGluZ3MgLyBTYXZlCgojIyDsi6Ttlokg7YyM7J28CgpgZGlzdC9USEVfQ0FMTF9VUF9TRUFTT05fU1RBTkRBTE9ORV92NTBfMl9QUk9EVUNUSU9OLmh0bWxgCgpHaXRIdWIgQWN0aW9ucyBhcnRpZmFjdOyXkOuPhCDrj5nsnbwg7Iuk7ZaJIEhUTUzqs7wgdjUwLjIg6rKA7KadIOumrO2PrO2KuOulvCDtlajqu5gg7Jis66a964uI64ukLgoKIyMg64uk7J2MIOuLqOqzhAoKdjUx67aA7YSwIOqzhOyVvS/shJzruYTsiqTtg4DsnoTsnYQg7Iuc7J6R7ZWp64uI64ukLgoKLSBDb250cmFjdCBzdGF0ZSBkYXRhIG1vZGVsCi0gU2VydmljZS1kYXkgYWNjcnVhbAotIHVua25vd24gcmVhbC1wbGF5ZXIgYmFzZWxpbmUKLSBzYXZlL3Jlc3RvcmUgaW50ZWdyYXRpb24KLSBtaW5pbWFsIHB1YmxpYyBjb250cmFjdCB2aWV3Ci0gZ2F0ZSArIFByb2R1Y3Rpb24gSFRNTCBjaGVja3BvaW50Cg==' | base64 -d > work/README_KO.md
+          python3 -m py_compile work/scripts/browser-production-v50_2.py
+
+      - name: Build v50.2 Production standalone
+        shell: bash
+        run: |
+          set -euo pipefail
+          gzip -dc work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz > /tmp/tcu-production-v2.json
+          cd work
+          node scripts/build-standalone.mjs \
+            --output=dist/THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html \
+            --master-snapshot=/tmp/tcu-production-v2.json
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("dist/THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html")
+          s = p.read_text(encoding="utf-8")
+          s = s.replace("Season v49", "Season v50.2")
+          p.write_text(s, encoding="utf-8")
+          PY
+
+      - name: Static standalone verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("dist/THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html")
+          s = p.read_text(encoding="utf-8")
+          checks = {
+              "doctype": s.startswith("<!doctype html>"),
+              "korean": '<html lang="ko">' in s,
+              "snapshot": "globalThis.__THE_CALL_UP_MASTER_SNAPSHOT__" in s,
+              "production": "Production 2026" in s,
+              "version": "Season v50.2" in s,
+              "app": '<div id="app"' in s,
+              "modules": "const __modules = Object.create(null);" in s,
+              "size": p.stat().st_size > 1_000_000,
+          }
+          if not all(checks.values()):
+              raise SystemExit(f"v50.2 standalone static check failed: {checks}")
+          print(checks)
+          PY
+
+      - name: Install isolated Playwright browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/tcu-browser
+          source /tmp/tcu-browser/bin/activate
+          python -m pip install --upgrade pip
+          pip install "playwright==1.55.0"
+          python -m playwright install --with-deps chromium
+
+      - name: v50.2c mobile Production browser smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          source /tmp/tcu-browser/bin/activate
+          cd work
+          python scripts/browser-production-v50_2.py
+          cat reports/v50-2c-production-browser-smoke.json
+
+      - name: v50.2d docs sync verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "v50.2 Production RC" work/README_KO.md
+          grep -q "5,429 canonical 선수" work/README_KO.md
+          grep -q "10,710경기" work/README_KO.md
+          grep -q "THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html" work/README_KO.md
+          grep -q "v51부터 계약/서비스타임" work/README_KO.md
+
+      - name: v50.2e RC decision report
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+
+          def load(path):
+              return json.loads(Path(path).read_text(encoding="utf-8"))
+
+          mvp = load("reports/v50-1g-current-mvp-gate.json")
+          standalone_prev = load("reports/v50-1h-production-standalone.json")
+          data = load("reports/v50-2a-production-data-runtime.json")
+          rollover = load("reports/v50-2b-rollover-evidence.json")
+          browser = load("reports/v50-2c-production-browser-smoke.json")
+
+          assert mvp["pass"] is True and mvp["verified"] is True
+          assert standalone_prev["pass"] is True
+          assert data["pass"] is True and data["verified"] is True
+          assert rollover["pass"] is True
+          assert browser["pass"] is True
+          assert browser["checks"]["pageErrors"] == 0
+
+          html_path = Path("dist/THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html")
+          html_bytes = html_path.read_bytes()
+
+          report = {
+              "schema": "THE_CALL_UP_V50_2_RELEASE_CANDIDATE",
+              "pass": True,
+              "decision": "RC_READY",
+              "source": "Production Snapshot v2",
+              "version": "v50.2",
+              "standalone": {
+                  "filename": html_path.name,
+                  "bytes": len(html_bytes),
+                  "sha256": hashlib.sha256(html_bytes).hexdigest()
+              },
+              "gates": {
+                  "v50_1CurrentMvp": True,
+                  "v50_1Standalone": True,
+                  "v50_2ProductionDataRuntime": True,
+                  "v50_2RolloverEvidence": True,
+                  "v50_2MobileBrowserSmoke": True,
+                  "v50_2DocsSync": True
+              },
+              "production": {
+                  "teams": data["snapshot"]["teams"],
+                  "players": data["snapshot"]["players"],
+                  "activePlayers": data["snapshot"]["activePlayers"],
+                  "statsRows": data["snapshot"]["statsRows"],
+                  "scheduleGames2026": data["snapshot"]["scheduleGames"],
+                  "organizations": data["runtimeGate"]["organizations"],
+                  "levels": ["MLB", "AAA", "AA", "HIGH_A", "A"]
+              },
+              "rollover": rollover["evidence"],
+              "browser": browser["checks"],
+              "next": "v51 Contracts / Service Time"
+          }
+
+          Path("reports/v50-2-release-candidate.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8"
+          )
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Commit v50.2 RC bundle
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            work/scripts/browser-production-v50_2.py \
+            work/README_KO.md \
+            work/reports/v50-2c-production-browser-smoke.json \
+            work/reports/v50-2-release-candidate.json
+          git rm .github/workflows/tcu-v50-2c-e-rc-bundle.yml
+          git commit -m "v50.2: Production RC browser smoke and release checkpoint [skip ci]"
+          git push origin HEAD:main
+
+      - name: Upload v50.2 Production RC
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE_CALL_UP_v50_2_PRODUCTION_RC
+          path: |
+            work/dist/THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html
+            work/reports/v50-2c-production-browser-smoke.json
+            work/reports/v50-2-release-candidate.json
+            work/README_KO.md
+          if-no-files-found: ignore
+          compression-level: 0
