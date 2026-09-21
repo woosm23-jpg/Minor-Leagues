@@ -3,7 +3,7 @@ import { inferRealWorldUniverse } from "../data/realWorldInference.js";
 import { playerAssignedTeamId, playerOrganizationId } from "../data/rosterAvailability.js";
 import { gameApi } from "./gameApi.js";
 import { createCareerSeasonFixture, createDemoSeasonFixture, createSeasonGameFixture, ensureDemoMultiLevelFixture } from "../services/demoSeasonFactory.js";
-import { createProductionCareerSeasonFixture, ensureProductionSeasonFixture, getProductionOrganizationOptions, createNextProductionSeasonFixture } from "../services/productionSeasonFactory.js";
+import { createProductionCareerSeasonFixture, ensureProductionSeasonFixture, getProductionOrganizationOptions, getProductionOrganizationTeamIds, rehomeProductionUserOrganization, createNextProductionSeasonFixture } from "../services/productionSeasonFactory.js";
 import { buildCareerCreationPlan, getCareerCreationCatalog } from "../services/careerCreationService.js";
 import { simulateSeasonFixtureGame } from "../services/seasonGameService.js";
 import { createSeasonState, getAllPlayerSeasonBatting, getGamesOnDate, getNextTeamGame, getPlayerSeasonBattingLine, getPlayerSeasonPitchingLine, getRecentTeamResults, getSeriesGames, getStandingsTable, getUserSeasonLine, recordSeasonGame, setSeasonCurrentDate } from "../engine/season/seasonState.js";
@@ -17,7 +17,7 @@ import { createProductionEcologyState, normalizeProductionEcologyState, advanceP
 import { applyRoleGame, createOrganizationRoleStates, getRolePublicView, normalizeRoleStates, reviewRoleIfDue } from "../engine/season/roleSystem.js";
 import { applyOrganizationReview, createOrganizationReviewState, evaluateAaaMlbPitcherMovement, evaluateAaaMlbPromotion, evaluateMinorLevelPitcherMovement, evaluateMinorLevelPromotion, getOrganizationEvaluationPublicView, getOrganizationReviewPublicView, isOrganizationReviewDue, normalizeOrganizationReviewState } from "../engine/season/promotionAI.js";
 import { executeAdjacentLevelSwap } from "../services/organizationRosterService.js";
-import { createCareerEventState, getCareerTimelinePublicView, normalizeCareerEventState, recordGameCareerMoments, recordOrganizationCareerEvents, recordRoleChangeCareerEvent } from "../engine/career/careerEvents.js";
+import { createCareerEventState, appendCareerEvent, getCareerTimelinePublicView, normalizeCareerEventState, recordGameCareerMoments, recordOrganizationCareerEvents, recordRoleChangeCareerEvent } from "../engine/career/careerEvents.js";
 import { getUtilityPathwayView } from "../engine/season/utilityUsage.js";
 import { getPositionPlayingTimeView } from "../engine/season/playingTimeReadModel.js";
 import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
@@ -25,9 +25,11 @@ import { applyScoutingReview, buildScoutingReport, createScoutingState, markScou
 import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
 import { createRosterControlState, normalizeRosterControlState, advanceRosterControlToDate, getRosterControlPublicView, knownFortyManCount, prepareAaaMlbRosterMove } from "../engine/career/rosterControlState.js";
 import { createContractMarketState, normalizeContractMarketState, refreshContractMarketState, getContractMarketPublicView } from "../engine/career/contractMarket.js";
+import { createTradeState, normalizeTradeState, requestTradeState, addTradeRumor, recordTrade, getTradePublicView } from "../engine/career/tradeState.js";
+import { executeTrade } from "../services/tradeService.js";
 
 const sessions = new Map();
-const CURRENT_GAME_VERSION = "full_career_arbitration_free_agency_v53";
+const CURRENT_GAME_VERSION = "full_career_trade_system_v54";
 
 function freeze(value) {
   if (Array.isArray(value)) return Object.freeze(value.map(freeze));
@@ -862,6 +864,34 @@ function finalizeInteractiveGameIfNeeded(session, gameSnapshot) {
   return true;
 }
 
+function requestTrade(seasonId, { preferences = {} } = {}) {
+  const session=assertSession(seasonId);
+  session.tradeState=requestTradeState(session.tradeState,{date:session.state.currentDate,preferences});
+  return snapshot(session);
+}
+function updateStateUserTeam(state, teamId) { return freeze({ ...state, userTeamId: String(teamId) }); }
+function executeTradeProposal(seasonId, proposal) {
+  const session=assertSession(seasonId);
+  if(session.fixture.worldMode!=="PRODUCTION_REAL") throw new RangeError("Trade System v54는 Production 커리어에서 지원합니다.");
+  clearActiveGame(session);
+  const buyerId=String(proposal.buyerOrganizationId),sellerId=String(proposal.sellerOrganizationId);
+  const teamIdsByOrganization={ [buyerId]:getProductionOrganizationTeamIds(session.dataUniverse,buyerId), [sellerId]:getProductionOrganizationTeamIds(session.dataUniverse,sellerId) };
+  session.tradeState=addTradeRumor(session.tradeState,{proposal});
+  const moved=executeTrade({fixture:session.fixture,proposal,teamIdsByOrganization});
+  session.fixture=moved.fixture;
+  for(const event of moved.events) if(session.rosterControlStates?.[event.playerId]) session.rosterControlStates[event.playerId]={...session.rosterControlStates[event.playerId],organizationId:String(event.toOrganizationId)};
+  const userEvent=moved.events.find(e=>e.playerId===session.fixture.userPlayerId)??null;
+  if(userEvent){
+    session.fixture=rehomeProductionUserOrganization(session.fixture,{universe:session.dataUniverse,organizationId:userEvent.toOrganizationId,userLevel:userEvent.level});
+    for(const level of SIMULATED_LEVELS){ const state=stateForLevel(session,level); if(state) setStateForLevel(session,level,updateStateUserTeam(state,session.fixture.levelLeagues[level].userTeamId)); }
+    session.state=session.levelStates.AAA;
+    const roleCopy={...(session.roleStates??{})}; delete roleCopy[session.fixture.userPlayerId]; session.roleStates=normalizeRoleStates(roleCopy,session.fixture,{startDate:proposal.date});
+    session.organizationState=normalizeOrganizationReviewState({...session.organizationState,lastReviewDate:proposal.date,latestEvaluations:{}},{startDate:proposal.date});
+    session.careerEventState=appendCareerEvent(session.careerEventState,{type:"PLAYER_TRADED",date:proposal.date,playerId:session.fixture.userPlayerId,importance:"MAJOR",source:"TRADE_SERVICE",level:userEvent.level,tradeId:proposal.tradeId,fromOrganizationId:userEvent.fromOrganizationId,toOrganizationId:userEvent.toOrganizationId,fromTeamId:userEvent.fromTeamId,toTeamId:userEvent.toTeamId,reasonCodes:["TRADE_COMPLETED"]});
+  }
+  session.tradeState=recordTrade(session.tradeState,{proposal}); updateCurrentDateToNextUserGame(session); return snapshot(session);
+}
+
 function teamRecord(session, level = currentUserLevel(session)) {
   const state = stateForLevel(session, level);
   const teamId = userTeamIdForLevel(session, level);
@@ -1065,6 +1095,7 @@ function playerDetailView(session, playerId, leaders = null) {
     }),
     rosterControl: getRosterControlPublicView(session.rosterControlStates?.[playerId] ?? null),
     contractMarket: getContractMarketPublicView(session.contractMarketStates?.[playerId] ?? null),
+    trade: playerId === session.fixture.userPlayerId ? getTradePublicView(session.tradeState) : null,
     seasonLine,
     seasonLinesByLevel,
     roleState: getRolePublicView(roleState, { currentDate: session.state.currentDate }),
@@ -1677,6 +1708,7 @@ function catchUpLegacyLevelStates(session) {
   const originalContractStates = session.contractStates;
   const originalRosterControlStates = session.rosterControlStates;
   const originalContractMarketStates = session.contractMarketStates;
+  const originalTradeState = session.tradeState;
   const originalRoleStates = session.roleStates;
   const originalPlayerStateDate = session.playerStateDate;
   const startDate = session.fixture.startDate ?? originalState.startDate ?? originalState.currentDate;
@@ -1690,6 +1722,7 @@ function catchUpLegacyLevelStates(session) {
   session.contractStates = initializeContractStates(session.fixture, { startDate });
   session.rosterControlStates = initializeRosterControlStates(session.fixture, { startDate });
   session.contractMarketStates = initializeContractMarketStates(session.fixture, session.contractStates, { startDate });
+  session.tradeState = createTradeState({ startDate, userPlayerId: session.fixture.userPlayerId });
   reconcileCurrentMlbServiceDate(session, startDate);
   session.roleStates = createOrganizationRoleStates(session.fixture, { startDate });
   session.playerStateDate = startDate;
@@ -1725,6 +1758,7 @@ function catchUpLegacyLevelStates(session) {
   session.contractStates = originalContractStates;
   session.rosterControlStates = originalRosterControlStates;
   session.contractMarketStates = originalContractMarketStates;
+  session.tradeState = originalTradeState;
   for (const level of missingLevels) {
     if (reconstructedStates[level]) session.levelStates[level] = reconstructedStates[level];
     const league = levelLeague(session, level);
@@ -1751,11 +1785,12 @@ function createSessionFromFixture(fixture, { seed, startDate, dataUniverse = nul
   const contractStates = initializeContractStates(fixture, { startDate });
   const rosterControlStates = initializeRosterControlStates(fixture, { startDate });
   const contractMarketStates = initializeContractMarketStates(fixture, contractStates, { startDate });
+  const tradeState = createTradeState({ startDate, userPlayerId: fixture.userPlayerId });
   const initialLevel = fixture.organization?.userLevel ?? roleStates[fixture.userPlayerId]?.level ?? "AAA";
   const session = {
     fixture, state: levelStates.AAA, levelStates,
     dataUniverse: normalizeSaveUniverse(dataUniverse ?? createSyntheticUniverseDescriptor({ startDate, sourceVersion: CURRENT_GAME_VERSION }), { startDate, sourceVersion: CURRENT_GAME_VERSION }),
-    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates, contractMarketStates,
+    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates, contractMarketStates, tradeState,
     roleStates, organizationState: createOrganizationReviewState({ startDate }),
     careerEventState: createCareerEventState({ userPlayerId: fixture.userPlayerId, startDate, initialLevel }),
     leagueEcologyState: fixture.worldMode === "PRODUCTION_REAL" ? createProductionEcologyState({ fixture }) : null,
@@ -1850,6 +1885,7 @@ const seasonApi = Object.freeze({
       restored.contractMarketStates ?? {},
       { currentDate: restored.playerStateDate ?? restored.fixture.startDate ?? restored.state.currentDate }
     );
+    restored.tradeState = normalizeTradeState(restored.tradeState ?? null, { startDate: restored.fixture.startDate ?? restored.state.currentDate, userPlayerId: restored.fixture.userPlayerId });
     const hadScoutingStates = Boolean(restored.scoutingStates);
     // Legacy v43 saves had no scouting state. Backfill at the restore date so
     // past review cycles are not retroactively replayed. Existing v44 states
@@ -1991,6 +2027,8 @@ const seasonApi = Object.freeze({
     return snapshot(session);
   },
   advanceToNextSeason(seasonId) { const session = assertSession(seasonId); return advanceCompletedProductionSeason(session); },
+  requestTrade,
+  executeTradeProposal,
   closeActiveGame(seasonId) { const session=assertSession(seasonId); clearActiveGame(session); return snapshot(session); },
   resetDemoSeason(seasonId, options={}) { const session=assertSession(seasonId); clearActiveGame(session); sessions.delete(seasonId); return this.createDemoSeason(options); }
 });

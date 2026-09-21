@@ -3,6 +3,7 @@ const CAREER_EVENT_TYPES = Object.freeze([
   "LEVEL_ASSIGNED",
   "PLAYER_PROMOTED",
   "PLAYER_DEMOTED",
+  "PLAYER_TRADED",
   "ROLE_CHANGED",
   "PRO_DEBUT",
   "MLB_DEBUT",
@@ -158,6 +159,11 @@ function appendMutable(state, event) {
     teamId: event.teamId ?? null,
     opponentTeamId: event.opponentTeamId ?? null,
     statValue: event.statValue ?? null,
+    tradeId: event.tradeId ?? null,
+    fromOrganizationId: event.fromOrganizationId ?? null,
+    toOrganizationId: event.toOrganizationId ?? null,
+    fromTeamId: event.fromTeamId ?? null,
+    toTeamId: event.toTeamId ?? null,
     gameContext: normalizeGameContext(event.gameContext)
   });
   state.nextSequence += 1;
@@ -317,6 +323,9 @@ function validateStoredEvent(event, expectedSequence, userPlayerId) {
   if (!Array.isArray(event.reasonCodes ?? [])) throw new TypeError("career event reasonCodes는 배열이어야 합니다.");
   if (event.momentKey !== null && event.momentKey !== undefined && !CAREER_MOMENT_KEYS.includes(event.momentKey)) throw new RangeError(`지원하지 않는 career moment key입니다: ${event.momentKey}`);
   if (event.careerOnce !== undefined && typeof event.careerOnce !== "boolean") throw new TypeError("career event careerOnce는 boolean이어야 합니다.");
+  for (const key of ["tradeId","fromOrganizationId","toOrganizationId","fromTeamId","toTeamId"]) {
+    if (event[key] !== undefined && event[key] !== null && typeof event[key] !== "string") throw new TypeError(`career event ${key}가 잘못되었습니다.`);
+  }
   normalizeGameContext(event.gameContext);
 }
 

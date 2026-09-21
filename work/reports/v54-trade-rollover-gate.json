@@ -1,0 +1,12 @@
+{
+  "schema": "THE_CALL_UP_V54_TRADE_ROLLOVER_GATE",
+  "pass": true,
+  "completed2026": {
+    "worldGames": 10710
+  },
+  "next2027": {
+    "organizationId": "144",
+    "tradeHistoryPreserved": true
+  },
+  "saveRoundTrip": true
+}

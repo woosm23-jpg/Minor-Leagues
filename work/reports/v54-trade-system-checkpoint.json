@@ -1,0 +1,25 @@
+{
+  "schema": "THE_CALL_UP_V54_TRADE_SYSTEM_CHECKPOINT",
+  "pass": true,
+  "version": "v54",
+  "features": {
+    "tradeValueNotOvr": true,
+    "buyerSeller": true,
+    "rentals": true,
+    "packages": true,
+    "rumors": true,
+    "agentRequest": true,
+    "atomicTradeService": true,
+    "organizationRehome": true,
+    "careerEvent": true,
+    "saveRestore": true,
+    "seasonRollover": true,
+    "playerUi": true
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v54_PRODUCTION.html",
+    "bytes": 66768144,
+    "sha256": "c31ae9f9bab81461e0a917f692de542841a32206480e8d475a71cd52aab8d3f1"
+  },
+  "next": "v55 Full Offseason"
+}

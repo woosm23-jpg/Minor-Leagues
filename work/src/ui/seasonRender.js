@@ -432,6 +432,7 @@ function careerEventLabel(event) {
   if (event.type === "LEVEL_ASSIGNED") return `${levelLabel(event.toLevel ?? event.level)} 첫 배정`;
   if (event.type === "PLAYER_PROMOTED") return `승격 · ${levelLabel(event.fromLevel)} → ${levelLabel(event.toLevel)}`;
   if (event.type === "PLAYER_DEMOTED") return `강등 · ${levelLabel(event.fromLevel)} → ${levelLabel(event.toLevel)}`;
+  if (event.type === "PLAYER_TRADED") return "트레이드";
   if (event.type === "ROLE_CHANGED") return `역할 변경 · ${roleLabel(event.fromRole)} → ${roleLabel(event.toRole)}`;
   if (event.type === "PRO_DEBUT") return "프로 데뷔";
   if (event.type === "MLB_DEBUT") return "MLB 데뷔";
@@ -474,6 +475,7 @@ function careerEventDetail(event) {
   const contextual = (base) => [base, careerGameContextDetail(event)].filter(Boolean).join(" · ");
   if (event.type === "CAREER_STARTED") return `${levelLabel(event.level)} 레벨에서 시작`;
   if (event.type === "LEVEL_ASSIGNED") return "초기 조직 배정";
+  if (event.type === "PLAYER_TRADED") return `${event.fromOrganizationId ?? "-"} → ${event.toOrganizationId ?? "-"} · ${levelLabel(event.level)}`;
   if (event.type === "ROLE_CHANGED") return `${levelLabel(event.level)} · 조직 역할 검토`;
   if (event.type === "PRO_DEBUT") return contextual(`${levelLabel(event.level)} 공식 경기 첫 출전`);
   if (event.type === "MLB_DEBUT") return contextual("메이저리그 공식 경기 첫 출전");
@@ -546,6 +548,7 @@ function playerContractView(player) {
   const service = contract.service ?? {};
   const roster = player.rosterControl ?? null;
   const market = player.contractMarket ?? null;
+  const trade = player.trade ?? null;
   const unknown = contract.baseline === "UNKNOWN_REAL_WORLD";
   const serviceText = unknown ? "Unknown" : (service.display ?? "0.000");
   const baselineText = unknown ? "실존 데이터 미확인" : "세이브 시작 기준 0";
@@ -564,8 +567,10 @@ function playerContractView(player) {
       <div><span>Arbitration / FA</span><b>${market?.status ?? "CONTROLLED"}</b><small>${market?.eligibility?.arbitration ?? "NOT_ELIGIBLE"} · FA ${market?.eligibility?.freeAgency ? "YES" : "NO"}</small></div>
       <div><span>Agent</span><b>${market?.agentStrategy ?? "BALANCED"}</b><small>시장 오퍼 ${market?.freeAgency?.openOffers ?? 0}개</small></div>
       <div><span>Rules</span><b>ruleset_2026</b><small>2027+ CBA 미확정 · versioned ruleset</small></div>
+      <div><span>Trade Market</span><b>${trade?.rumor ? trade.rumor.confidence : "활성 루머 없음"}</b><small>${trade?.lastTrade ? `최근 ${trade.lastTrade.date}` : "확정 트레이드 없음"}</small></div>
+      <div><span>Agent Request</span><b>${trade?.agentRequest?.status ?? "NONE"}</b><small>요청은 이적을 보장하지 않음</small></div>
     </div>
-    <p class="condition-note">v53은 arbitration과 free-agency 시장을 계약 엔진에 추가합니다. 시장가치는 OVR을 달러로 직접 바꾸지 않고 미래 기여도·나이·내구성·트랙레코드·평판·포지션 수요를 사용합니다. 2027+ 실제 CBA는 2026-09 현재 미확정이므로 별도 ruleset이 나오기 전까지 이 세이브는 ruleset_2026 시뮬레이션 규칙을 고정합니다. 실제 조직 이동 transaction layer는 v54에서 FA signing과 trade가 함께 공유합니다.</p>
+    <p class="condition-note">v54 Trade Value는 OVR이 아니라 현재 기여도·미래가치·control·contract surplus·포지션 need·부상·나이를 사용합니다. 루머는 Speculation/Credible/Strong으로 표시되며 성사되지 않을 수 있습니다. 사용자는 GM이 아닙니다. 에이전트를 통해 요청할 수 있지만 임의 목적지를 선택하는 기능은 제공하지 않습니다.</p>
   </section>`;
 }
 
@@ -864,6 +869,7 @@ function majorEventTitle(event) {
   if (event.type === "PRO_DEBUT") return "프로 데뷔";
   if (event.type === "PLAYER_PROMOTED") return `${levelLabel(event.toLevel)} 승격`;
   if (event.type === "PLAYER_DEMOTED") return `${levelLabel(event.toLevel)} 재배치`;
+  if (event.type === "PLAYER_TRADED") return "TRADED";
   return "커리어 모먼트";
 }
 

@@ -190,6 +190,11 @@ function affiliateTeamId(universe, organizationId, level) {
   return String(universe.data.affiliations.find((row) => String(row.organizationId) === String(organizationId) && row.level === level)?.teamId ?? "");
 }
 
+function getProductionOrganizationTeamIds(universe, organizationId) {
+  if (universe?.origin !== "MASTER_SNAPSHOT" || !universe.data) throw new TypeError("organization team ids에는 Master Snapshot universe가 필요합니다.");
+  return freeze(Object.fromEntries(PRODUCTION_LEVELS.map((level) => [level, affiliateTeamId(universe, organizationId, level)])));
+}
+
 function getProductionOrganizationOptions(universe) {
   if (universe?.origin !== "MASTER_SNAPSHOT" || !universe.data) throw new TypeError("production organization에는 Master Snapshot universe가 필요합니다.");
   const teams = teamRowsForLevel(universe, "MLB").sort((a, b) => a.name.localeCompare(b.name));
@@ -290,6 +295,38 @@ function createProductionCareerSeasonFixture({ seed, careerPlan, universe } = {}
   });
 }
 
+function rehomeProductionUserOrganization(fixture, { universe, organizationId, userLevel = fixture?.organization?.userLevel ?? "AAA" } = {}) {
+  ensureProductionSeasonFixture(fixture);
+  const orgId=String(organizationId);
+  const option=getProductionOrganizationOptions(universe).find((row)=>row.id===orgId);
+  if(!option) throw new RangeError(`production 조직을 찾을 수 없습니다: ${orgId}`);
+  const teamIds=getProductionOrganizationTeamIds(universe,orgId);
+  const levelLeagues=Object.fromEntries(PRODUCTION_LEVELS.map((level)=>{
+    const league=fixture.levelLeagues[level], teamId=String(teamIds[level]);
+    if(!league?.rosters?.[teamId]) throw new RangeError(`rehome ${level} roster를 찾을 수 없습니다: ${teamId}`);
+    return [level,freeze({...league,userTeamId:teamId})];
+  }));
+  const levels=Object.fromEntries(PRODUCTION_LEVELS.map((level)=>{
+    const roster=levelLeagues[level].rosters[levelLeagues[level].userTeamId];
+    return [level,freeze({level,team:roster.team,roster,simulated:true})];
+  }));
+  const aaa=levelLeagues.AAA;
+  const careerProfile=fixture.careerProfile ? freeze({
+    ...fixture.careerProfile,
+    organizationChoice: freeze({
+      ...(fixture.careerProfile.organizationChoice ?? {}),
+      teamId: orgId,
+      teamName: option.name,
+      teamShortName: option.shortName,
+      pool: option.pool,
+      provisional: option.provisional
+    })
+  }) : fixture.careerProfile;
+  return freeze({...fixture,userTeamId:aaa.userTeamId,teams:aaa.teams,rosters:aaa.rosters,schedule:aaa.schedule,levelLeagues,careerProfile,
+    organization:freeze({id:`ORG_${orgId}`,organizationId:orgId,name:option.name,levels,levelOrder:PRODUCTION_LEVELS,userLevel})
+  });
+}
+
 function ensureProductionSeasonFixture(fixture) {
   if (fixture?.worldMode !== "PRODUCTION_REAL") return fixture;
   if (!fixture?.levelLeagues || !fixture?.organization?.levels) throw new RangeError("production fixture의 league/organization 구조가 없습니다.");
@@ -340,4 +377,4 @@ function createFutureProductionSchedules(fixture, { startDate = null } = {}) {
 // used only as immutable engine-shape constructors; source facts and ratings come
 // exclusively from the copied snapshot + v46 inference, never from dev fixture constants.
 
-export { PRODUCTION_WORLD_VERSION, PRODUCTION_LEVELS, getProductionOrganizationOptions, resolveProductionStartingLevel, validateProductionRuntimeUniverse, createProductionCareerSeasonFixture, ensureProductionSeasonFixture, createFutureProductionSchedules, createNextProductionSeasonFixture };
+export { PRODUCTION_WORLD_VERSION, PRODUCTION_LEVELS, getProductionOrganizationOptions, getProductionOrganizationTeamIds, rehomeProductionUserOrganization, resolveProductionStartingLevel, validateProductionRuntimeUniverse, createProductionCareerSeasonFixture, ensureProductionSeasonFixture, createFutureProductionSchedules, createNextProductionSeasonFixture };

@@ -1,0 +1,22 @@
+{
+  "schema": "THE_CALL_UP_V54_TRADE_SYSTEM_GATE",
+  "pass": true,
+  "source": "Production Snapshot v2",
+  "pure": {
+    "ovrExcluded": true,
+    "rentalPenalty": true,
+    "buyerSellerBehavior": true,
+    "rumorConfidence": true,
+    "agentRequestNotGuarantee": true
+  },
+  "production": {
+    "sourceOrganization": "109",
+    "destinationOrganization": "133",
+    "userTradeExecuted": true,
+    "atomicRosterSwap": true,
+    "organizationRehome": true,
+    "nextGameAfterTrade": true,
+    "careerEvent": true,
+    "saveRestore": true
+  }
+}

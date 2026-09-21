@@ -113,7 +113,7 @@ function normalizeRosterControlState(existing, options) {
   validateRosterControlState(existing);
   const next = clone(existing);
   if (next.playerId !== options.playerId) throw new RangeError(`roster playerId 불일치: ${next.playerId} != ${options.playerId}`);
-  if (options.organizationId !== undefined && options.organizationId !== null) next.organizationId = String(options.organizationId);
+  if (next.organizationId === null && options.organizationId !== undefined && options.organizationId !== null) next.organizationId = String(options.organizationId);
   if (options.resetSeason === true) return resetRosterControlForSeason(next, options);
   return next;
 }

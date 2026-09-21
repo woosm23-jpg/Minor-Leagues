@@ -2,10 +2,12 @@ import { normalizeSaveUniverse } from "../data/masterSnapshot.js";
 import { validateContractState } from "../engine/career/contractState.js";
 import { validateRosterControlState } from "../engine/career/rosterControlState.js";
 import { validateContractMarketState } from "../engine/career/contractMarket.js";
+import { validateTradeState } from "../engine/career/tradeState.js";
+import { CAREER_EVENT_TYPES } from "../engine/career/careerEvents.js";
 
 const SAVE_FORMAT = "THE_CALL_UP_SEASON_SAVE";
 const SAVE_SCHEMA_VERSION = 2;
-const GAME_VERSION = "full_career_arbitration_free_agency_v53";
+const GAME_VERSION = "full_career_trade_system_v54";
 const VALIDATION_MODES = Object.freeze(["LIGHT", "FULL"]);
 const ROLE_VALUES = new Set(["STARTER", "PLATOON", "ROTATION", "BENCH", "UTILITY", "CALL_UP_DEPTH", "AAA_STARTER"]);
 
@@ -136,6 +138,7 @@ function validateCommon(payload) {
   if (payload.contractStates !== undefined && payload.contractStates !== null) assertObject(payload.contractStates, "payload.contractStates");
   if (payload.rosterControlStates !== undefined && payload.rosterControlStates !== null) assertObject(payload.rosterControlStates, "payload.rosterControlStates");
   if (payload.contractMarketStates !== undefined && payload.contractMarketStates !== null) assertObject(payload.contractMarketStates, "payload.contractMarketStates");
+  if (payload.tradeState !== undefined && payload.tradeState !== null) assertObject(payload.tradeState, "payload.tradeState");
   if (payload.levelSeasons !== undefined && payload.levelSeasons !== null) assertObject(payload.levelSeasons, "payload.levelSeasons");
   if (payload.dataUniverse !== undefined && payload.dataUniverse !== null) normalizeSaveUniverse(payload.dataUniverse, { startDate: payload.fixture?.startDate ?? payload.season?.startDate ?? payload.season?.currentDate, sourceVersion: payload.gameVersion ?? "legacy" });
   if (typeof payload.seasonId !== "string" || !payload.seasonId) throw new TypeError("payload.seasonId가 필요합니다.");
@@ -231,6 +234,7 @@ function validateFull(payload) {
     validateContractMarketState(marketState, `payload.contractMarketStates.${playerId}`);
     if (marketState.playerId !== playerId) throw new RangeError(`contract-market playerId가 key와 일치하지 않습니다: ${playerId}`);
   }
+  if (payload.tradeState) validateTradeState(payload.tradeState, "payload.tradeState");
   for (const [playerId, playerState] of Object.entries(payload.playerStates ?? {})) {
     validateHealthState(playerState.health, `payload.playerStates.${playerId}.health`);
     validateAgingState(playerState.aging, `payload.playerStates.${playerId}.aging`, { allowMigration: true });
@@ -281,13 +285,16 @@ function validateFull(payload) {
       if (event.schemaVersion !== 1) throw new RangeError("career event schema가 호환되지 않습니다.");
       if (event.sequence !== index + 1) throw new RangeError("career event sequence가 연속적이지 않습니다.");
       if (event.eventId !== `career_event_${String(index + 1).padStart(6, "0")}`) throw new RangeError("career eventId가 sequence와 일치하지 않습니다.");
-      if (!["CAREER_STARTED", "LEVEL_ASSIGNED", "PLAYER_PROMOTED", "PLAYER_DEMOTED", "ROLE_CHANGED", "PRO_DEBUT", "MLB_DEBUT", "FIRST_MLB_HIT", "FIRST_MLB_HR", "FIRST_MLB_RBI", "FIRST_MLB_SB"].includes(event.type)) throw new RangeError(`지원하지 않는 career event입니다: ${event.type}`);
+      if (!CAREER_EVENT_TYPES.includes(event.type)) throw new RangeError(`지원하지 않는 career event입니다: ${event.type}`);
       if (!["MINOR", "NORMAL", "MAJOR", "CAREER"].includes(event.importance)) throw new RangeError(`지원하지 않는 career event importance입니다: ${event.importance}`);
       if (event.playerId !== payload.fixture.userPlayerId) throw new RangeError("career timeline에는 사용자 선수 event만 저장할 수 있습니다.");
       assertIsoDate(event.date, "career event date");
       if (!Array.isArray(event.reasonCodes ?? [])) throw new TypeError("career event reasonCodes는 배열이어야 합니다.");
       if (event.momentKey !== undefined && event.momentKey !== null && !allowedMomentKeys.has(event.momentKey)) throw new RangeError(`지원하지 않는 career moment key입니다: ${event.momentKey}`);
       if (event.careerOnce !== undefined && typeof event.careerOnce !== "boolean") throw new TypeError("career event careerOnce는 boolean이어야 합니다.");
+      for (const key of ["tradeId","fromOrganizationId","toOrganizationId","fromTeamId","toTeamId"]) {
+        if (event[key] !== undefined && event[key] !== null && typeof event[key] !== "string") throw new TypeError(`career event ${key}가 잘못되었습니다.`);
+      }
       if (event.gameContext !== undefined && event.gameContext !== null) {
         assertObject(event.gameContext, "career event gameContext");
         if (!["GAME", "PA", "RUNNING"].includes(event.gameContext.kind)) throw new RangeError(`지원하지 않는 career gameContext kind입니다: ${event.gameContext.kind}`);
@@ -411,6 +418,7 @@ function serializeSeasonSession(session, { activeGameCheckpoint = null } = {}) {
     contractStates: session.contractStates ?? null,
     rosterControlStates: session.rosterControlStates ?? null,
     contractMarketStates: session.contractMarketStates ?? null,
+    tradeState: session.tradeState ?? null,
     leagueEcologyState: session.leagueEcologyState ?? null,
     playerStateDate: session.playerStateDate,
     activeGameCheckpoint,
@@ -439,6 +447,7 @@ function restoreSeasonSession(payload) {
     contractStates: restored.contractStates ?? null,
     rosterControlStates: restored.rosterControlStates ?? null,
     contractMarketStates: restored.contractMarketStates ?? null,
+    tradeState: restored.tradeState ?? null,
     leagueEcologyState: restored.leagueEcologyState ?? null,
     playerStateDate: restored.playerStateDate,
     activeGameId: null,
