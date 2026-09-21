@@ -1,0 +1,89 @@
+{
+  "schema": "THE_CALL_UP_V50_1C_FULL_LADDER_GATE",
+  "pass": true,
+  "verified": true,
+  "source": "Production Snapshot v2",
+  "levelOrder": [
+    "MLB",
+    "AAA",
+    "AA",
+    "HIGH_A",
+    "A"
+  ],
+  "seeds": 1,
+  "rows": [
+    {
+      "seed": 1,
+      "organizationId": "109",
+      "organizationName": "Arizona Diamondbacks",
+      "levelOrder": [
+        "MLB",
+        "AAA",
+        "AA",
+        "HIGH_A",
+        "A"
+      ],
+      "userLevel": "A",
+      "userLevels": [
+        "A"
+      ],
+      "legalPairs": [
+        {
+          "fromLevel": "A",
+          "toLevel": "HIGH_A"
+        },
+        {
+          "fromLevel": "HIGH_A",
+          "toLevel": "AA"
+        },
+        {
+          "fromLevel": "AA",
+          "toLevel": "AAA"
+        },
+        {
+          "fromLevel": "AAA",
+          "toLevel": "MLB"
+        }
+      ],
+      "uniqueOrganizationPlayers": 140,
+      "levels": {
+        "MLB": {
+          "teams": 30,
+          "scheduleGames": 2430,
+          "teamId": "109",
+          "teamName": "Arizona Diamondbacks",
+          "players": 28
+        },
+        "AAA": {
+          "teams": 30,
+          "scheduleGames": 2250,
+          "teamId": "2310",
+          "teamName": "Reno Aces",
+          "players": 27
+        },
+        "AA": {
+          "teams": 30,
+          "scheduleGames": 2070,
+          "teamId": "5368",
+          "teamName": "Amarillo Sod Poodles",
+          "players": 28
+        },
+        "HIGH_A": {
+          "teams": 30,
+          "scheduleGames": 1980,
+          "teamId": "419",
+          "teamName": "Hillsboro Hops",
+          "players": 26
+        },
+        "A": {
+          "teams": 30,
+          "scheduleGames": 1980,
+          "teamId": "516",
+          "teamName": "Visalia Rawhide",
+          "players": 31
+        }
+      },
+      "restoreRoundTrip": true
+    }
+  ]
+}
