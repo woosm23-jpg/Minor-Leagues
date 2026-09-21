@@ -1,0 +1,40 @@
+{
+  "schema": "THE_CALL_UP_V50_1F_SAVE_TRANSFER_REGRESSION",
+  "pass": true,
+  "verified": true,
+  "source": "Production Snapshot v2",
+  "organization": {
+    "id": "109",
+    "name": "Arizona Diamondbacks"
+  },
+  "checkpoint": {
+    "seasonId": "season_v50-1f-production-save-transfer",
+    "currentDate": "2026-04-03",
+    "userLevel": "A",
+    "gameId": "real_A_820961",
+    "rngCounter": 274,
+    "deterministicContinuation": true,
+    "fullValidation": true,
+    "fiveLevelProduction": true
+  },
+  "saveLoad": {
+    "sourceSaveId": "v50-1f-production-source",
+    "listed": 1,
+    "hasActiveGame": true,
+    "loadedCheckpoint": true,
+    "currentLevel": "A",
+    "currentDate": "2026-04-03"
+  },
+  "transfer": {
+    "filename": "THE_CALL_UP_v50-1f-production-source_2026-04-03.tcu",
+    "checksum": "1e5c13919cda1f151eddc36cc07644e59b58be2575a07e3d0382c5b97071996e",
+    "checksumPass": true,
+    "importedSaveId": "import_v50-1f-production-source_20260921101002_1e5c1391",
+    "importAsCopy": true,
+    "provenancePass": true,
+    "deterministicContinuation": true,
+    "corruptRejected": true,
+    "corruptNoWrite": true,
+    "sourceUntouched": true
+  }
+}
