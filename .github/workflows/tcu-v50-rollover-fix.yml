@@ -1,0 +1,165 @@
+name: THE CALL-UP v50 Rollover Fix Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/tcu-v50-rollover-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  rollover-fix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object work/src/api/seasonApi.js)" = "68b0dff23e945bb9c7a34695ebd74c58550024bb"
+          test "$(git hash-object work/src/engine/game/pitcherFatigue.js)" = "aaa3bc6603458f3108d8d5ab90c412e6f7f1611e"
+          test "$(git hash-object work/src/engine/game/pitcherUsageAI.js)" = "06d5fb30dc5ef390a60c6d49c4b2a9d937b5819f"
+          test "$(git hash-object work/src/engine/player/playerContextResolver.js)" = "e62b493b921e0198ed424cad993d78c349fd3576"
+          test -f work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+
+      - name: Apply fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/tcu_patch.b64 <<'EOF'
+          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
+          EOF
+          tr -d '[:space:]' < /tmp/tcu_patch.b64 | base64 -d | gzip -d > /tmp/tcu.patch
+          patch -p0 --forward < /tmp/tcu.patch
+          test "$(git hash-object work/src/api/seasonApi.js)" = "43eb81c034bb1778ccc42d380b62ba43e208d80a"
+          test "$(git hash-object work/src/engine/game/pitcherFatigue.js)" = "88555070051b0792d379e9763255ed79d03b4c17"
+          test "$(git hash-object work/src/engine/game/pitcherUsageAI.js)" = "c897d17a8bf66baf1808d8c8b71fddc7c793789c"
+          test "$(git hash-object work/src/engine/player/playerContextResolver.js)" = "a76abb1017356c36272879fb614febac6812ef37"
+          test "$(git hash-object work/scripts/verify-production-season-rollover-v50.mjs)" = "ce70536b256322dc0b820a227b29c4dc31dfa04e"
+          node --check work/src/api/seasonApi.js
+          node --check work/src/engine/game/pitcherFatigue.js
+          node --check work/src/engine/game/pitcherUsageAI.js
+          node --check work/src/engine/player/playerContextResolver.js
+          node --check work/scripts/verify-production-season-rollover-v50.mjs
+
+      - name: Focused pitcher regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { resolvePitcherUsageRole } from './src/engine/game/pitcherFatigue.js';
+          import { resolvePitcherThrowHand } from './src/engine/player/playerContextResolver.js';
+          assert.equal(resolvePitcherUsageRole('SWING', { startedGame: true }), 'SP');
+          assert.equal(resolvePitcherUsageRole('SWING', { startedGame: false }), 'RP');
+          assert.equal(resolvePitcherThrowHand('S', 'L'), 'L');
+          assert.equal(resolvePitcherThrowHand('S', 'R'), 'R');
+          console.log('focused pitcher regression PASS');
+          NODE
+
+      - name: Production 2026 to 2027 rollover gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          node scripts/verify-production-season-rollover-v50.mjs
+
+      - name: Commit verified fixes
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add work/src/api/seasonApi.js \
+                  work/src/engine/game/pitcherFatigue.js \
+                  work/src/engine/game/pitcherUsageAI.js \
+                  work/src/engine/player/playerContextResolver.js \
+                  work/scripts/verify-production-season-rollover-v50.mjs \
+                  work/reports/v50-production-season-rollover.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Fix v50 Production season rollover path [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      - name: Upload report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-call-up-v50-production-rollover-fix
+          path: work/reports/v50-production-season-rollover.json
+          if-no-files-found: ignore
