@@ -1,0 +1,136 @@
+name: THE CALL-UP v50.1h Production Standalone
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/tcu-v50-1h-production-standalone.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  production-standalone:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify v50.1h baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f work/reports/v50-1g-current-mvp-gate.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('work/reports/v50-1g-current-mvp-gate.json', 'utf8'));
+          if (report.schema !== 'THE_CALL_UP_V50_1G_CURRENT_MVP_GATE') throw new Error('v50.1g schema drift');
+          if (report.pass !== true || report.verified !== true) throw new Error('v50.1g gate is not verified PASS');
+          if (report.componentCount !== 6) throw new Error('v50.1g component count drift');
+          NODE
+          test "$(git hash-object work/scripts/build-standalone.mjs)" = "4bf75be6ad8dba1706a91b98968c72fcd4656daf"
+          test "$(git hash-object work/src/api/seasonApi.js)" = "ae3f22620b054788e9d9fae8b5f0c6604445c2f4"
+          test "$(git hash-object work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz)" = "a113be1ff629e68db8ccf8b7603badf1af83766a"
+
+      - name: Current UI render regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          node --test tests/seasonUiRender.test.js
+
+      - name: Build v50.1 Production standalone from Snapshot v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          gzip -dc work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz > /tmp/tcu-production-v2.json
+          cd work
+          node scripts/build-standalone.mjs \
+            --output=dist/THE_CALL_UP_SEASON_STANDALONE_v50_1_PRODUCTION.html \
+            --master-snapshot=/tmp/tcu-production-v2.json
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("dist/THE_CALL_UP_SEASON_STANDALONE_v50_1_PRODUCTION.html")
+          s = p.read_text(encoding="utf-8")
+          s = s.replace("Season v49", "Season v50.1")
+          p.write_text(s, encoding="utf-8")
+          PY
+
+      - name: Verify standalone and write checkpoint report
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, subprocess
+
+          html_path = Path("dist/THE_CALL_UP_SEASON_STANDALONE_v50_1_PRODUCTION.html")
+          html = html_path.read_text(encoding="utf-8")
+          checks = {
+              "doctype": html.startswith("<!doctype html>"),
+              "koreanDocument": '<html lang="ko">' in html,
+              "snapshotEmbedded": "globalThis.__THE_CALL_UP_MASTER_SNAPSHOT__" in html,
+              "productionBadge": "Production 2026" in html,
+              "versionLabel": "Season v50.1" in html,
+              "appRoot": '<div id="app"' in html,
+              "moduleBootstrap": "const __modules = Object.create(null);" in html,
+              "sizeOver1MB": html_path.stat().st_size > 1_000_000,
+          }
+          if not all(checks.values()):
+              raise SystemExit(f"standalone static verification failed: {checks}")
+
+          data = html_path.read_bytes()
+          report = {
+              "schema": "THE_CALL_UP_V50_1H_PRODUCTION_STANDALONE",
+              "pass": True,
+              "source": "Production Snapshot v2",
+              "filename": html_path.name,
+              "bytes": len(data),
+              "sha256": hashlib.sha256(data).hexdigest(),
+              "snapshotGitBlob": subprocess.check_output(
+                  ["git", "hash-object", "data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz"],
+                  text=True
+              ).strip(),
+              "checks": checks,
+              "uiRenderRegression": True,
+              "currentMvpGate": True,
+              "browserSmoke": "DEFERRED_TO_V50_2"
+          }
+          Path("reports/v50-1h-production-standalone.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8"
+          )
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Commit verified v50.1h checkpoint
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add work/reports/v50-1h-production-standalone.json
+          git rm .github/workflows/tcu-v50-1h-production-standalone.yml
+          git commit -m "v50.1h: checkpoint Production standalone [skip ci]"
+          git push origin HEAD:main
+
+      - name: Upload executable v50.1 Production standalone
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE_CALL_UP_v50_1_PRODUCTION_STANDALONE
+          path: |
+            work/dist/THE_CALL_UP_SEASON_STANDALONE_v50_1_PRODUCTION.html
+            work/reports/v50-1h-production-standalone.json
+          if-no-files-found: ignore
+          compression-level: 0
