@@ -1,0 +1,29 @@
+{
+  "schema": "THE_CALL_UP_V52_ROSTER_RULES_CHECKPOINT",
+  "pass": true,
+  "version": "v52",
+  "ruleset": "ruleset_2026",
+  "features": {
+    "fortyMan": true,
+    "options": true,
+    "option20DayUse": true,
+    "fiveAssignmentsPerSeason": true,
+    "dfa": true,
+    "outrightWaivers": true,
+    "promotionConstraintIntegration": true,
+    "saveRestore": true,
+    "seasonRollover": true,
+    "playerUi": true
+  },
+  "regression": {
+    "v51ContractService": true,
+    "v50_1CurrentMvp": true,
+    "v50_2ProductionDataRuntime": true
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v52_PRODUCTION.html",
+    "bytes": 66725566,
+    "sha256": "d4e08602f61512df6baedbf194b25e31c2d74f7e9c25080698ef28a407617ea1"
+  },
+  "next": "v53 arbitration / free agency"
+}

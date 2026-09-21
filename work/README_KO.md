@@ -4,11 +4,11 @@
 
 ## 현재 버전
 
-- 안정 기준선: **v50.2 Production RC**
-- 현재 개발 체크포인트: **v51 Contracts / Service Time**
-- 엔진/세이브 gameVersion: `full_career_contracts_service_v51`
+- 안정 기준선: **v51 Contracts / Service Time**
+- 현재 개발 체크포인트: **v52 40-man / Options / DFA / Waivers**
+- 엔진/세이브 gameVersion: `full_career_roster_rules_v52`
 - Save schema: v2
-- 계약 ruleset: `ruleset_2026`
+- ruleset: `ruleset_2026`
 - Complete Edition: 아직 아님
 
 ## Production 월드
@@ -17,57 +17,47 @@
 - 총 150 실존 팀
 - 5,429 canonical 선수
 - 게임 가능 ACTIVE 선수 4,217명
-- 2024~2026 hitting / pitching / fielding 기록 80,606 rows
 - 2026 실제 5레벨 일정 10,710경기
-- MLB 구장 30개
 - Production 조직 30개
 
-## v50.2 RC 기준
+## v52 Roster Rules
 
-- Current MVP 통합 회귀: PASS
-- Production 데이터/런타임: PASS
-- 2026→2027 시즌 롤오버: PASS
-- 모바일 Production 브라우저 smoke: PASS
-- 실행 standalone: `THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html`
+- 40-man limit: 40
+- 표준 Minor League option years: 3
+- optioned minor days 20일 이상이면 해당 시즌 option year 1개 사용
+- 같은 시즌에는 option year 최대 1개 소진
+- optional assignment는 한 시즌 최대 5회
+- out-of-options 선수의 마이너 강등은 waiver/DFA 경로가 필요
+- DFA 처리 기한: 7일
+- outright waiver claim / clear 상태
+- waiver priority helper: 현재 승률 역순, 동률이면 이전 시즌 승률
+- AAA↔MLB 이동 판단에 40-man / option 상태 실제 연결
+- 실존 선수의 과거 option/40-man 이력은 Snapshot에 없으면 Unknown 유지
+- Player → Contract 화면에 40-man / Options / DFA 상태 공개
 
-## v51 Contracts / Service Time
+Rule 5 보호연수 값은 ruleset에 보존하지만 실제 Rule 5 Draft 실행은 오프시즌 시스템에서 연결합니다. 4번째 option year의 예외 자격도 임의 추정하지 않습니다.
 
-v51은 Full Career 계약 기반의 첫 단계입니다.
+## 검증
 
-- versioned `ruleset_2026`
-- MLB active/MLB IL에 해당하는 서비스 일수 누적을 위한 일 단위 상태
-- 마이너리그 체류일은 MLB service에서 제외
-- 172 service days = 1 service year
-- standard arbitration eligibility = 3 service years
-- free agency eligibility = 6 service years
-- Super Two 기준 정보는 ruleset에 보존하되 실제 리그 상대 순위 판정/중재 금액은 v53에서 처리
-- 2026 MLB minimum salary basis = $780,000
-- 세이브 시작 이전 실존 선수 service time은 데이터에 없는 경우 추정하지 않고 `UNKNOWN_REAL_WORLD`로 보존
-- 사용자/생성 선수는 세이브 시작부터 정확히 누적
-- 기본 contract terms 필드: years / total guarantee / AAV / expected role
-- 저장/복원 및 시즌 롤오버에서 contract state 보존
-- Player → Contract 탭에 최소 공개 뷰 제공
-
-실존 선수의 과거 service time을 나이/MLB 경력만으로 임의 추정하지 않습니다. 현재 Production Snapshot이 직접 제공하지 않는 과거 계약·서비스 정보는 Unknown으로 표시하고, 세이브 시작 이후의 변화만 정확히 추적합니다.
-
-## v51 검증
-
-- contract/service focused gate
-- AAA 시간 service 제외
-- AAA→MLB 콜업일부터 service 시작
-- 3년/6년 ruleset threshold
-- real-player unknown baseline 안전성
-- save/restore roundtrip
-- 기존 v50.1 Current MVP 통합 회귀
+- 20일 option-year 소진
+- 같은 시즌 option-year 중복 소진 방지
+- 시즌 6번째 optional assignment 차단
+- 7일 DFA deadline
+- outright waiver claim / clear
+- waiver priority
+- 실제 Production AAA→MLB 콜업 시 40-man 등록
+- save/restore
+- v51 계약/서비스 회귀
+- v50.1 Current MVP 통합 회귀
 - v50.2 Production data/runtime 회귀
-- 2026→2027 전체 시즌 rollover + contract continuity
-- 모바일 Contract 탭 browser smoke
+- 2026→2027 전체 시즌 roster-rule rollover
+- 모바일 Contract/40-man UI smoke
 - Production standalone HTML checkpoint
 
 ## 실행 파일
 
-`dist/THE_CALL_UP_SEASON_STANDALONE_v51_PRODUCTION.html`
+`dist/THE_CALL_UP_SEASON_STANDALONE_v52_PRODUCTION.html`
 
 ## 다음 단계
 
-v52에서 40-man / options / DFA / waivers를 추가합니다. v53에서 arbitration / free agency 시장을 연결합니다.
+v53에서 arbitration / free agency를 실제 계약 시장과 연결합니다.

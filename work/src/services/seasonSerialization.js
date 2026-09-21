@@ -1,9 +1,10 @@
 import { normalizeSaveUniverse } from "../data/masterSnapshot.js";
 import { validateContractState } from "../engine/career/contractState.js";
+import { validateRosterControlState } from "../engine/career/rosterControlState.js";
 
 const SAVE_FORMAT = "THE_CALL_UP_SEASON_SAVE";
 const SAVE_SCHEMA_VERSION = 2;
-const GAME_VERSION = "full_career_contracts_service_v51";
+const GAME_VERSION = "full_career_roster_rules_v52";
 const VALIDATION_MODES = Object.freeze(["LIGHT", "FULL"]);
 const ROLE_VALUES = new Set(["STARTER", "PLATOON", "ROTATION", "BENCH", "UTILITY", "CALL_UP_DEPTH", "AAA_STARTER"]);
 
@@ -132,6 +133,7 @@ function validateCommon(payload) {
   if (payload.organizationState !== undefined && payload.organizationState !== null) assertObject(payload.organizationState, "payload.organizationState");
   if (payload.careerEventState !== undefined && payload.careerEventState !== null) assertObject(payload.careerEventState, "payload.careerEventState");
   if (payload.contractStates !== undefined && payload.contractStates !== null) assertObject(payload.contractStates, "payload.contractStates");
+  if (payload.rosterControlStates !== undefined && payload.rosterControlStates !== null) assertObject(payload.rosterControlStates, "payload.rosterControlStates");
   if (payload.levelSeasons !== undefined && payload.levelSeasons !== null) assertObject(payload.levelSeasons, "payload.levelSeasons");
   if (payload.dataUniverse !== undefined && payload.dataUniverse !== null) normalizeSaveUniverse(payload.dataUniverse, { startDate: payload.fixture?.startDate ?? payload.season?.startDate ?? payload.season?.currentDate, sourceVersion: payload.gameVersion ?? "legacy" });
   if (typeof payload.seasonId !== "string" || !payload.seasonId) throw new TypeError("payload.seasonId가 필요합니다.");
@@ -218,6 +220,10 @@ function validateFull(payload) {
   for (const [playerId, contractState] of Object.entries(payload.contractStates ?? {})) {
     validateContractState(contractState, `payload.contractStates.${playerId}`);
     if (contractState.playerId !== playerId) throw new RangeError(`contract state playerId가 key와 일치하지 않습니다: ${playerId}`);
+  }
+  for (const [playerId, rosterState] of Object.entries(payload.rosterControlStates ?? {})) {
+    validateRosterControlState(rosterState, `payload.rosterControlStates.${playerId}`);
+    if (rosterState.playerId !== playerId) throw new RangeError(`roster-control playerId가 key와 일치하지 않습니다: ${playerId}`);
   }
   for (const [playerId, playerState] of Object.entries(payload.playerStates ?? {})) {
     validateHealthState(playerState.health, `payload.playerStates.${playerId}.health`);
@@ -397,6 +403,7 @@ function serializeSeasonSession(session, { activeGameCheckpoint = null } = {}) {
     organizationState: session.organizationState ?? null,
     careerEventState: session.careerEventState ?? null,
     contractStates: session.contractStates ?? null,
+    rosterControlStates: session.rosterControlStates ?? null,
     leagueEcologyState: session.leagueEcologyState ?? null,
     playerStateDate: session.playerStateDate,
     activeGameCheckpoint,
@@ -423,6 +430,7 @@ function restoreSeasonSession(payload) {
     organizationState: restored.organizationState ?? null,
     careerEventState: restored.careerEventState ?? null,
     contractStates: restored.contractStates ?? null,
+    rosterControlStates: restored.rosterControlStates ?? null,
     leagueEcologyState: restored.leagueEcologyState ?? null,
     playerStateDate: restored.playerStateDate,
     activeGameId: null,

@@ -1,0 +1,17 @@
+{
+  "schema": "THE_CALL_UP_V52_ROSTER_BROWSER_SMOKE",
+  "pass": true,
+  "standalone": "THE_CALL_UP_SEASON_STANDALONE_v52_PRODUCTION.html",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "checks": {
+    "contractTab": true,
+    "fortyMan": true,
+    "options": true,
+    "notOn40Man": true,
+    "pageErrors": 0
+  },
+  "errors": []
+}

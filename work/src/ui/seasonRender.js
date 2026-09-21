@@ -543,6 +543,7 @@ function playerContractView(player) {
   const contract = player.contract;
   if (!contract) return `<section class="card player-detail-card player-contract-card"><p class="season-empty">계약/서비스타임 데이터가 없습니다.</p></section>`;
   const service = contract.service ?? {};
+  const roster = player.rosterControl ?? null;
   const unknown = contract.baseline === "UNKNOWN_REAL_WORLD";
   const serviceText = unknown ? "Unknown" : (service.display ?? "0.000");
   const baselineText = unknown ? "실존 데이터 미확인" : "세이브 시작 기준 0";
@@ -555,8 +556,11 @@ function playerContractView(player) {
       <div><span>Baseline</span><b>${esc(baselineText)}</b><small>과거 값을 임의 추정하지 않음</small></div>
       <div><span>AAV</span><b>${esc(moneyLabel(contract.terms?.aav, contract.terms?.currency))}</b><small>${contract.terms?.aav ? `${contract.terms?.years ?? 1}년 · 보장 ${moneyLabel(contract.terms?.totalGuarantee, contract.terms?.currency)}` : "현재 공개 금액 없음"}</small></div>
       <div><span>FA 기준</span><b>${contract.freeAgency?.eligibleYears ?? 6}년</b><small>표준 조정 ${contract.arbitration?.standardEligibleYears ?? 3}년</small></div>
+      <div><span>40-man</span><b>${roster?.on40Man === true ? "등록" : roster?.on40Man === false ? "미등록" : "Unknown"}</b><small>${roster?.assignmentStatus ?? "-"}</small></div>
+      <div><span>Options</span><b>${roster?.options?.remaining === null || roster?.options?.remaining === undefined ? "Unknown" : `${roster.options.remaining}년 남음`}</b><small>이번 시즌 ${roster?.options?.assignmentsThisSeason ?? 0}/${roster?.options?.maxAssignmentsPerSeason ?? 5}회 · 마이너 ${roster?.options?.minorDaysThisSeason ?? 0}일</small></div>
+      <div><span>DFA / Waivers</span><b>${roster?.dfa?.status ?? "없음"}</b><small>${roster?.dfa?.deadlineDate ? `처리 기한 ${roster.dfa.deadlineDate}` : "현재 pending transaction 없음"}</small></div>
     </div>
-    <p class="condition-note">v51은 MLB active service를 일 단위로 누적합니다. 마이너리그 시간은 MLB service에 포함하지 않습니다. 실존 선수의 세이브 시작 이전 서비스타임은 현재 Snapshot에 직접 없으면 Unknown으로 유지합니다. Super Two 상대순위 판정과 실제 arbitration/FA 시장은 v53에서 연결합니다.</p>
+    <p class="condition-note">v52는 40-man·Minor League options·DFA·outright waivers를 명시적 상태로 추적합니다. 20일 이상 optioned minor assignment는 해당 시즌 option year 1개를 사용하며, optional assignment는 시즌 최대 5회입니다. 실존 선수의 과거 option/40-man 이력은 Snapshot에 없으면 임의 추정하지 않습니다.</p>
   </section>`;
 }
 
@@ -681,7 +685,15 @@ function orgReasonLabel(code) {
     DEVELOPMENT_PATH_STABILITY: "현재 레벨 꾸준한 출전",
     LOWER_LEVEL_PITCHING_PERFORMANCE: "현재 레벨 최근 투구",
     UPPER_LEVEL_PITCHING_STRUGGLES: "상위 레벨 최근 투구",
-    LOWER_LEVEL_PITCHER_READY: "하위 레벨 대체 투수 준비"
+    LOWER_LEVEL_PITCHER_READY: "하위 레벨 대체 투수 준비",
+    FORTY_MAN_ADDED: "40인 로스터 등록",
+    FORTY_MAN_ELIGIBLE: "40인 로스터 등록 상태",
+    OPTIONED_TO_MINORS: "마이너 옵션 사용",
+    OPTION_STATUS_UNKNOWN: "실존 옵션 이력 미확인",
+    FORTY_MAN_FULL: "40인 로스터 슬롯 부족",
+    OUT_OF_OPTIONS_WAIVERS_REQUIRED: "옵션 소진 · 웨이버 필요",
+    OPTION_ASSIGNMENT_LIMIT: "시즌 옵션 이동 횟수 제한",
+    ROSTER_RULE_BLOCK: "로스터 규정 제약"
   })[code] ?? code;
 }
 

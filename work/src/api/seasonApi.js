@@ -23,9 +23,10 @@ import { getPositionPlayingTimeView } from "../engine/season/playingTimeReadMode
 import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
 import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
+import { createRosterControlState, normalizeRosterControlState, advanceRosterControlToDate, getRosterControlPublicView, knownFortyManCount, prepareAaaMlbRosterMove } from "../engine/career/rosterControlState.js";
 
 const sessions = new Map();
-const CURRENT_GAME_VERSION = "full_career_contracts_service_v51";
+const CURRENT_GAME_VERSION = "full_career_roster_rules_v52";
 
 function freeze(value) {
   if (Array.isArray(value)) return Object.freeze(value.map(freeze));
@@ -224,6 +225,73 @@ function normalizeContractStatesForFixture(fixture, existing = {}, { startDate =
   return states;
 }
 
+function fixtureOrganizationIdForPlayer(fixture, playerId, player = null) {
+  for (const level of fixture.organization?.levelOrder ?? []) {
+    if (fixture.organization?.levels?.[level]?.roster?.players?.[playerId]) return String(fixture.organization.id);
+  }
+  return player?.realWorld?.organizationId != null ? String(player.realWorld.organizationId) : null;
+}
+
+function initializeRosterControlStates(fixture, { startDate = fixture?.startDate ?? "2026-04-01" } = {}) {
+  const states = {};
+  for (const roster of allFixtureRosters(fixture)) {
+    for (const [id, player] of Object.entries(roster.players ?? {})) {
+      if (states[id]) continue;
+      states[id] = createRosterControlState({
+        playerId: id,
+        player,
+        startDate,
+        initialLevel: fixtureLevelForPlayer(fixture, id),
+        organizationId: fixtureOrganizationIdForPlayer(fixture, id, player),
+        isUser: id === fixture.userPlayerId
+      });
+    }
+  }
+  return states;
+}
+
+function normalizeRosterControlStatesForFixture(fixture, existing = {}, { startDate = fixture?.startDate ?? "2026-04-01", resetSeason = false } = {}) {
+  const states = structuredClone(existing ?? {});
+  for (const roster of allFixtureRosters(fixture)) {
+    for (const [id, player] of Object.entries(roster.players ?? {})) {
+      const currentLevel = fixtureLevelForPlayer(fixture, id);
+      states[id] = normalizeRosterControlState(states[id] ?? null, {
+        playerId: id,
+        player,
+        startDate,
+        currentLevel,
+        initialLevel: currentLevel,
+        organizationId: fixtureOrganizationIdForPlayer(fixture, id, player),
+        isUser: id === fixture.userPlayerId,
+        resetSeason
+      });
+    }
+  }
+  return states;
+}
+
+function currentOrganizationPlayerIds(session) {
+  const ids = [];
+  for (const level of session.fixture.organization?.levelOrder ?? []) {
+    ids.push(...Object.keys(session.fixture.organization?.levels?.[level]?.roster?.players ?? {}));
+  }
+  return [...new Set(ids)];
+}
+
+function advanceCurrentOrganizationRosterControlStates(session, date) {
+  if (!session.rosterControlStates) return;
+  const next = { ...session.rosterControlStates };
+  for (const id of currentOrganizationPlayerIds(session)) {
+    if (!next[id]) continue;
+    next[id] = advanceRosterControlToDate(next[id], { toDate: date });
+  }
+  session.rosterControlStates = next;
+}
+
+function currentOrganizationKnownFortyManCount(session) {
+  return knownFortyManCount(session.rosterControlStates ?? {}, currentOrganizationPlayerIds(session));
+}
+
 function currentMlbPlayerIds(session) {
   const league = levelLeague(session, "MLB");
   return [...new Set(Object.values(league?.rosters ?? {}).flatMap((roster) => Object.keys(roster.players ?? {})))];
@@ -257,6 +325,7 @@ function recoverAllPlayersToDate(session, date) {
   const days = daysBetween(session.playerStateDate, date);
   if (days > 0) {
     advanceCurrentMlbContractStates(session, date);
+    advanceCurrentOrganizationRosterControlStates(session, date);
     session.playerStates = Object.fromEntries(Object.entries(session.playerStates).map(([id, state]) => [id, recoverPositionPlayer(state, days)]));
     session.pitcherStates = Object.fromEntries(Object.entries(session.pitcherStates).map(([id, state]) => {
       const player = findPlayer(session, id);
@@ -702,6 +771,10 @@ function advanceCompletedProductionSeason(session) {
     startDate: nextStartDate,
     resetClock: true
   });
+  session.rosterControlStates = normalizeRosterControlStatesForFixture(session.fixture, session.rosterControlStates ?? {}, {
+    startDate: nextStartDate,
+    resetSeason: true
+  });
   const reset = resetSeasonStatesForNewYear({ playerStates: ecology.playerStates, pitcherStates: ecology.pitcherStates, roleStates: session.roleStates, startDate: nextStartDate });
   session.playerStates = reset.playerStates;
   session.pitcherStates = reset.pitcherStates;
@@ -951,6 +1024,7 @@ function playerDetailView(session, playerId, leaders = null) {
       currentLevel: identity.organizationLevel ?? detailLevel,
       currentDate: session.state.currentDate
     }),
+    rosterControl: getRosterControlPublicView(session.rosterControlStates?.[playerId] ?? null),
     seasonLine,
     seasonLinesByLevel,
     roleState: getRolePublicView(roleState, { currentDate: session.state.currentDate }),
@@ -1265,25 +1339,50 @@ function runOrganizationReviewIfDue(session, date, { force = false } = {}) {
       || ORGANIZATION_REVIEW_PAIRS.findIndex((p) => p.fromLevel === b.fromLevel && p.toLevel === b.toLevel) - ORGANIZATION_REVIEW_PAIRS.findIndex((p) => p.fromLevel === a.fromLevel && p.toLevel === a.toLevel)
       || a.position.localeCompare(b.position))[0] ?? null;
   let transactionEvents = [];
+  let reviewEvaluations = evaluations;
   if (transactionCandidate) {
-    const moved = executeAdjacentLevelSwap({
-      fixture: session.fixture,
-      roleStates: session.roleStates,
-      fromLevel: transactionCandidate.fromLevel,
-      toLevel: transactionCandidate.toLevel,
-      promotePlayerId: transactionCandidate.candidateId,
-      demotePlayerId: transactionCandidate.incumbentId,
-      position: transactionCandidate.position,
-      date,
-      promoteReasonCodes: transactionCandidate.candidateReasonCodes ?? transactionCandidate.reasonCodes,
-      demoteReasonCodes: transactionCandidate.incumbentReasonCodes ?? transactionCandidate.reasonCodes
-    });
-    session.fixture = moved.fixture;
-    session.roleStates = moved.roleStates;
-    transactionEvents = moved.events;
-    session.careerEventState = recordOrganizationCareerEvents(session.careerEventState, moved.events, { userPlayerId: session.fixture.userPlayerId });
+    let rosterPrep = null;
+    if (transactionCandidate.fromLevel === "AAA" && transactionCandidate.toLevel === "MLB") {
+      rosterPrep = prepareAaaMlbRosterMove({
+        states: session.rosterControlStates,
+        candidateId: transactionCandidate.candidateId,
+        incumbentId: transactionCandidate.incumbentId,
+        date,
+        organizationId: String(session.fixture.organization.id),
+        organizationPlayerIds: currentOrganizationPlayerIds(session)
+      });
+      if (!rosterPrep.allowed) {
+        reviewEvaluations = evaluations.map((row) => row !== transactionCandidate ? row : freeze({
+          ...row,
+          decision: "HOLD",
+          incumbentDecision: "HOLD",
+          reasonCodes: [...new Set([...(row.reasonCodes ?? []), rosterPrep.blockCode])],
+          candidateReasonCodes: [...new Set([...(row.candidateReasonCodes ?? row.reasonCodes ?? []), rosterPrep.blockCode])],
+          incumbentReasonCodes: [...new Set([...(row.incumbentReasonCodes ?? row.reasonCodes ?? []), rosterPrep.blockCode])]
+        }));
+      }
+    }
+    if (!rosterPrep || rosterPrep.allowed) {
+      const moved = executeAdjacentLevelSwap({
+        fixture: session.fixture,
+        roleStates: session.roleStates,
+        fromLevel: transactionCandidate.fromLevel,
+        toLevel: transactionCandidate.toLevel,
+        promotePlayerId: transactionCandidate.candidateId,
+        demotePlayerId: transactionCandidate.incumbentId,
+        position: transactionCandidate.position,
+        date,
+        promoteReasonCodes: [...new Set([...(transactionCandidate.candidateReasonCodes ?? transactionCandidate.reasonCodes ?? []), ...(rosterPrep?.candidateReasonCodes ?? [])])],
+        demoteReasonCodes: [...new Set([...(transactionCandidate.incumbentReasonCodes ?? transactionCandidate.reasonCodes ?? []), ...(rosterPrep?.incumbentReasonCodes ?? [])])]
+      });
+      session.fixture = moved.fixture;
+      session.roleStates = moved.roleStates;
+      if (rosterPrep?.allowed) session.rosterControlStates = rosterPrep.states;
+      transactionEvents = moved.events;
+      session.careerEventState = recordOrganizationCareerEvents(session.careerEventState, moved.events, { userPlayerId: session.fixture.userPlayerId });
+    }
   }
-  session.organizationState = applyOrganizationReview(session.organizationState, { date, evaluations, transactionEvents });
+  session.organizationState = applyOrganizationReview(session.organizationState, { date, evaluations: reviewEvaluations, transactionEvents });
   reconcileCurrentMlbServiceDate(session, date);
   return true;
 }
@@ -1536,6 +1635,7 @@ function catchUpLegacyLevelStates(session) {
   const originalPlayerStates = session.playerStates;
   const originalPitcherStates = session.pitcherStates;
   const originalContractStates = session.contractStates;
+  const originalRosterControlStates = session.rosterControlStates;
   const originalRoleStates = session.roleStates;
   const originalPlayerStateDate = session.playerStateDate;
   const startDate = session.fixture.startDate ?? originalState.startDate ?? originalState.currentDate;
@@ -1547,6 +1647,7 @@ function catchUpLegacyLevelStates(session) {
   session.playerStates = initializePlayerStates(session.fixture);
   session.pitcherStates = initializePitcherStates(session.fixture);
   session.contractStates = initializeContractStates(session.fixture, { startDate });
+  session.rosterControlStates = initializeRosterControlStates(session.fixture, { startDate });
   reconcileCurrentMlbServiceDate(session, startDate);
   session.roleStates = createOrganizationRoleStates(session.fixture, { startDate });
   session.playerStateDate = startDate;
@@ -1580,6 +1681,7 @@ function catchUpLegacyLevelStates(session) {
   session.playerStates = { ...originalPlayerStates };
   session.pitcherStates = { ...originalPitcherStates };
   session.contractStates = originalContractStates;
+  session.rosterControlStates = originalRosterControlStates;
   for (const level of missingLevels) {
     if (reconstructedStates[level]) session.levelStates[level] = reconstructedStates[level];
     const league = levelLeague(session, level);
@@ -1604,11 +1706,12 @@ function createSessionFromFixture(fixture, { seed, startDate, dataUniverse = nul
   const pitcherStates = initializePitcherStates(fixture);
   const scoutingStates = initializeScoutingStates(fixture, playerStates, pitcherStates, { startDate });
   const contractStates = initializeContractStates(fixture, { startDate });
+  const rosterControlStates = initializeRosterControlStates(fixture, { startDate });
   const initialLevel = fixture.organization?.userLevel ?? roleStates[fixture.userPlayerId]?.level ?? "AAA";
   const session = {
     fixture, state: levelStates.AAA, levelStates,
     dataUniverse: normalizeSaveUniverse(dataUniverse ?? createSyntheticUniverseDescriptor({ startDate, sourceVersion: CURRENT_GAME_VERSION }), { startDate, sourceVersion: CURRENT_GAME_VERSION }),
-    playerStates, pitcherStates, scoutingStates, contractStates,
+    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates,
     roleStates, organizationState: createOrganizationReviewState({ startDate }),
     careerEventState: createCareerEventState({ userPlayerId: fixture.userPlayerId, startDate, initialLevel }),
     leagueEcologyState: fixture.worldMode === "PRODUCTION_REAL" ? createProductionEcologyState({ fixture }) : null,
@@ -1692,6 +1795,9 @@ const seasonApi = Object.freeze({
     restored.playerStates = normalizePlayerStates(restored.fixture, restored.playerStates);
     restored.pitcherStates = normalizePitcherStates(restored.fixture, restored.pitcherStates);
     restored.contractStates = normalizeContractStatesForFixture(restored.fixture, restored.contractStates ?? {}, {
+      startDate: restored.playerStateDate ?? restored.fixture.startDate ?? restored.state.currentDate
+    });
+    restored.rosterControlStates = normalizeRosterControlStatesForFixture(restored.fixture, restored.rosterControlStates ?? {}, {
       startDate: restored.playerStateDate ?? restored.fixture.startDate ?? restored.state.currentDate
     });
     const hadScoutingStates = Boolean(restored.scoutingStates);

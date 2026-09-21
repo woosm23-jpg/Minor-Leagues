@@ -1,0 +1,18 @@
+{
+  "schema": "THE_CALL_UP_V52_ROSTER_ROLLOVER_GATE",
+  "pass": true,
+  "source": "Production Snapshot v2",
+  "completed2026": {
+    "worldGames": 10710
+  },
+  "next2027": {
+    "startDate": "2027-03-25",
+    "mlbPlayers": 840,
+    "allMlbOn40Man": true
+  },
+  "user": {
+    "on40Man": false,
+    "assignmentsThisSeason": 0
+  },
+  "saveRoundTrip": true
+}

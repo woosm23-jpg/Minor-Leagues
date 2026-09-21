@@ -1,0 +1,29 @@
+{
+  "schema": "THE_CALL_UP_V52_ROSTER_RULES_GATE",
+  "pass": true,
+  "source": "Production Snapshot v2",
+  "ruleset": {
+    "id": "ruleset_2026",
+    "fortyManLimit": 40,
+    "standardOptionYears": 3,
+    "optionYearMinorDays": 20,
+    "maxOptionalAssignmentsPerSeason": 5,
+    "dfaResolutionDays": 7
+  },
+  "pureRules": {
+    "optionYearConsumedAt20Days": true,
+    "oneOptionYearPerSeason": true,
+    "sixthAssignmentBlocked": true,
+    "dfaDeadlineSevenDays": true,
+    "outrightRights": true,
+    "waiverPriority": true
+  },
+  "production": {
+    "initialKnown40": 0,
+    "aaaGamesBeforeCallup": 5,
+    "callupDate": "2026-04-01",
+    "userAddedTo40Man": true,
+    "saveRestore": true,
+    "publicInternalFieldsHidden": true
+  }
+}
