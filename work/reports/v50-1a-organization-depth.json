@@ -1,0 +1,118 @@
+{
+  "schema": "THE_CALL_UP_V50_1A_ORGANIZATION_DEPTH",
+  "pass": true,
+  "verified": true,
+  "source": "Production Snapshot v2",
+  "levelOrder": [
+    "MLB",
+    "AAA",
+    "AA",
+    "HIGH_A",
+    "A"
+  ],
+  "seeds": 2,
+  "rows": [
+    {
+      "seed": 1,
+      "organizationId": "ORG_109",
+      "organizationName": "Arizona Diamondbacks",
+      "levelOrder": [
+        "MLB",
+        "AAA",
+        "AA",
+        "HIGH_A",
+        "A"
+      ],
+      "userLevel": "A",
+      "userPosition": "SS",
+      "userAssignmentLevels": [
+        "A"
+      ],
+      "userDepthScore": 54.3,
+      "depthEntryCount": 251,
+      "rosterCounts": {
+        "MLB": {
+          "players": 28,
+          "positionPlayers": 14,
+          "pitchers": 14,
+          "referencesChecked": 65
+        },
+        "AAA": {
+          "players": 27,
+          "positionPlayers": 12,
+          "pitchers": 15,
+          "referencesChecked": 63
+        },
+        "AA": {
+          "players": 28,
+          "positionPlayers": 12,
+          "pitchers": 16,
+          "referencesChecked": 65
+        },
+        "HIGH_A": {
+          "players": 26,
+          "positionPlayers": 13,
+          "pitchers": 13,
+          "referencesChecked": 61
+        },
+        "A": {
+          "players": 31,
+          "positionPlayers": 15,
+          "pitchers": 16,
+          "referencesChecked": 71
+        }
+      }
+    },
+    {
+      "seed": 2,
+      "organizationId": "ORG_133",
+      "organizationName": "Athletics",
+      "levelOrder": [
+        "MLB",
+        "AAA",
+        "AA",
+        "HIGH_A",
+        "A"
+      ],
+      "userLevel": "A",
+      "userPosition": "SS",
+      "userAssignmentLevels": [
+        "A"
+      ],
+      "userDepthScore": 54.1,
+      "depthEntryCount": 249,
+      "rosterCounts": {
+        "MLB": {
+          "players": 28,
+          "positionPlayers": 14,
+          "pitchers": 14,
+          "referencesChecked": 65
+        },
+        "AAA": {
+          "players": 28,
+          "positionPlayers": 12,
+          "pitchers": 16,
+          "referencesChecked": 65
+        },
+        "AA": {
+          "players": 28,
+          "positionPlayers": 13,
+          "pitchers": 15,
+          "referencesChecked": 65
+        },
+        "HIGH_A": {
+          "players": 26,
+          "positionPlayers": 11,
+          "pitchers": 15,
+          "referencesChecked": 61
+        },
+        "A": {
+          "players": 31,
+          "positionPlayers": 14,
+          "pitchers": 17,
+          "referencesChecked": 71
+        }
+      }
+    }
+  ]
+}
