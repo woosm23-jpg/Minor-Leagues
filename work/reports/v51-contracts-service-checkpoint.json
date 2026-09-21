@@ -1,0 +1,25 @@
+{
+  "schema": "THE_CALL_UP_V51_CONTRACTS_SERVICE_CHECKPOINT",
+  "pass": true,
+  "version": "v51",
+  "ruleset": "ruleset_2026",
+  "features": {
+    "versionedContractRules": true,
+    "dailyMlbService": true,
+    "minorTimeExcluded": true,
+    "unknownRealBaseline": true,
+    "saveRestore": true,
+    "seasonRollover": true,
+    "playerContractTab": true
+  },
+  "regression": {
+    "v50_1CurrentMvp": true,
+    "v50_2ProductionDataRuntime": true
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v51_PRODUCTION.html",
+    "bytes": 66699412,
+    "sha256": "32dc987d6754d35083d71005e9f07063bd82a18a80e429c973ed4b8c4a34835e"
+  },
+  "next": "v52 40-man / options / DFA / waivers"
+}

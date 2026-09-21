@@ -274,7 +274,7 @@ function homeView(snapshot, uiState = {}) {
 }
 
 function playerSectionNav(section) {
-  const tabs = [["RATINGS", "Ratings", "능력"], ["SCOUTING", "Scouting", "스카우팅"], ["STATS", "Stats", "기록"], ["DEVELOPMENT", "Development", "성장"], ["CAREER", "Career", "커리어"]];
+  const tabs = [["RATINGS", "Ratings", "능력"], ["SCOUTING", "Scouting", "스카우팅"], ["STATS", "Stats", "기록"], ["DEVELOPMENT", "Development", "성장"], ["CONTRACT", "Contract", "계약"], ["CAREER", "Career", "커리어"]];
   return `<div class="subnav player-subnav" aria-label="선수 상세 메뉴">${tabs.map(([key,en,ko]) => `<button type="button" data-player-section="${key}" class="${section === key ? "active" : ""}"><strong>${ko}</strong><small>${en}</small></button>`).join("")}</div>`;
 }
 
@@ -514,16 +514,62 @@ function playerScoutingView(player) {
   </section>`;
 }
 
+function contractStatusLabel(value) {
+  return ({
+    MINOR_LEAGUE_CONTROL: "마이너리그 구단 통제",
+    PRE_ARBITRATION: "Pre-Arbitration",
+    ARBITRATION_ELIGIBLE: "연봉 조정 대상",
+    FREE_AGENCY_ELIGIBLE: "FA 자격",
+    UNKNOWN_REAL_BASELINE: "과거 서비스타임 미확인",
+    UNKNOWN: "확인 불가"
+  })[value] ?? value ?? "-";
+}
+
+function contractKindLabel(value) {
+  return ({
+    MINOR_LEAGUE_CONTROL: "마이너 계약",
+    MLB_CONTROL: "MLB 구단 통제",
+    REAL_WORLD_UNKNOWN: "실존 계약 정보 미확인"
+  })[value] ?? value ?? "-";
+}
+
+function moneyLabel(value, currency = "USD") {
+  if (!Number.isFinite(Number(value))) return "-";
+  const prefix = currency === "USD" ? "$" : "";
+  return `${prefix}${Math.round(Number(value)).toLocaleString("en-US")}`;
+}
+
+function playerContractView(player) {
+  const contract = player.contract;
+  if (!contract) return `<section class="card player-detail-card player-contract-card"><p class="season-empty">계약/서비스타임 데이터가 없습니다.</p></section>`;
+  const service = contract.service ?? {};
+  const unknown = contract.baseline === "UNKNOWN_REAL_WORLD";
+  const serviceText = unknown ? "Unknown" : (service.display ?? "0.000");
+  const baselineText = unknown ? "실존 데이터 미확인" : "세이브 시작 기준 0";
+  return `<section class="card player-detail-card player-contract-card">
+    <div class="section-head"><strong>Contract / Service</strong><span>${esc(contract.rulesetId)}</span></div>
+    <div class="player-rank-grid">
+      <div><span>상태</span><b>${esc(contractStatusLabel(contract.status))}</b><small>${esc(contractKindLabel(contract.terms?.kind))}</small></div>
+      <div><span>MLB Service</span><b>${esc(serviceText)}</b><small>${unknown ? `세이브 이후 ${service.simulatedDaysSinceSave ?? 0}일 추적` : `${service.knownTotalDays ?? 0}일`}</small></div>
+      <div><span>이번 시즌</span><b>${service.thisSeasonDays ?? 0}일</b><small>MLB active/IL 기준</small></div>
+      <div><span>Baseline</span><b>${esc(baselineText)}</b><small>과거 값을 임의 추정하지 않음</small></div>
+      <div><span>AAV</span><b>${esc(moneyLabel(contract.terms?.aav, contract.terms?.currency))}</b><small>${contract.terms?.aav ? `${contract.terms?.years ?? 1}년 · 보장 ${moneyLabel(contract.terms?.totalGuarantee, contract.terms?.currency)}` : "현재 공개 금액 없음"}</small></div>
+      <div><span>FA 기준</span><b>${contract.freeAgency?.eligibleYears ?? 6}년</b><small>표준 조정 ${contract.arbitration?.standardEligibleYears ?? 3}년</small></div>
+    </div>
+    <p class="condition-note">v51은 MLB active service를 일 단위로 누적합니다. 마이너리그 시간은 MLB service에 포함하지 않습니다. 실존 선수의 세이브 시작 이전 서비스타임은 현재 Snapshot에 직접 없으면 Unknown으로 유지합니다. Super Two 상대순위 판정과 실제 arbitration/FA 시장은 v53에서 연결합니다.</p>
+  </section>`;
+}
+
 function playerView(snapshot, uiState = {}) {
   const section = uiState.playerSection ?? "RATINGS";
   const player = snapshot.userPlayer;
   const body = section === "SCOUTING" ? playerScoutingView(player)
     : section === "STATS" ? playerStatsView(player, snapshot.leaders)
       : section === "DEVELOPMENT" ? playerDevelopmentView(player)
-        : section === "CAREER" ? careerTimelineView(snapshot)
-          : playerRatingsView(player);
-  return `${playerHeader(player)}${playerSectionNav(section)}${body}
-    <section class="card player-future-card"><strong>Contract</strong><p>계약·서비스타임·FA·트레이드 이력은 이후 Full Career 단계에서 연결합니다. v31부터 Career First에는 가능한 경우 상대·이닝·PA 번호·아웃/주자·당시 점수까지 공식 경기 이벤트 문맥을 함께 영속 기록합니다.</p></section>`;
+        : section === "CONTRACT" ? playerContractView(player)
+          : section === "CAREER" ? careerTimelineView(snapshot)
+            : playerRatingsView(player);
+  return `${playerHeader(player)}${playerSectionNav(section)}${body}`;
 }
 
 function standingsTable(snapshot) {

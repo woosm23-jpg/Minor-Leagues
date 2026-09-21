@@ -1,0 +1,19 @@
+{
+  "schema": "THE_CALL_UP_V51_CONTRACT_BROWSER_SMOKE",
+  "pass": true,
+  "standalone": "THE_CALL_UP_SEASON_STANDALONE_v51_PRODUCTION.html",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "checks": {
+    "organizations30": true,
+    "realOrganizations": true,
+    "contractTab": true,
+    "ruleset2026": true,
+    "minorControl": true,
+    "serviceZero": true,
+    "pageErrors": 0
+  },
+  "errors": []
+}

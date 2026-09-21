@@ -22,9 +22,10 @@ import { getUtilityPathwayView } from "../engine/season/utilityUsage.js";
 import { getPositionPlayingTimeView } from "../engine/season/playingTimeReadModel.js";
 import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
+import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
 
 const sessions = new Map();
-const CURRENT_GAME_VERSION = "phase4_production_world_activation_v47";
+const CURRENT_GAME_VERSION = "full_career_contracts_service_v51";
 
 function freeze(value) {
   if (Array.isArray(value)) return Object.freeze(value.map(freeze));
@@ -189,9 +190,73 @@ function normalizeScoutingStates(fixture, existing, playerStates, pitcherStates,
   return states;
 }
 
+function initializeContractStates(fixture, { startDate = fixture?.startDate ?? "2026-04-01" } = {}) {
+  const states = {};
+  for (const roster of allFixtureRosters(fixture)) {
+    for (const [id, player] of Object.entries(roster.players ?? {})) {
+      if (states[id]) continue;
+      states[id] = createContractState({
+        playerId: id,
+        player,
+        startDate,
+        initialLevel: fixtureLevelForPlayer(fixture, id),
+        isUser: id === fixture.userPlayerId
+      });
+    }
+  }
+  return states;
+}
+
+function normalizeContractStatesForFixture(fixture, existing = {}, { startDate = fixture?.startDate ?? "2026-04-01", resetClock = false } = {}) {
+  const states = structuredClone(existing ?? {});
+  for (const roster of allFixtureRosters(fixture)) {
+    for (const [id, player] of Object.entries(roster.players ?? {})) {
+      states[id] = normalizeContractState(states[id] ?? null, {
+        playerId: id,
+        player,
+        startDate,
+        initialLevel: fixtureLevelForPlayer(fixture, id),
+        isUser: id === fixture.userPlayerId,
+        resetClock
+      });
+    }
+  }
+  return states;
+}
+
+function currentMlbPlayerIds(session) {
+  const league = levelLeague(session, "MLB");
+  return [...new Set(Object.values(league?.rosters ?? {}).flatMap((roster) => Object.keys(roster.players ?? {})))];
+}
+
+function advanceCurrentMlbContractStates(session, date) {
+  if (!session.contractStates) return;
+  const serviceWindow = getMlbServiceWindow(session.fixture);
+  if (!serviceWindow) return;
+  const next = { ...session.contractStates };
+  for (const id of currentMlbPlayerIds(session)) {
+    if (!next[id]) continue;
+    next[id] = advanceContractStateToDate(next[id], { toDate: date, level: "MLB", serviceWindow });
+  }
+  session.contractStates = next;
+}
+
+function reconcileCurrentMlbServiceDate(session, date) {
+  if (!session.contractStates) return;
+  const serviceWindow = getMlbServiceWindow(session.fixture);
+  if (!serviceWindow) return;
+  const next = { ...session.contractStates };
+  for (const id of currentMlbPlayerIds(session)) {
+    if (!next[id]) continue;
+    next[id] = creditContractServiceDate(next[id], { date, level: "MLB", serviceWindow });
+  }
+  session.contractStates = next;
+}
+
 function recoverAllPlayersToDate(session, date) {
   const days = daysBetween(session.playerStateDate, date);
   if (days > 0) {
+    advanceCurrentMlbContractStates(session, date);
     session.playerStates = Object.fromEntries(Object.entries(session.playerStates).map(([id, state]) => [id, recoverPositionPlayer(state, days)]));
     session.pitcherStates = Object.fromEntries(Object.entries(session.pitcherStates).map(([id, state]) => {
       const player = findPlayer(session, id);
@@ -633,6 +698,10 @@ function advanceCompletedProductionSeason(session) {
   });
   session.fixture = ecology.fixture;
   session.leagueEcologyState = ecology.ecologyState;
+  session.contractStates = normalizeContractStatesForFixture(session.fixture, session.contractStates ?? {}, {
+    startDate: nextStartDate,
+    resetClock: true
+  });
   const reset = resetSeasonStatesForNewYear({ playerStates: ecology.playerStates, pitcherStates: ecology.pitcherStates, roleStates: session.roleStates, startDate: nextStartDate });
   session.playerStates = reset.playerStates;
   session.pitcherStates = reset.pitcherStates;
@@ -648,6 +717,7 @@ function advanceCompletedProductionSeason(session) {
   session.levelStates = createLevelSeasonStates(session.fixture, seasonId, nextStartDate);
   session.state = session.levelStates.AAA;
   session.playerStateDate = nextStartDate;
+  reconcileCurrentMlbServiceDate(session, nextStartDate);
   session.lastProgress = null;
   session.activeGameId = null;
   session.activeScheduleGameId = null;
@@ -877,6 +947,10 @@ function playerDetailView(session, playerId, leaders = null) {
     effectiveRatings: visibleRatings(effective),
     scouting: scoutingReportForPlayer(session, playerId),
     careerProfile,
+    contract: getContractPublicView(session.contractStates?.[playerId] ?? null, {
+      currentLevel: identity.organizationLevel ?? detailLevel,
+      currentDate: session.state.currentDate
+    }),
     seasonLine,
     seasonLinesByLevel,
     roleState: getRolePublicView(roleState, { currentDate: session.state.currentDate }),
@@ -1210,6 +1284,7 @@ function runOrganizationReviewIfDue(session, date, { force = false } = {}) {
     session.careerEventState = recordOrganizationCareerEvents(session.careerEventState, moved.events, { userPlayerId: session.fixture.userPlayerId });
   }
   session.organizationState = applyOrganizationReview(session.organizationState, { date, evaluations, transactionEvents });
+  reconcileCurrentMlbServiceDate(session, date);
   return true;
 }
 
@@ -1460,6 +1535,7 @@ function catchUpLegacyLevelStates(session) {
   const originalLevelStates = session.levelStates ?? { AAA: session.state };
   const originalPlayerStates = session.playerStates;
   const originalPitcherStates = session.pitcherStates;
+  const originalContractStates = session.contractStates;
   const originalRoleStates = session.roleStates;
   const originalPlayerStateDate = session.playerStateDate;
   const startDate = session.fixture.startDate ?? originalState.startDate ?? originalState.currentDate;
@@ -1470,6 +1546,8 @@ function catchUpLegacyLevelStates(session) {
   session.levelStates = created;
   session.playerStates = initializePlayerStates(session.fixture);
   session.pitcherStates = initializePitcherStates(session.fixture);
+  session.contractStates = initializeContractStates(session.fixture, { startDate });
+  reconcileCurrentMlbServiceDate(session, startDate);
   session.roleStates = createOrganizationRoleStates(session.fixture, { startDate });
   session.playerStateDate = startDate;
 
@@ -1501,6 +1579,7 @@ function catchUpLegacyLevelStates(session) {
   session.levelStates = { ...originalLevelStates };
   session.playerStates = { ...originalPlayerStates };
   session.pitcherStates = { ...originalPitcherStates };
+  session.contractStates = originalContractStates;
   for (const level of missingLevels) {
     if (reconstructedStates[level]) session.levelStates[level] = reconstructedStates[level];
     const league = levelLeague(session, level);
@@ -1524,11 +1603,12 @@ function createSessionFromFixture(fixture, { seed, startDate, dataUniverse = nul
   const playerStates = initializePlayerStates(fixture);
   const pitcherStates = initializePitcherStates(fixture);
   const scoutingStates = initializeScoutingStates(fixture, playerStates, pitcherStates, { startDate });
+  const contractStates = initializeContractStates(fixture, { startDate });
   const initialLevel = fixture.organization?.userLevel ?? roleStates[fixture.userPlayerId]?.level ?? "AAA";
   const session = {
     fixture, state: levelStates.AAA, levelStates,
     dataUniverse: normalizeSaveUniverse(dataUniverse ?? createSyntheticUniverseDescriptor({ startDate, sourceVersion: CURRENT_GAME_VERSION }), { startDate, sourceVersion: CURRENT_GAME_VERSION }),
-    playerStates, pitcherStates, scoutingStates,
+    playerStates, pitcherStates, scoutingStates, contractStates,
     roleStates, organizationState: createOrganizationReviewState({ startDate }),
     careerEventState: createCareerEventState({ userPlayerId: fixture.userPlayerId, startDate, initialLevel }),
     leagueEcologyState: fixture.worldMode === "PRODUCTION_REAL" ? createProductionEcologyState({ fixture }) : null,
@@ -1536,6 +1616,7 @@ function createSessionFromFixture(fixture, { seed, startDate, dataUniverse = nul
     lastProgress: null,
     activeGameId: null, activeScheduleGameId: null, activeLevel: null, finalizedActiveGameId: null, activeFixture: null
   };
+  reconcileCurrentMlbServiceDate(session, startDate);
   sessions.set(seasonId, session);
   return snapshot(session);
 }
@@ -1610,6 +1691,9 @@ const seasonApi = Object.freeze({
     restored.dataUniverse = inferRealWorldUniverse(normalizeSaveUniverse(restored.dataUniverse ?? null, { startDate: restored.fixture.startDate ?? restored.state.currentDate, sourceVersion: CURRENT_GAME_VERSION }));
     restored.playerStates = normalizePlayerStates(restored.fixture, restored.playerStates);
     restored.pitcherStates = normalizePitcherStates(restored.fixture, restored.pitcherStates);
+    restored.contractStates = normalizeContractStatesForFixture(restored.fixture, restored.contractStates ?? {}, {
+      startDate: restored.playerStateDate ?? restored.fixture.startDate ?? restored.state.currentDate
+    });
     const hadScoutingStates = Boolean(restored.scoutingStates);
     // Legacy v43 saves had no scouting state. Backfill at the restore date so
     // past review cycles are not retroactively replayed. Existing v44 states

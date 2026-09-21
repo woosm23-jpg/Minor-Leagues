@@ -4,13 +4,12 @@
 
 ## 현재 버전
 
-- 공식 안정 기준선: **v50.1 Current MVP**
-- 현재 릴리스 후보: **v50.2 Production RC**
-- 엔진/세이브 gameVersion: `phase4_production_world_activation_v47`
+- 안정 기준선: **v50.2 Production RC**
+- 현재 개발 체크포인트: **v51 Contracts / Service Time**
+- 엔진/세이브 gameVersion: `full_career_contracts_service_v51`
 - Save schema: v2
-- Complete Edition: 아직 아님. 다음 큰 단계는 **v51 Contracts / Service Time**
-
-v50.2는 v50.1의 현재 MVP 회귀 안정성을 유지하면서, Production Snapshot v2의 데이터/런타임 검증, 2026→2027 시즌 롤오버 증거 연속성, 모바일 브라우저 smoke, 문서 동기화, 실행 가능한 Production standalone HTML까지 묶은 RC입니다.
+- 계약 ruleset: `ruleset_2026`
+- Complete Edition: 아직 아님
 
 ## Production 월드
 
@@ -20,69 +19,55 @@ v50.2는 v50.1의 현재 MVP 회귀 안정성을 유지하면서, Production Sna
 - 게임 가능 ACTIVE 선수 4,217명
 - 2024~2026 hitting / pitching / fielding 기록 80,606 rows
 - 2026 실제 5레벨 일정 10,710경기
-  - MLB 2,430
-  - AAA 2,250
-  - AA 2,070
-  - High-A 1,980
-  - A 1,980
 - MLB 구장 30개
 - Production 조직 30개
-- 새 커리어 시작일: 2026-03-25
 
-## v50.1 Current MVP 검증
+## v50.2 RC 기준
 
-통합 gate에서 다음 6개를 모두 Production Snapshot v2 기준으로 재검증했습니다.
+- Current MVP 통합 회귀: PASS
+- Production 데이터/런타임: PASS
+- 2026→2027 시즌 롤오버: PASS
+- 모바일 Production 브라우저 smoke: PASS
+- 실행 standalone: `THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html`
 
-- Organization depth
-- 5레벨 승격/강등
-- 전체 5레벨 ladder
-- AAA→MLB 콜업 / 대체 / MLB 데뷔
-- 부상 / 피로 / 폼
-- 저장 / 체크포인트 / `.tcu` export-import
+## v51 Contracts / Service Time
 
-또한 v50.1 Production standalone HTML 빌드와 Snapshot v2 내장 정적 검증을 완료했습니다.
+v51은 Full Career 계약 기반의 첫 단계입니다.
 
-## v50.2 Production RC 검증
+- versioned `ruleset_2026`
+- MLB active/MLB IL에 해당하는 서비스 일수 누적을 위한 일 단위 상태
+- 마이너리그 체류일은 MLB service에서 제외
+- 172 service days = 1 service year
+- standard arbitration eligibility = 3 service years
+- free agency eligibility = 6 service years
+- Super Two 기준 정보는 ruleset에 보존하되 실제 리그 상대 순위 판정/중재 금액은 v53에서 처리
+- 2026 MLB minimum salary basis = $780,000
+- 세이브 시작 이전 실존 선수 service time은 데이터에 없는 경우 추정하지 않고 `UNKNOWN_REAL_WORLD`로 보존
+- 사용자/생성 선수는 세이브 시작부터 정확히 누적
+- 기본 contract terms 필드: years / total guarantee / AAV / expected role
+- 저장/복원 및 시즌 롤오버에서 contract state 보존
+- Player → Contract 탭에 최소 공개 뷰 제공
 
-- Production 데이터/런타임 gate: PASS
-- 2026→2027 롤오버 증거 연속성: PASS
-  - 2026 월드 경기 10,710 / 10,710 완료
-  - 2027 시작일 2027-03-25
-  - 2027 새 일정 12,150경기
-  - 오프시즌 은퇴 / 생성 82 / 82
-  - 저장/복원 PASS
-- 모바일 브라우저 smoke:
-  - 새 Production 커리어 생성
-  - Season Home 진입
-  - 자동 저장
-  - 7일 진행
-  - 중요 이벤트(PRO_DEBUT) 자동 정지
-  - page error 0
+실존 선수의 과거 service time을 나이/MLB 경력만으로 임의 추정하지 않습니다. 현재 Production Snapshot이 직접 제공하지 않는 과거 계약·서비스 정보는 Unknown으로 표시하고, 세이브 시작 이후의 변화만 정확히 추적합니다.
 
-## 화면 구조
+## v51 검증
 
-- Home
-- Game
-- Player
-- League
-- More
-  - Organization / Depth Chart
-  - Career Feed
-  - Settings / Save
+- contract/service focused gate
+- AAA 시간 service 제외
+- AAA→MLB 콜업일부터 service 시작
+- 3년/6년 ruleset threshold
+- real-player unknown baseline 안전성
+- save/restore roundtrip
+- 기존 v50.1 Current MVP 통합 회귀
+- v50.2 Production data/runtime 회귀
+- 2026→2027 전체 시즌 rollover + contract continuity
+- 모바일 Contract 탭 browser smoke
+- Production standalone HTML checkpoint
 
 ## 실행 파일
 
-`dist/THE_CALL_UP_SEASON_STANDALONE_v50_2_PRODUCTION.html`
-
-GitHub Actions artifact에도 동일 실행 HTML과 v50.2 검증 리포트를 함께 올립니다.
+`dist/THE_CALL_UP_SEASON_STANDALONE_v51_PRODUCTION.html`
 
 ## 다음 단계
 
-v51부터 계약/서비스타임을 시작합니다.
-
-- Contract state data model
-- Service-day accrual
-- unknown real-player baseline
-- save/restore integration
-- minimal public contract view
-- gate + Production HTML checkpoint
+v52에서 40-man / options / DFA / waivers를 추가합니다. v53에서 arbitration / free agency 시장을 연결합니다.

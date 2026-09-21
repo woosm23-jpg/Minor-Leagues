@@ -1,0 +1,32 @@
+{
+  "schema": "THE_CALL_UP_V51_CONTRACT_SERVICE_GATE",
+  "pass": true,
+  "source": "Production Snapshot v2",
+  "ruleset": {
+    "id": "ruleset_2026",
+    "serviceYearDays": 172,
+    "regularSeasonCalendarDays": 187,
+    "arbitrationYears": 3,
+    "freeAgencyYears": 6,
+    "superTwoMinimumPriorSeasonDays": 86,
+    "superTwoPercent": 0.22,
+    "mlbMinimumSalary": 780000
+  },
+  "coverage": {
+    "contractStates": 4218,
+    "realBaselineUnknownSafe": true,
+    "minorTimeExcluded": true,
+    "callupServiceBegins": true,
+    "saveRestore": true,
+    "publicInternalFieldsHidden": true
+  },
+  "user": {
+    "aaaGamesBeforeCallup": 5,
+    "callupDate": "2026-04-01",
+    "serviceAtCallup": 2,
+    "serviceAfterMlbGame": 3,
+    "publicStatus": "PRE_ARBITRATION",
+    "serviceDisplay": "0.003",
+    "aav": 780000
+  }
+}

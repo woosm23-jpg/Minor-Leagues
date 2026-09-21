@@ -1,0 +1,17 @@
+{
+  "schema": "THE_CALL_UP_V51_CONTRACT_ROLLOVER_GATE",
+  "pass": true,
+  "source": "Production Snapshot v2",
+  "completed2026": {
+    "worldGames": 10710,
+    "maxServiceDays": 187,
+    "zeroServicePlayers": 3378
+  },
+  "next2027": {
+    "startDate": "2027-03-25",
+    "currentMlbPlayers": 840,
+    "openingDayCreditedPlayers": 840,
+    "max2027ServiceDays": 1
+  },
+  "saveRoundTrip": true
+}

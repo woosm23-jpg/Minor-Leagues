@@ -322,7 +322,7 @@ function startSeasonApp(root) {
         renderHome();
       },
       onPlayerSection(section) {
-        playerSection = ["RATINGS", "SCOUTING", "STATS", "DEVELOPMENT", "CAREER"].includes(section) ? section : "RATINGS";
+        playerSection = ["RATINGS", "SCOUTING", "STATS", "DEVELOPMENT", "CONTRACT", "CAREER"].includes(section) ? section : "RATINGS";
         playerDetail = null;
         renderHome();
       },

@@ -1,0 +1,85 @@
+import json
+import re
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+
+root = Path(__file__).resolve().parents[1]
+html_path = root / "dist" / "THE_CALL_UP_SEASON_STANDALONE_v51_PRODUCTION.html"
+html = html_path.read_text(encoding="utf-8")
+legacy = (root / "scripts" / "browser-standalone-smoke-v39.py").read_text(encoding="utf-8")
+match = re.search(r"fake_idb = r'''(.*?)'''\n\nsmoke_html", legacy, re.S)
+if not match:
+    raise RuntimeError("fake IndexedDB harness not found")
+smoke_html = html.replace("<body>\n", "<body>\n" + match.group(1), 1)
+
+errors = []
+checks = {}
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"])
+    page = browser.new_page(viewport={"width":390,"height":844})
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    page.on("dialog", lambda dialog: dialog.accept())
+    page.set_content(smoke_html, wait_until="domcontentloaded", timeout=180000)
+    page.wait_for_selector(".save-select-hero", timeout=60000)
+    page.locator("[data-career-new]").click()
+    page.wait_for_selector(".new-career-screen", timeout=60000)
+
+    page.locator('[data-career-org-mode][value="FAVORITE"]').check(force=True)
+    page.wait_for_function(
+        "() => { const el = document.querySelector('[data-career-field=\"favoriteOrganizationId\"]'); return !!el && [...el.options].filter((o) => o.value).length === 30; }",
+        timeout=180000,
+    )
+    org = page.locator('[data-career-field="favoriteOrganizationId"]')
+    values = org.locator("option").evaluate_all("(els) => els.map(e => e.value).filter(Boolean)")
+    names = org.locator("option").evaluate_all("(els) => els.map(e => e.textContent.trim()).filter(Boolean)")
+    if len(values) != 30:
+        raise AssertionError(f"expected 30 Production organizations, got {len(values)}")
+
+    checks["organizations30"] = len(values) == 30
+    checks["realOrganizations"] = (
+        any("Arizona Diamondbacks" in x for x in names)
+        and any("New York Yankees" in x for x in names)
+    )
+    org.select_option(values[0])
+
+    page.locator('[data-career-field="name"]').fill("v51 계약 QA")
+    page.locator('[data-career-field="age"]').select_option("21")
+    page.locator('[data-career-field="primaryPosition"]').select_option("CF")
+    page.locator('[data-career-field="archetype"]').select_option("BALANCED")
+    page.locator("[data-career-create-submit]").click()
+    page.wait_for_selector(".season-title", timeout=180000)
+    page.wait_for_function(
+        "() => document.querySelector('.season-title')?.textContent.includes('시즌 홈')",
+        timeout=180000,
+    )
+
+    page.wait_for_selector('[data-season-tab="PLAYER"]', timeout=60000)
+    page.locator('[data-season-tab="PLAYER"]').click()
+    page.wait_for_selector('[data-player-section="CONTRACT"]', timeout=60000)
+    page.locator('[data-player-section="CONTRACT"]').click()
+    page.wait_for_selector(".player-contract-card", timeout=60000)
+    card_text = page.locator(".player-contract-card").inner_text()
+
+    checks["contractTab"] = "Contract / Service" in card_text
+    checks["ruleset2026"] = "ruleset_2026" in card_text
+    checks["minorControl"] = "마이너리그 구단 통제" in card_text
+    checks["serviceZero"] = "0.000" in card_text
+    checks["pageErrors"] = len(errors)
+    browser.close()
+
+passed = all(v is True for k,v in checks.items() if k != "pageErrors") and checks["pageErrors"] == 0
+report = {
+  "schema":"THE_CALL_UP_V51_CONTRACT_BROWSER_SMOKE",
+  "pass":passed,
+  "standalone":html_path.name,
+  "viewport":{"width":390,"height":844},
+  "checks":checks,
+  "errors":errors
+}
+(root / "reports" / "v51-contract-browser-smoke.json").write_text(
+    json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+    encoding="utf-8"
+)
+print(json.dumps(report, ensure_ascii=False, indent=2))
+if not passed:
+    raise SystemExit(1)
