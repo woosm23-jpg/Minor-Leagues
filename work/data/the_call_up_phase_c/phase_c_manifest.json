@@ -1,0 +1,43 @@
+{
+  "schema": "THE_CALL_UP_PHASE_C_MANIFEST_V1",
+  "season": 2026,
+  "createdAt": "2026-09-20T20:41:09.058922+00:00",
+  "baseSnapshotHash": "fnv1a32:21eb3434",
+  "sha256": "cfe8000f998f438c73c59e836725deff69d7ad4def58d97f6bbf683ca94ea87a",
+  "coverage": {
+    "trackingRows": 14988,
+    "trackingPlayers": 2149,
+    "pitchArsenalRows": 12023,
+    "pitchArsenalPlayers": 1288,
+    "trackingByLevel": {
+      "AAA": 2887,
+      "MLB": 12101
+    },
+    "arsenalByLevel": {
+      "AAA": 3023,
+      "MLB": 9000
+    },
+    "trackingByGroup": {
+      "HITTING_BATTED_BALL": 2159,
+      "HITTING_SWING": 2158,
+      "PITCHING_BATTED_BALL": 2654,
+      "PITCHING_LOCATION": 2654,
+      "PITCHING_SWING": 2654,
+      "FIELDING": 1118,
+      "RUNNING": 1591
+    },
+    "mlb_hitters": 1698,
+    "mlb_pitchers": 1999,
+    "mlb_arsenal_rows": 9000,
+    "aaa_raw_rows": 667602,
+    "aaa_rows_kept": 667602,
+    "aaa_hitter_players": 790,
+    "aaa_pitcher_players": 1094,
+    "aaa_arsenal_rows": 5072,
+    "aaa_current_players_matched": 1057,
+    "aaaBbeComparableHitters": 325,
+    "aaaBbeMedianRatio": 1.0,
+    "aaaBbeP90Ratio": 1.0
+  },
+  "productionReady": false
+}

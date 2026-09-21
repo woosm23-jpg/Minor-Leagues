@@ -1,0 +1,22 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><body data-result="RUNNING">RUNNING<script type="module">
+import { seasonApi } from "../src/api/seasonApi.js";
+import { seasonSaveService } from "../src/services/seasonSaveService.js";
+try {
+  let season = seasonApi.createDemoSeason({ seed: "browser-idb-v15", startDate: "2026-04-01" });
+  season = seasonApi.setTrainingFocus(season.seasonId, "PLATE_DISCIPLINE");
+  season = seasonApi.startCurrentGame(season.seasonId);
+  season = seasonApi.playUserPA(season.seasonId, "CONTACT");
+  const expected = seasonApi.serializeSeason(season.seasonId);
+  if (!expected.activeGameCheckpoint) throw new Error("active checkpoint missing");
+  await seasonSaveService.saveSeason(season.seasonId);
+  seasonApi.playUserPA(season.seasonId, "AGGRESSIVE");
+  const loaded = await seasonSaveService.loadSeason(season.seasonId);
+  const actual = seasonApi.serializeSeason(loaded.seasonId);
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error("IndexedDB checkpoint round-trip mismatch");
+  document.body.dataset.result = "PASS";
+  document.body.textContent = `PASS ${loaded.record.W}-${loaded.record.L} ${loaded.userPlayer.status.development.focus} checkpoint`;
+} catch (error) {
+  document.body.dataset.result = "FAIL";
+  document.body.textContent = `FAIL ${error?.stack || error}`;
+}
+</script></body></html>

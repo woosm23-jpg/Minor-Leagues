@@ -1,0 +1,108 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_LIVE_ECOLOGY_10Y_V50_V1",
+  "pass": true,
+  "startYear": 2026,
+  "endYear": 2036,
+  "initialPopulation": 4218,
+  "levelCounts": {
+    "MLB": 840,
+    "AAA": 837,
+    "AA": 804,
+    "HIGH_A": 839,
+    "A": 898
+  },
+  "totalRetired": 2678,
+  "totalGenerated": 2678,
+  "checkpoints": [
+    {
+      "year": 2027,
+      "retired": 73,
+      "generated": 73,
+      "activeGenerated": 73,
+      "generatedMlb": 0,
+      "generatedEverDebuted": 0,
+      "classStrength": 0.1349
+    },
+    {
+      "year": 2028,
+      "retired": 88,
+      "generated": 88,
+      "activeGenerated": 161,
+      "generatedMlb": 5,
+      "generatedEverDebuted": 5,
+      "classStrength": 0.0192
+    },
+    {
+      "year": 2029,
+      "retired": 129,
+      "generated": 129,
+      "activeGenerated": 290,
+      "generatedMlb": 10,
+      "generatedEverDebuted": 10,
+      "classStrength": 0.0795
+    },
+    {
+      "year": 2030,
+      "retired": 156,
+      "generated": 156,
+      "activeGenerated": 444,
+      "generatedMlb": 20,
+      "generatedEverDebuted": 20,
+      "classStrength": 0.1304
+    },
+    {
+      "year": 2031,
+      "retired": 188,
+      "generated": 188,
+      "activeGenerated": 630,
+      "generatedMlb": 30,
+      "generatedEverDebuted": 30,
+      "classStrength": 0.1654
+    },
+    {
+      "year": 2032,
+      "retired": 288,
+      "generated": 288,
+      "activeGenerated": 914,
+      "generatedMlb": 55,
+      "generatedEverDebuted": 55,
+      "classStrength": 0.2912
+    },
+    {
+      "year": 2033,
+      "retired": 383,
+      "generated": 383,
+      "activeGenerated": 1293,
+      "generatedMlb": 110,
+      "generatedEverDebuted": 110,
+      "classStrength": -0.3697
+    },
+    {
+      "year": 2034,
+      "retired": 442,
+      "generated": 442,
+      "activeGenerated": 1734,
+      "generatedMlb": 170,
+      "generatedEverDebuted": 170,
+      "classStrength": 0.1494
+    },
+    {
+      "year": 2035,
+      "retired": 479,
+      "generated": 479,
+      "activeGenerated": 2206,
+      "generatedMlb": 261,
+      "generatedEverDebuted": 262,
+      "classStrength": -0.3541
+    },
+    {
+      "year": 2036,
+      "retired": 452,
+      "generated": 452,
+      "activeGenerated": 2647,
+      "generatedMlb": 346,
+      "generatedEverDebuted": 348,
+      "classStrength": 0.1135
+    }
+  ]
+}

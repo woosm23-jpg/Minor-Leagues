@@ -1,0 +1,189 @@
+{
+  "schema": "THE_CALL_UP_GENERATED_PIPELINE_V50_V2",
+  "simulation": {
+    "startYear": 2027,
+    "endYear": 2046,
+    "annualSample": 60,
+    "scaleNote": "Calibration sample; evaluate rates/shares, not raw league counts.",
+    "lifecycleVersion": 3
+  },
+  "generatedCount": 1200,
+  "activeCount": 739,
+  "debutCount": 213,
+  "debutRate": 0.1775,
+  "releasedCount": 307,
+  "retiredCount": 154,
+  "classStrength": 0.1266,
+  "finiteErrors": [],
+  "levelShareTarget2026": {
+    "A": 0.21790384969607662,
+    "HIGH_A": 0.19432676367655186,
+    "AA": 0.18806410020261558,
+    "AAA": 0.20261558298029103,
+    "MLB": 0.19708970344446491
+  },
+  "levelShareError": {
+    "A": 0.0081,
+    "HIGH_A": -0.0184,
+    "AA": 0.0162,
+    "AAA": 0.0058,
+    "MLB": -0.0117
+  },
+  "maxLevelShareError": 0.0184,
+  "checkpoints": [
+    {
+      "year": 2027,
+      "label": "START",
+      "active": 60,
+      "levels": {
+        "A": 47,
+        "HIGH_A": 11,
+        "AA": 2,
+        "AAA": 0,
+        "MLB": 0
+      },
+      "levelShares": {
+        "A": 0.7833,
+        "HIGH_A": 0.1833,
+        "AA": 0.0333,
+        "AAA": 0,
+        "MLB": 0
+      },
+      "meanOvr": 33.371,
+      "mlbMeanOvr": null,
+      "meanAge": 18.817,
+      "under25": 60,
+      "age35plus": 0,
+      "debuts": 0,
+      "meanDebutAge": null,
+      "released": 0,
+      "retired": 0
+    },
+    {
+      "year": 2031,
+      "label": "4Y",
+      "active": 299,
+      "levels": {
+        "A": 120,
+        "HIGH_A": 63,
+        "AA": 58,
+        "AAA": 44,
+        "MLB": 14
+      },
+      "levelShares": {
+        "A": 0.4013,
+        "HIGH_A": 0.2107,
+        "AA": 0.194,
+        "AAA": 0.1472,
+        "MLB": 0.0468
+      },
+      "meanOvr": 35.705,
+      "mlbMeanOvr": 48.005,
+      "meanAge": 21.084,
+      "under25": 280,
+      "age35plus": 0,
+      "debuts": 14,
+      "meanDebutAge": 23.5,
+      "released": 0,
+      "retired": 1
+    },
+    {
+      "year": 2036,
+      "label": "9Y",
+      "active": 585,
+      "levels": {
+        "A": 145,
+        "HIGH_A": 108,
+        "AA": 128,
+        "AAA": 126,
+        "MLB": 78
+      },
+      "levelShares": {
+        "A": 0.2479,
+        "HIGH_A": 0.1846,
+        "AA": 0.2188,
+        "AAA": 0.2154,
+        "MLB": 0.1333
+      },
+      "meanOvr": 37.966,
+      "mlbMeanOvr": 48.33,
+      "meanAge": 23.429,
+      "under25": 346,
+      "age35plus": 0,
+      "debuts": 79,
+      "meanDebutAge": 24.367,
+      "released": 6,
+      "retired": 9
+    },
+    {
+      "year": 2041,
+      "label": "14Y",
+      "active": 720,
+      "levels": {
+        "A": 162,
+        "HIGH_A": 107,
+        "AA": 155,
+        "AAA": 175,
+        "MLB": 121
+      },
+      "levelShares": {
+        "A": 0.225,
+        "HIGH_A": 0.1486,
+        "AA": 0.2153,
+        "AAA": 0.2431,
+        "MLB": 0.1681
+      },
+      "meanOvr": 38.689,
+      "mlbMeanOvr": 48.856,
+      "meanAge": 24.678,
+      "under25": 357,
+      "age35plus": 4,
+      "debuts": 139,
+      "meanDebutAge": 25.058,
+      "released": 115,
+      "retired": 65
+    },
+    {
+      "year": 2046,
+      "label": "19Y",
+      "active": 739,
+      "levels": {
+        "A": 167,
+        "HIGH_A": 130,
+        "AA": 151,
+        "AAA": 154,
+        "MLB": 137
+      },
+      "levelShares": {
+        "A": 0.226,
+        "HIGH_A": 0.1759,
+        "AA": 0.2043,
+        "AAA": 0.2084,
+        "MLB": 0.1854
+      },
+      "meanOvr": 38.788,
+      "mlbMeanOvr": 48.614,
+      "meanAge": 24.959,
+      "under25": 361,
+      "age35plus": 19,
+      "debuts": 213,
+      "meanDebutAge": 25.484,
+      "released": 307,
+      "retired": 154
+    }
+  ],
+  "gates": {
+    "uniqueIds": true,
+    "finite": true,
+    "activePoolStable": true,
+    "mlbShare": true,
+    "aaaBacklog": true,
+    "mlbTalentLevel": true,
+    "selectiveDebuts": true,
+    "debutAge": true,
+    "ageMix": true,
+    "levelShapeVs2026": true,
+    "classMeanReversion": true
+  },
+  "pass": true
+}

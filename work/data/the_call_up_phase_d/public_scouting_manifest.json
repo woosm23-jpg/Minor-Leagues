@@ -1,0 +1,23 @@
+{
+  "schema": "THE_CALL_UP_PHASE_D_PUBLIC_SCOUTING_MANIFEST_V1",
+  "season": 2026,
+  "createdAt": "2026-09-20T23:26:14.897835+00:00",
+  "baseSnapshotHash": "fnv1a32:21eb3434",
+  "sha256": "54554149776c25f7038398bb1e952bbecb6f43bee821c90f8b74cfaeffb50e28",
+  "coverage": {
+    "sourcePlayers": 1290,
+    "matchedPlayers": 1127,
+    "unmatchedSourcePlayers": 162,
+    "ambiguousSourcePlayers": 0,
+    "futureValuePlayers": 1127,
+    "riskPlayers": 1084,
+    "futureToolObservations": 5091,
+    "positionToolPlayers": 509,
+    "pitcherToolPlayers": 618,
+    "matchMethods": {
+      "ORG_NAME": 1037,
+      "GLOBAL_NAME": 90
+    }
+  },
+  "productionReady": false
+}
