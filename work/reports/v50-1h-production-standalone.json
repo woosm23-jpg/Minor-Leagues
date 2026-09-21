@@ -1,0 +1,21 @@
+{
+  "schema": "THE_CALL_UP_V50_1H_PRODUCTION_STANDALONE",
+  "pass": true,
+  "source": "Production Snapshot v2",
+  "filename": "THE_CALL_UP_SEASON_STANDALONE_v50_1_PRODUCTION.html",
+  "bytes": 66678659,
+  "sha256": "4b367a85fb23549458df38e339ad793d0c873906a3d2f2de16a76a4874c6a9fb",
+  "snapshotGitBlob": "a113be1ff629e68db8ccf8b7603badf1af83766a",
+  "checks": {
+    "doctype": true,
+    "koreanDocument": true,
+    "snapshotEmbedded": true,
+    "productionBadge": true,
+    "versionLabel": true,
+    "appRoot": true,
+    "moduleBootstrap": true,
+    "sizeOver1MB": true
+  },
+  "currentMvpGate": true,
+  "browserSmoke": "DEFERRED_TO_V50_2C"
+}
