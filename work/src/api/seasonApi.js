@@ -1671,7 +1671,7 @@ const seasonApi = Object.freeze({
     applySeasonEndAgingIfNeeded(session); updateCurrentDateToNextUserGame(session); return snapshot(session);
   },
   simulateToSeasonEnd(seasonId) {
-    const session = assertSession(seasonId); let safety=0;
+    const session = assertSession(seasonId);
     if (session.activeGameId) {
       const level = session.activeLevel ?? currentUserLevel(session);
       const activeSchedule = session.activeScheduleGameId ? scheduleGameById(session, session.activeScheduleGameId, level) : null;
@@ -1682,20 +1682,26 @@ const seasonApi = Object.freeze({
       clearActiveGame(session);
     }
     while (!worldComplete(session)) {
-      const level = currentUserLevel(session);
-      const game = nextUserGame(session);
-      if (game) {
-        recoverAllPlayersToDate(session, game.date);
-        simulateScheduledGame(session, level, game);
-        simulateWorldDate(session, game.date, { excludeLevel: level, excludeGameId: game.gameId });
-        runOrganizationReviewIfDue(session, game.date); updateCurrentDateToNextUserGame(session);
-      } else {
-        const pendingDates = SIMULATED_LEVELS.flatMap((itemLevel) => stateForLevel(session, itemLevel).schedule.filter((row) => row.status !== "FINAL").map((row) => row.date)).sort();
-        const date = pendingDates[0];
-        if (!date) break;
-        simulateWorldDate(session, date); runOrganizationReviewIfDue(session, date); recoverAllPlayersToDate(session, date);
+      const pending = SIMULATED_LEVELS.flatMap((itemLevel) => {
+        const state = stateForLevel(session, itemLevel);
+        if (!state) return [];
+        return state.schedule
+          .filter((row) => row.status !== "FINAL")
+          .map((row) => ({ level: itemLevel, date: row.date, gameId: row.gameId }));
+      }).sort((a, b) => a.date.localeCompare(b.date) || a.level.localeCompare(b.level) || a.gameId.localeCompare(b.gameId));
+      if (pending.length === 0) break;
+      const date = pending[0].date;
+      const before = pending.length;
+      recoverAllPlayersToDate(session, date);
+      simulateWorldDate(session, date);
+      runOrganizationReviewIfDue(session, date);
+      const after = SIMULATED_LEVELS.reduce((sum, itemLevel) => {
+        const state = stateForLevel(session, itemLevel);
+        return sum + (state ? state.schedule.filter((row) => row.status !== "FINAL").length : 0);
+      }, 0);
+      if (after >= before) {
+        throw new RangeError(`멀티레벨 시즌 시뮬레이션이 진행되지 않았습니다: ${date} (${before} -> ${after})`);
       }
-      if (++safety > 100) throw new RangeError("멀티레벨 시즌 시뮬레이션이 안전 한도를 초과했습니다.");
     }
     applySeasonEndAgingIfNeeded(session);
     return snapshot(session);

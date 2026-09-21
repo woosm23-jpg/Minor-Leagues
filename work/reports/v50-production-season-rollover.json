@@ -1,0 +1,30 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_SEASON_ROLLOVER_V50_V2",
+  "pass": true,
+  "durationSeconds": 404.6,
+  "completedSeason": {
+    "year": 2026,
+    "worldGamesCompleted": 10710,
+    "worldGamesTotal": 10710
+  },
+  "nextSeason": {
+    "year": 2027,
+    "startDate": "2027-03-25",
+    "worldGamesCompleted": 0,
+    "worldGamesTotal": 12150
+  },
+  "ecology": {
+    "retired": 82,
+    "generated": 82,
+    "totalRetired": 82,
+    "totalGenerated": 82
+  },
+  "levelRosterCounts": {
+    "MLB": 840,
+    "AAA": 837,
+    "AA": 804,
+    "HIGH_A": 839,
+    "A": 898
+  },
+  "saveRoundTrip": true
+}

@@ -11,10 +11,16 @@ function assertRole(role) {
   }
 }
 
-function getPitcherCapacityPitches(stamina, role, config = pitchingCalibration) {
+function resolvePitcherUsageRole(role, { startedGame = false } = {}) {
+  if (role === "SWING") return startedGame ? "SP" : "RP";
   assertRole(role);
+  return role;
+}
+
+function getPitcherCapacityPitches(stamina, role, config = pitchingCalibration) {
+  const resolvedRole = resolvePitcherUsageRole(role);
   const z = ratingToLatent(stamina);
-  const reliever = role !== "SP";
+  const reliever = resolvedRole !== "SP";
   const base = reliever
     ? config.fatigue.relieverCapacityPitchesAt50Stamina
     : config.fatigue.starterCapacityPitchesAt50Stamina;
@@ -29,9 +35,10 @@ function getPitcherCapacityPitches(stamina, role, config = pitchingCalibration) 
  * a flat per-pitch subtraction. At neutral stamina, ~50 pitches is Fresh/Normal,
  * ~85 pitches is Fatigued, and ~100 pitches approaches Exhausted.
  */
-function calculatePitcherFatigue({ pitchCount, stamina = 50, role = "SP" }, config = pitchingCalibration) {
+function calculatePitcherFatigue({ pitchCount, stamina = 50, role = "SP", startedGame = false }, config = pitchingCalibration) {
   if (!Number.isFinite(pitchCount) || pitchCount < 0) throw new RangeError("pitchCount는 0 이상의 유한한 값이어야 합니다.");
-  const capacity = getPitcherCapacityPitches(stamina, role, config);
+  const resolvedRole = resolvePitcherUsageRole(role, { startedGame });
+  const capacity = getPitcherCapacityPitches(stamina, resolvedRole, config);
   const ratio = pitchCount / capacity;
   return clamp(100 * ratio * ratio, 0, 100);
 }
@@ -44,13 +51,14 @@ function getEffectivePitcherRatings({
   pitchVelocityMph = null,
   stamina = 50,
   role = "SP",
-  pitchCount = 0
+  pitchCount = 0,
+  startedGame = false
 }, config = pitchingCalibration) {
   for (const [name, value] of Object.entries({ control, command, movement, stuff, stamina })) ratingToLatent(value, name);
-  assertRole(role);
-  const fatigue = calculatePitcherFatigue({ pitchCount, stamina, role }, config);
+  const resolvedRole = resolvePitcherUsageRole(role, { startedGame });
+  const fatigue = calculatePitcherFatigue({ pitchCount, stamina, role: resolvedRole }, config);
   const factor = fatigue / 100;
-  const reliever = role !== "SP";
+  const reliever = resolvedRole !== "SP";
   const rating = (value, penalty, bonus = 0) => clamp(value - penalty * factor + bonus, 20, 99);
   let velocity = pitchVelocityMph;
   if (velocity !== null && velocity !== undefined) {
@@ -74,4 +82,4 @@ function getEffectivePitcherRatings({
   });
 }
 
-export { getPitcherCapacityPitches, calculatePitcherFatigue, getEffectivePitcherRatings };
+export { resolvePitcherUsageRole, getPitcherCapacityPitches, calculatePitcherFatigue, getEffectivePitcherRatings };

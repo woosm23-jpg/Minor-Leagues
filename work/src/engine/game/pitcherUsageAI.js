@@ -1,6 +1,6 @@
 import { pitchingCalibration } from "../../config/pitchingCalibration.js";
 import { ratingToLatent } from "../ratings/latentRating.js";
-import { calculatePitcherFatigue } from "./pitcherFatigue.js";
+import { calculatePitcherFatigue, resolvePitcherUsageRole } from "./pitcherFatigue.js";
 
 function lookupFrom(players) {
   if (players instanceof Map) return (id) => players.get(id);
@@ -14,8 +14,8 @@ function validatePlan(plan, team) {
   if (!Array.isArray(plan.bullpenIds)) throw new TypeError(`${team}.bullpenIds는 배열이어야 합니다.`);
 }
 
-function getSoftLimit(player, config) {
-  const role = player.pitching?.role ?? "SP";
+function getSoftLimit(player, config, { startedGame = false } = {}) {
+  const role = resolvePitcherUsageRole(player.pitching?.role ?? "SP", { startedGame });
   const stamina = player.pitching?.stamina ?? 50;
   const z = ratingToLatent(stamina);
   if (role === "SP") return config.usage.starterSoftLimitAt50Stamina + z * config.usage.starterSoftLimitPerLatent;
@@ -33,12 +33,12 @@ function canRemoveReliever(state, usage, config) {
   return usage.battersFaced >= config.usage.relieverMinimumBatters || hasCompletedEntryHalf(state, usage);
 }
 
-function shouldHook({ state, player, usage, config }) {
+function shouldHook({ state, player, usage, config, startedGame = false }) {
   if (!usage) return false;
-  const role = player.pitching?.role ?? "SP";
+  const role = resolvePitcherUsageRole(player.pitching?.role ?? "SP", { startedGame });
   const stamina = player.pitching?.stamina ?? 50;
-  const fatigue = calculatePitcherFatigue({ pitchCount: usage.pitchCount, stamina, role }, config);
-  const limit = getSoftLimit(player, config);
+  const fatigue = calculatePitcherFatigue({ pitchCount: usage.pitchCount, stamina, role, startedGame }, config);
+  const limit = getSoftLimit(player, config, { startedGame });
 
   if (role === "SP") {
     if (usage.outsRecorded >= 21 && usage.runsAllowed <= config.usage.starterFinishGameMaxRuns) {
@@ -81,8 +81,10 @@ function createPitcherUsageManager({ players, pitchingPlans, config = pitchingCa
     const currentId = state.currentPitcherId[fieldingTeam];
     const player = lookup(currentId);
     if (!player) throw new RangeError(`투수를 찾을 수 없습니다: ${currentId}`);
-    const usage = state.pitcherUsage[fieldingTeam][currentId];
-    if (!shouldHook({ state, player, usage, config })) return null;
+    const teamUsage = state.pitcherUsage[fieldingTeam] ?? {};
+    const usage = teamUsage[currentId];
+    const startedGame = Object.keys(teamUsage)[0] === currentId;
+    if (!shouldHook({ state, player, usage, config, startedGame })) return null;
     return nextAvailableBullpen(pitchingPlans[fieldingTeam], state.pitcherUsage[fieldingTeam]);
   };
 }

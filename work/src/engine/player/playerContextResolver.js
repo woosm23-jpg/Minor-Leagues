@@ -1,5 +1,5 @@
 import { buildPAContext } from "../pa/context.js";
-import { getEffectivePitcherRatings } from "../game/pitcherFatigue.js";
+import { getEffectivePitcherRatings, resolvePitcherUsageRole } from "../game/pitcherFatigue.js";
 import { FIELDING_POSITIONS, getFieldingTeam } from "../game/gameState.js";
 
 function asLookup(players) {
@@ -127,12 +127,21 @@ function getRunnerProfile(player) {
 }
 
 
+function resolvePitcherThrowHand(throws, batterBats = "R") {
+  if (throws === "R" || throws === "L") return throws;
+  if (throws === "S") {
+    if (batterBats === "L" || batterBats === "R") return batterBats;
+    return "R";
+  }
+  throw new RangeError(`pitcher throws는 R/L/S 중 하나여야 합니다: ${throws}`);
+}
+
 function getPitcherRunningGameProfile(player) {
   assertPlayer(player, player?.id);
   const pitching = assertSection(player, "pitching");
   return Object.freeze({
     id: player.id,
-    throws: player.throws,
+    throws: resolvePitcherThrowHand(player.throws),
     holdRunner: pitching.holdRunner ?? 50
   });
 }
@@ -168,7 +177,7 @@ function getCachedDerivedStuff(player) {
   return derived.stuff;
 }
 
-function getPitcherPAProfile(player, getPitcherStuff = getCachedDerivedStuff, gameUsage = null) {
+function getPitcherPAProfile(player, getPitcherStuff = getCachedDerivedStuff, gameUsage = null, { startedGame = false } = {}) {
   assertPlayer(player, player?.id);
   const pitching = assertSection(player, "pitching");
   if (typeof getPitcherStuff !== "function") {
@@ -182,7 +191,7 @@ function getPitcherPAProfile(player, getPitcherStuff = getCachedDerivedStuff, ga
     stuff: getPitcherStuff(player),
     pitchVelocityMph: pitching.pitchVelocityMph ?? null,
     stamina: pitching.stamina ?? 50,
-    role: pitching.role ?? "SP"
+    role: resolvePitcherUsageRole(pitching.role ?? "SP", { startedGame })
   };
   const effective = gameUsage
     ? getEffectivePitcherRatings({ ...base, pitchCount: gameUsage.pitchCount ?? 0 })
@@ -232,11 +241,14 @@ function createPlayerContextResolver({
 
     const fieldingTeam = getFieldingTeam(state);
     const args = { state, batterId, pitcherId, batter, pitcher, fieldingTeam };
-    const gameUsage = state.pitcherUsage?.[fieldingTeam]?.[pitcherId] ?? null;
+    const teamUsage = state.pitcherUsage?.[fieldingTeam] ?? {};
+    const gameUsage = teamUsage[pitcherId] ?? null;
+    const startedGame = Object.keys(teamUsage)[0] === pitcherId;
     const explicitDefense = resolveDefense ? resolveDefense(args) : null;
     const defense = explicitDefense ?? buildGameDefensePackage(state, fieldingTeam, lookup);
 
-    const pitcherProfile = getPitcherPAProfile(pitcher, getPitcherStuff, gameUsage);
+    const rawPitcherProfile = getPitcherPAProfile(pitcher, getPitcherStuff, gameUsage, { startedGame });
+    const pitcherProfile = Object.freeze({ ...rawPitcherProfile, throws: resolvePitcherThrowHand(rawPitcherProfile.throws, batter.bats) });
     const selectedPitchVelocityMph = resolvePitchVelocity({ ...args, pitcherProfile });
 
     return buildPAContext({
@@ -274,4 +286,4 @@ function createPlayerContextResolver({
   return resolver;
 }
 
-export { getHitterPAProfile, getFielderDefenseProfile, buildGameDefensePackage, getRunnerProfile, getPitcherRunningGameProfile, getCatcherRunningGameProfile, createRunnerProfileResolver, getCachedDerivedStuff, getPitcherPAProfile, createPlayerContextResolver };
+export { getHitterPAProfile, getFielderDefenseProfile, buildGameDefensePackage, getRunnerProfile, resolvePitcherThrowHand, getPitcherRunningGameProfile, getCatcherRunningGameProfile, createRunnerProfileResolver, getCachedDerivedStuff, getPitcherPAProfile, createPlayerContextResolver };
