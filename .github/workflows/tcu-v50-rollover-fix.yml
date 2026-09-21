@@ -1,4 +1,4 @@
-name: THE CALL-UP v50 Rollover Fix Gate
+name: THE CALL-UP v50 Rollover Fix Gate v2
 
 on:
   workflow_dispatch:
@@ -33,87 +33,114 @@ jobs:
           test "$(git hash-object work/src/engine/player/playerContextResolver.js)" = "e62b493b921e0198ed424cad993d78c349fd3576"
           test -f work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
 
-      - name: Apply fixes
+      - name: Apply pitcher and chronological rollover fixes
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/tcu_patch.b64 <<'EOF'
-          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
-          EOF
-          tr -d '[:space:]' < /tmp/tcu_patch.b64 | base64 -d | gzip -d > /tmp/tcu.patch
-          patch -p0 --forward < /tmp/tcu.patch
-          test "$(git hash-object work/src/api/seasonApi.js)" = "43eb81c034bb1778ccc42d380b62ba43e208d80a"
-          test "$(git hash-object work/src/engine/game/pitcherFatigue.js)" = "88555070051b0792d379e9763255ed79d03b4c17"
-          test "$(git hash-object work/src/engine/game/pitcherUsageAI.js)" = "c897d17a8bf66baf1808d8c8b71fddc7c793789c"
-          test "$(git hash-object work/src/engine/player/playerContextResolver.js)" = "a76abb1017356c36272879fb614febac6812ef37"
-          test "$(git hash-object work/scripts/verify-production-season-rollover-v50.mjs)" = "ce70536b256322dc0b820a227b29c4dc31dfa04e"
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_once(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f"missing patch anchor: {label}")
+              return text.replace(old, new, 1)
+
+          # 1) SWING pitcher role normalization.
+          path = Path('work/src/engine/game/pitcherFatigue.js')
+          s = path.read_text()
+          anchor = '''function getPitcherCapacityPitches(stamina, role, config = pitchingCalibration) {\n  assertRole(role);\n  const z = ratingToLatent(stamina);\n  const reliever = role !== "SP";'''
+          replacement = '''function resolvePitcherUsageRole(role, { startedGame = false } = {}) {\n  if (role === "SWING") return startedGame ? "SP" : "RP";\n  assertRole(role);\n  return role;\n}\n\nfunction getPitcherCapacityPitches(stamina, role, config = pitchingCalibration) {\n  const resolvedRole = resolvePitcherUsageRole(role);\n  const z = ratingToLatent(stamina);\n  const reliever = resolvedRole !== "SP";'''
+          s = replace_once(s, anchor, replacement, 'pitcher capacity role')
+          s = replace_once(s,
+              'function calculatePitcherFatigue({ pitchCount, stamina = 50, role = "SP" }, config = pitchingCalibration) {\n  if (!Number.isFinite(pitchCount) || pitchCount < 0) throw new RangeError("pitchCount는 0 이상의 유한한 값이어야 합니다.");\n  const capacity = getPitcherCapacityPitches(stamina, role, config);',
+              'function calculatePitcherFatigue({ pitchCount, stamina = 50, role = "SP", startedGame = false }, config = pitchingCalibration) {\n  if (!Number.isFinite(pitchCount) || pitchCount < 0) throw new RangeError("pitchCount는 0 이상의 유한한 값이어야 합니다.");\n  const resolvedRole = resolvePitcherUsageRole(role, { startedGame });\n  const capacity = getPitcherCapacityPitches(stamina, resolvedRole, config);',
+              'fatigue role')
+          s = replace_once(s,
+              '  role = "SP",\n  pitchCount = 0\n}, config = pitchingCalibration) {\n  for (const [name, value] of Object.entries({ control, command, movement, stuff, stamina })) ratingToLatent(value, name);\n  assertRole(role);\n  const fatigue = calculatePitcherFatigue({ pitchCount, stamina, role }, config);\n  const factor = fatigue / 100;\n  const reliever = role !== "SP";',
+              '  role = "SP",\n  pitchCount = 0,\n  startedGame = false\n}, config = pitchingCalibration) {\n  for (const [name, value] of Object.entries({ control, command, movement, stuff, stamina })) ratingToLatent(value, name);\n  const resolvedRole = resolvePitcherUsageRole(role, { startedGame });\n  const fatigue = calculatePitcherFatigue({ pitchCount, stamina, role: resolvedRole }, config);\n  const factor = fatigue / 100;\n  const reliever = resolvedRole !== "SP";',
+              'effective pitcher role')
+          s = replace_once(s,
+              'export { getPitcherCapacityPitches, calculatePitcherFatigue, getEffectivePitcherRatings };',
+              'export { resolvePitcherUsageRole, getPitcherCapacityPitches, calculatePitcherFatigue, getEffectivePitcherRatings };',
+              'fatigue export')
+          path.write_text(s)
+
+          # 2) Usage AI: a SWING arm uses starter limits only when he actually started this game.
+          path = Path('work/src/engine/game/pitcherUsageAI.js')
+          s = path.read_text()
+          s = replace_once(s,
+              'import { calculatePitcherFatigue } from "./pitcherFatigue.js";',
+              'import { calculatePitcherFatigue, resolvePitcherUsageRole } from "./pitcherFatigue.js";',
+              'usage import')
+          s = replace_once(s,
+              'function getSoftLimit(player, config) {\n  const role = player.pitching?.role ?? "SP";',
+              'function getSoftLimit(player, config, { startedGame = false } = {}) {\n  const role = resolvePitcherUsageRole(player.pitching?.role ?? "SP", { startedGame });',
+              'soft limit role')
+          s = replace_once(s,
+              'function shouldHook({ state, player, usage, config }) {\n  if (!usage) return false;\n  const role = player.pitching?.role ?? "SP";\n  const stamina = player.pitching?.stamina ?? 50;\n  const fatigue = calculatePitcherFatigue({ pitchCount: usage.pitchCount, stamina, role }, config);\n  const limit = getSoftLimit(player, config);',
+              'function shouldHook({ state, player, usage, config, startedGame = false }) {\n  if (!usage) return false;\n  const role = resolvePitcherUsageRole(player.pitching?.role ?? "SP", { startedGame });\n  const stamina = player.pitching?.stamina ?? 50;\n  const fatigue = calculatePitcherFatigue({ pitchCount: usage.pitchCount, stamina, role, startedGame }, config);\n  const limit = getSoftLimit(player, config, { startedGame });',
+              'hook role')
+          s = replace_once(s,
+              '    const usage = state.pitcherUsage[fieldingTeam][currentId];\n    if (!shouldHook({ state, player, usage, config })) return null;',
+              '    const teamUsage = state.pitcherUsage[fieldingTeam] ?? {};\n    const usage = teamUsage[currentId];\n    const startedGame = Object.keys(teamUsage)[0] === currentId;\n    if (!shouldHook({ state, player, usage, config, startedGame })) return null;',
+              'usage starter detection')
+          path.write_text(s)
+
+          # 3) Switch-pitcher hand resolution + SWING role in PA resolver.
+          path = Path('work/src/engine/player/playerContextResolver.js')
+          s = path.read_text()
+          s = replace_once(s,
+              'import { getEffectivePitcherRatings } from "../game/pitcherFatigue.js";',
+              'import { getEffectivePitcherRatings, resolvePitcherUsageRole } from "../game/pitcherFatigue.js";',
+              'resolver import')
+          insert_anchor = 'function getPitcherRunningGameProfile(player) {'
+          helper = '''function resolvePitcherThrowHand(throws, batterBats = "R") {\n  if (throws === "R" || throws === "L") return throws;\n  if (throws === "S") {\n    if (batterBats === "L" || batterBats === "R") return batterBats;\n    return "R";\n  }\n  throw new RangeError(`pitcher throws는 R/L/S 중 하나여야 합니다: ${throws}`);\n}\n\n'''
+          if 'function resolvePitcherThrowHand' not in s:
+              s = replace_once(s, insert_anchor, helper + insert_anchor, 'switch pitcher helper')
+          s = replace_once(s,
+              '    throws: player.throws,\n    holdRunner: pitching.holdRunner ?? 50',
+              '    throws: resolvePitcherThrowHand(player.throws),\n    holdRunner: pitching.holdRunner ?? 50',
+              'running-game throw hand')
+          s = replace_once(s,
+              'function getPitcherPAProfile(player, getPitcherStuff = getCachedDerivedStuff, gameUsage = null) {',
+              'function getPitcherPAProfile(player, getPitcherStuff = getCachedDerivedStuff, gameUsage = null, { startedGame = false } = {}) {',
+              'PA profile signature')
+          s = replace_once(s,
+              '    role: pitching.role ?? "SP"',
+              '    role: resolvePitcherUsageRole(pitching.role ?? "SP", { startedGame })',
+              'PA profile role')
+          s = replace_once(s,
+              '    const gameUsage = state.pitcherUsage?.[fieldingTeam]?.[pitcherId] ?? null;\n    const explicitDefense = resolveDefense ? resolveDefense(args) : null;',
+              '    const teamUsage = state.pitcherUsage?.[fieldingTeam] ?? {};\n    const gameUsage = teamUsage[pitcherId] ?? null;\n    const startedGame = Object.keys(teamUsage)[0] === pitcherId;\n    const explicitDefense = resolveDefense ? resolveDefense(args) : null;',
+              'PA starter detection')
+          s = replace_once(s,
+              '    const pitcherProfile = getPitcherPAProfile(pitcher, getPitcherStuff, gameUsage);\n    const selectedPitchVelocityMph = resolvePitchVelocity({ ...args, pitcherProfile });',
+              '    const rawPitcherProfile = getPitcherPAProfile(pitcher, getPitcherStuff, gameUsage, { startedGame });\n    const pitcherProfile = Object.freeze({ ...rawPitcherProfile, throws: resolvePitcherThrowHand(rawPitcherProfile.throws, batter.bats) });\n    const selectedPitchVelocityMph = resolvePitchVelocity({ ...args, pitcherProfile });',
+              'PA hand resolution')
+          s = replace_once(s,
+              'export { getHitterPAProfile, getFielderDefenseProfile, buildGameDefensePackage, getRunnerProfile, getPitcherRunningGameProfile, getCatcherRunningGameProfile, createRunnerProfileResolver, getCachedDerivedStuff, getPitcherPAProfile, createPlayerContextResolver };',
+              'export { getHitterPAProfile, getFielderDefenseProfile, buildGameDefensePackage, getRunnerProfile, resolvePitcherThrowHand, getPitcherRunningGameProfile, getCatcherRunningGameProfile, createRunnerProfileResolver, getCachedDerivedStuff, getPitcherPAProfile, createPlayerContextResolver };',
+              'resolver export')
+          path.write_text(s)
+
+          # 4) Full-season simulation must process the whole five-level world chronologically.
+          path = Path('work/src/api/seasonApi.js')
+          s = path.read_text()
+          pattern = re.compile(r'  simulateToSeasonEnd\(seasonId\) \{.*?\n  \},\n  advanceToNextSeason\(seasonId\)', re.S)
+          replacement = '''  simulateToSeasonEnd(seasonId) {\n    const session = assertSession(seasonId);\n    if (session.activeGameId) {\n      const level = session.activeLevel ?? currentUserLevel(session);\n      const activeSchedule = session.activeScheduleGameId ? scheduleGameById(session, session.activeScheduleGameId, level) : null;\n      if (activeSchedule && activeSchedule.status !== "FINAL") {\n        const finalGame = gameApi.simulateToFinal(session.activeGameId, { approach: "BALANCED" });\n        finalizeInteractiveGameIfNeeded(session, finalGame);\n      }\n      clearActiveGame(session);\n    }\n    while (!worldComplete(session)) {\n      const pending = SIMULATED_LEVELS.flatMap((itemLevel) => {\n        const state = stateForLevel(session, itemLevel);\n        if (!state) return [];\n        return state.schedule\n          .filter((row) => row.status !== "FINAL")\n          .map((row) => ({ level: itemLevel, date: row.date, gameId: row.gameId }));\n      }).sort((a, b) => a.date.localeCompare(b.date) || a.level.localeCompare(b.level) || a.gameId.localeCompare(b.gameId));\n      if (pending.length === 0) break;\n      const date = pending[0].date;\n      const before = pending.length;\n      recoverAllPlayersToDate(session, date);\n      simulateWorldDate(session, date);\n      runOrganizationReviewIfDue(session, date);\n      const after = SIMULATED_LEVELS.reduce((sum, itemLevel) => {\n        const state = stateForLevel(session, itemLevel);\n        return sum + (state ? state.schedule.filter((row) => row.status !== "FINAL").length : 0);\n      }, 0);\n      if (after >= before) {\n        throw new RangeError(`멀티레벨 시즌 시뮬레이션이 진행되지 않았습니다: ${date} (${before} -> ${after})`);\n      }\n    }\n    applySeasonEndAgingIfNeeded(session);\n    return snapshot(session);\n  },\n  advanceToNextSeason(seasonId)'''
+          s2, count = pattern.subn(replacement, s, count=1)
+          if count != 1:
+              raise SystemExit('missing patch anchor: simulateToSeasonEnd')
+          path.write_text(s2)
+          PY
+
           node --check work/src/api/seasonApi.js
           node --check work/src/engine/game/pitcherFatigue.js
           node --check work/src/engine/game/pitcherUsageAI.js
           node --check work/src/engine/player/playerContextResolver.js
-          node --check work/scripts/verify-production-season-rollover-v50.mjs
 
-      - name: Focused pitcher regression
+      - name: Focused regression
         shell: bash
         run: |
           set -euo pipefail
@@ -126,8 +153,106 @@ jobs:
           assert.equal(resolvePitcherUsageRole('SWING', { startedGame: false }), 'RP');
           assert.equal(resolvePitcherThrowHand('S', 'L'), 'L');
           assert.equal(resolvePitcherThrowHand('S', 'R'), 'R');
-          console.log('focused pitcher regression PASS');
+          assert.equal(resolvePitcherThrowHand('S', 'S'), 'R');
+          console.log('focused regression PASS');
           NODE
+
+      - name: Build rollover verifier
+        shell: bash
+        run: |
+          cat > work/scripts/verify-production-season-rollover-v50.mjs <<'NODE'
+          import fs from 'node:fs';
+          import zlib from 'node:zlib';
+          import assert from 'node:assert/strict';
+          import { seasonApi } from '../src/api/seasonApi.js';
+
+          const LEVELS = ['MLB', 'AAA', 'AA', 'HIGH_A', 'A'];
+          const SNAPSHOT_PATH = 'data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz';
+          const REPORT_PATH = 'reports/v50-production-season-rollover.json';
+          const snapshot = JSON.parse(zlib.gunzipSync(fs.readFileSync(SNAPSHOT_PATH)).toString('utf8'));
+          const catalog = seasonApi.getCareerCreationCatalog({ masterSnapshot: snapshot });
+          assert.equal(catalog.organizations.length, 30);
+
+          const input = {
+            name: 'Rollover QA', nationality: '대한민국', hometown: '구미', age: 18,
+            heightCm: 180, weightKg: 78, bodyType: 'ATHLETIC', bats: 'R', throws: 'R',
+            primaryPosition: 'SS', archetype: 'HIT_FIRST', visibleTraits: ['QUICK_BAT', 'SOFT_HANDS'],
+            organizationMode: 'FAVORITE', favoriteOrganizationId: String(catalog.organizations[0].id)
+          };
+
+          function levelRosterCounts(fixture) {
+            return Object.fromEntries(LEVELS.map((level) => [
+              level,
+              Object.values(fixture.levelLeagues[level].rosters)
+                .reduce((sum, roster) => sum + Object.keys(roster.players).length, 0)
+            ]));
+          }
+
+          const startedAt = Date.now();
+          const created = seasonApi.createCareerSeason({ seed: 'v50-production-rollover-ci-v2', input, masterSnapshot: snapshot });
+          const before = seasonApi.serializeSeason(created.seasonId);
+          assert.equal(before.fixture.worldMode, 'PRODUCTION_REAL');
+          assert.equal(before.fixture.startDate, '2026-03-25');
+          const initialCounts = levelRosterCounts(before.fixture);
+
+          const completed = seasonApi.simulateToSeasonEnd(created.seasonId);
+          assert.equal(completed.status, 'COMPLETE');
+          assert.equal(completed.seasonYear, 2026);
+          assert.equal(completed.progress.worldLeagueGamesCompleted, completed.progress.worldLeagueGamesTotal);
+          for (const level of LEVELS) {
+            assert.equal(completed.userStatsByLevel[level].leagueGamesCompleted, completed.userStatsByLevel[level].leagueGamesTotal, `${level} incomplete`);
+          }
+
+          const next = seasonApi.advanceToNextSeason(created.seasonId);
+          assert.equal(next.seasonYear, 2027);
+          assert.equal(next.status, 'REGULAR_SEASON');
+          assert.equal(next.startDate, '2027-03-25');
+          assert.equal(next.progress.worldLeagueGamesCompleted, 0);
+          assert.ok(next.progress.worldLeagueGamesTotal > 0);
+          assert.equal(next.leagueEcology?.year, 2027);
+          assert.ok(next.leagueEcology?.lastOffseason);
+          assert.equal(next.leagueEcology.lastOffseason.retired, next.leagueEcology.lastOffseason.generated);
+
+          const after = seasonApi.serializeSeason(created.seasonId);
+          assert.deepEqual(levelRosterCounts(after.fixture), initialCounts);
+          assert.ok(after.fixture.organization.levels[after.fixture.organization.userLevel].roster.players[after.fixture.userPlayerId]);
+
+          const saved = seasonApi.serializeSeason(created.seasonId);
+          const restored = seasonApi.restoreSeason(structuredClone(saved));
+          assert.equal(restored.seasonYear, 2027);
+          assert.equal(restored.status, 'REGULAR_SEASON');
+          const restoredPayload = seasonApi.serializeSeason(restored.seasonId);
+          assert.deepEqual(levelRosterCounts(restoredPayload.fixture), initialCounts);
+          assert.deepEqual(restoredPayload.leagueEcologyState, saved.leagueEcologyState);
+
+          const report = {
+            schema: 'THE_CALL_UP_PRODUCTION_SEASON_ROLLOVER_V50_V2',
+            pass: true,
+            durationSeconds: Math.round((Date.now() - startedAt) / 100) / 10,
+            completedSeason: {
+              year: completed.seasonYear,
+              worldGamesCompleted: completed.progress.worldLeagueGamesCompleted,
+              worldGamesTotal: completed.progress.worldLeagueGamesTotal
+            },
+            nextSeason: {
+              year: next.seasonYear,
+              startDate: next.startDate,
+              worldGamesCompleted: next.progress.worldLeagueGamesCompleted,
+              worldGamesTotal: next.progress.worldLeagueGamesTotal
+            },
+            ecology: {
+              retired: next.leagueEcology.lastOffseason.retired,
+              generated: next.leagueEcology.lastOffseason.generated,
+              totalRetired: next.leagueEcology.totalRetired,
+              totalGenerated: next.leagueEcology.totalGenerated
+            },
+            levelRosterCounts: initialCounts,
+            saveRoundTrip: true
+          };
+          fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2) + '\n');
+          console.log(JSON.stringify(report, null, 2));
+          NODE
+          node --check work/scripts/verify-production-season-rollover-v50.mjs
 
       - name: Production 2026 to 2027 rollover gate
         shell: bash
@@ -152,7 +277,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Fix v50 Production season rollover path [skip ci]"
+            git commit -m "Fix v50 Production chronological season rollover [skip ci]"
             git push origin HEAD:main
           fi
 
@@ -160,6 +285,6 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: the-call-up-v50-production-rollover-fix
+          name: the-call-up-v50-production-rollover-v2
           path: work/reports/v50-production-season-rollover.json
           if-no-files-found: ignore
