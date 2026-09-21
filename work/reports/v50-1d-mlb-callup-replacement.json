@@ -1,0 +1,33 @@
+{
+  "schema": "THE_CALL_UP_V50_1D_MLB_CALLUP_REPLACEMENT",
+  "pass": true,
+  "verified": true,
+  "source": "Production Snapshot v2",
+  "organization": {
+    "id": "109",
+    "name": "Arizona Diamondbacks"
+  },
+  "aaaSample": {
+    "gamesSimulated": 5,
+    "G": 5,
+    "PA": 22
+  },
+  "callup": {
+    "date": "2026-04-01",
+    "userId": "user_001",
+    "replacedPlayerId": "691783",
+    "mode": "NATURAL",
+    "position": "CF",
+    "transactionType": "PLAYER_PROMOTED",
+    "replacementType": "PLAYER_DEMOTED",
+    "careerEventCount": 1
+  },
+  "mlbDebut": {
+    "boundedSteps": 1,
+    "G": 1,
+    "eventCount": 1,
+    "date": "2026-04-02",
+    "gameId": "real_MLB_825105"
+  },
+  "restoreRoundTrip": true
+}

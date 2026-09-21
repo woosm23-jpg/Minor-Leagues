@@ -472,9 +472,50 @@ function nextUserGame(session) {
   const state = stateForLevel(session, level);
   return state ? getNextTeamGame(state, userTeamIdForLevel(session, level)) : null;
 }
+
+function earliestPendingWorldDate(session) {
+  let earliest = null;
+  for (const level of SIMULATED_LEVELS) {
+    const state = stateForLevel(session, level);
+    if (!state) continue;
+    for (const game of state.schedule) {
+      if (game.status === "FINAL") continue;
+      if (earliest === null || game.date < earliest) earliest = game.date;
+    }
+  }
+  return earliest;
+}
+
+function prepareNextUserGameChronologically(session) {
+  let safety = 0;
+  while (!worldComplete(session)) {
+    const level = currentUserLevel(session);
+    const game = nextUserGame(session);
+    if (!game) return { level, game: null };
+
+    const earliest = earliestPendingWorldDate(session);
+    if (earliest === null || earliest >= game.date) return { level, game };
+    if (earliest < session.playerStateDate) {
+      throw new RangeError(`미처리 월드 일정이 현재 날짜보다 과거입니다: ${earliest} < ${session.playerStateDate}`);
+    }
+
+    recoverAllPlayersToDate(session, earliest);
+    simulateWorldDate(session, earliest);
+    runOrganizationReviewIfDue(session, earliest);
+    applySeasonEndAgingIfNeeded(session);
+
+    safety += 1;
+    if (safety > 420) throw new RangeError("사용자 경기 전 월드 일정 정리가 안전 한도를 초과했습니다.");
+  }
+  return { level: currentUserLevel(session), game: nextUserGame(session) };
+}
+
 function updateCurrentDateToNextUserGame(session) {
   const next = nextUserGame(session);
-  if (next) recoverAllPlayersToDate(session, next.date);
+  if (!next) return;
+  const earliest = earliestPendingWorldDate(session);
+  const target = earliest && earliest < next.date ? earliest : next.date;
+  if (target >= session.playerStateDate) recoverAllPlayersToDate(session, target);
 }
 
 function recordResult(session, level, game, { awayRuns, homeRuns, userBattingLine = null, battingBySide = null, pitchingBySide = null, startingPitcherIds = [] }) {
@@ -1382,8 +1423,8 @@ function snapshot(session) {
 function startCurrentGameInternal(session) {
   let safety = 0;
   while (true) {
-    const level = currentUserLevel(session);
-    const game = nextUserGame(session); if (!game) return null;
+    const prepared = prepareNextUserGameChronologically(session);
+    const level = prepared.level, game = prepared.game; if (!game) return null;
     recoverAllPlayersToDate(session, game.date);
     if (session.activeGameId && session.activeScheduleGameId === game.gameId && session.activeLevel === level) return gameApi.getGame(session.activeGameId);
     if (session.activeGameId) gameApi.closeGame(session.activeGameId);
@@ -1638,7 +1679,8 @@ const seasonApi = Object.freeze({
     return snapshot(session);
   },
   simulateCurrentGame(seasonId) {
-    const session = assertSession(seasonId); session.lastProgress = null; const level = currentUserLevel(session), game = nextUserGame(session); if (!game) return snapshot(session);
+    const session = assertSession(seasonId); session.lastProgress = null;
+    const prepared = prepareNextUserGameChronologically(session), level = prepared.level, game = prepared.game; if (!game) return snapshot(session);
     recoverAllPlayersToDate(session, game.date);
     if (session.activeGameId && session.activeScheduleGameId === game.gameId && session.activeLevel === level) {
       const finalGame = gameApi.simulateToFinal(session.activeGameId, { approach: "BALANCED" }); finalizeInteractiveGameIfNeeded(session, finalGame);
@@ -1652,7 +1694,7 @@ const seasonApi = Object.freeze({
   simulateCurrentSeries(seasonId) {
     const session = assertSession(seasonId);
     session.lastProgress = null;
-    const startLevel = currentUserLevel(session), first = nextUserGame(session); if (!first) return snapshot(session);
+    const prepared = prepareNextUserGameChronologically(session), startLevel = prepared.level, first = prepared.game; if (!first) return snapshot(session);
     const seriesId = first.seriesId, userTeamId = userTeamIdForLevel(session, startLevel);
     if (session.activeGameId && session.activeScheduleGameId === first.gameId && session.activeLevel === startLevel) {
       const finalGame = gameApi.simulateToFinal(session.activeGameId, { approach: "BALANCED" });
@@ -1663,6 +1705,8 @@ const seasonApi = Object.freeze({
     const remaining = getSeriesGames(remainingState, seriesId).filter((g) => (g.awayTeamId === userTeamId || g.homeTeamId === userTeamId) && g.status !== "FINAL" && g.date >= session.playerStateDate).sort((a,b)=>a.date.localeCompare(b.date));
     for (const game of remaining) {
       if (currentUserLevel(session) !== startLevel) break;
+      const nextPrepared = prepareNextUserGameChronologically(session);
+      if (nextPrepared.level !== startLevel || nextPrepared.game?.gameId !== game.gameId) break;
       recoverAllPlayersToDate(session, game.date);
       simulateScheduledGame(session, startLevel, game);
       simulateWorldDate(session, game.date, { excludeLevel: startLevel, excludeGameId: game.gameId });
