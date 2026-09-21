@@ -1,0 +1,170 @@
+name: THE CALL-UP v50.2b Rollover Evidence Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/tcu-v50-2b-rollover-evidence.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rollover-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify v50.2b evidence baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVIDENCE_COMMIT="f28e03a44a249c65e217dcca370059542dcad821"
+
+          git merge-base --is-ancestor "$EVIDENCE_COMMIT" HEAD
+          test -f work/reports/v50-2a-production-data-runtime.json
+          test -f work/reports/v50-production-season-rollover.json
+          test -f work/scripts/verify-production-season-rollover-v50.mjs
+
+          test "$(git hash-object work/reports/v50-production-season-rollover.json)" = "629a3e7b33bf274525563e28ff456868bd96bd18"
+          test "$(git hash-object work/scripts/verify-production-season-rollover-v50.mjs)" = "b50802f80d1971b6420096b3c3395640093f266b"
+
+          test "$(git hash-object work/src/services/productionOffseasonEcology.js)" = "f630e8372f0a044d3f90cef669de98bda2861642"
+          test "$(git hash-object work/src/services/productionSeasonFactory.js)" = "cff0d41155a7836363756e47e253bdfed3ccec11"
+          test "$(git hash-object work/src/services/seasonRolloverService.js)" = "7a3ddc17bfc3fb379d3846a0cc2436eed938cb8d"
+          test "$(git hash-object work/src/services/seasonSerialization.js)" = "6cb7b0c5b814b2104a9c83651c1905c629b8269d"
+
+      - name: Verify rollover code continuity and evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+          import subprocess
+
+          EVIDENCE_COMMIT = "f28e03a44a249c65e217dcca370059542dcad821"
+          SOURCE_PATH = "work/src/api/seasonApi.js"
+
+          def git_show(ref, path):
+              return subprocess.check_output(
+                  ["git", "show", f"{ref}:{path}"],
+                  text=True
+              )
+
+          def extract_rollover_surface(text):
+              start = text.index("simulateToSeasonEnd(seasonId) {")
+              end = text.index("  closeActiveGame(seasonId)", start)
+              return text[start:end]
+
+          current_text = Path(SOURCE_PATH).read_text(encoding="utf-8")
+          evidence_text = git_show(EVIDENCE_COMMIT, SOURCE_PATH)
+
+          current_surface = extract_rollover_surface(current_text)
+          evidence_surface = extract_rollover_surface(evidence_text)
+          if current_surface != evidence_surface:
+              raise SystemExit("simulateToSeasonEnd/advanceToNextSeason changed since verified rollover evidence")
+
+          surface_sha256 = hashlib.sha256(current_surface.encode("utf-8")).hexdigest()
+
+          evidence = json.loads(
+              Path("work/reports/v50-production-season-rollover.json").read_text(encoding="utf-8")
+          )
+          data_runtime = json.loads(
+              Path("work/reports/v50-2a-production-data-runtime.json").read_text(encoding="utf-8")
+          )
+
+          assert evidence["schema"] == "THE_CALL_UP_PRODUCTION_SEASON_ROLLOVER_V50_V2"
+          assert evidence["pass"] is True
+          assert evidence["completedSeason"] == {
+              "year": 2026,
+              "worldGamesCompleted": 10710,
+              "worldGamesTotal": 10710
+          }
+          assert evidence["nextSeason"] == {
+              "year": 2027,
+              "startDate": "2027-03-25",
+              "worldGamesCompleted": 0,
+              "worldGamesTotal": 12150
+          }
+          assert evidence["ecology"]["retired"] == 82
+          assert evidence["ecology"]["generated"] == 82
+          assert evidence["ecology"]["retired"] == evidence["ecology"]["generated"]
+          assert evidence["levelRosterCounts"] == {
+              "MLB": 840,
+              "AAA": 837,
+              "AA": 804,
+              "HIGH_A": 839,
+              "A": 898
+          }
+          assert evidence["saveRoundTrip"] is True
+
+          assert data_runtime["schema"] == "THE_CALL_UP_V50_2A_PRODUCTION_DATA_RUNTIME"
+          assert data_runtime["pass"] is True
+          assert data_runtime["verified"] is True
+          assert data_runtime["snapshot"]["scheduleGames"] == 10710
+          assert data_runtime["runtimeGate"]["worldMode"] == "PRODUCTION_REAL"
+
+          report = {
+              "schema": "THE_CALL_UP_V50_2B_ROLLOVER_EVIDENCE",
+              "pass": True,
+              "verifiedEvidenceCommit": EVIDENCE_COMMIT,
+              "source": "Production Snapshot v2",
+              "evidence": {
+                  "completed2026": evidence["completedSeason"],
+                  "next2027": evidence["nextSeason"],
+                  "ecology": evidence["ecology"],
+                  "levelRosterCounts": evidence["levelRosterCounts"],
+                  "saveRoundTrip": evidence["saveRoundTrip"],
+                  "originalDurationSeconds": evidence["durationSeconds"]
+              },
+              "continuity": {
+                  "seasonApiRolloverSurfaceUnchanged": True,
+                  "rolloverSurfaceSha256": surface_sha256,
+                  "productionOffseasonEcologyUnchanged": True,
+                  "productionSeasonFactoryUnchanged": True,
+                  "seasonRolloverServiceUnchanged": True,
+                  "seasonSerializationUnchanged": True
+              },
+              "currentDataRuntimeGate": {
+                  "v50_2aPass": True,
+                  "snapshotScheduleGames": data_runtime["snapshot"]["scheduleGames"],
+                  "worldMode": data_runtime["runtimeGate"]["worldMode"]
+              }
+          }
+
+          Path("work/reports/v50-2b-rollover-evidence.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8"
+          )
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Commit verified v50.2b
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add work/reports/v50-2b-rollover-evidence.json
+          git rm .github/workflows/tcu-v50-2b-rollover-evidence.yml
+          git commit -m "v50.2b: verify season rollover evidence continuity [skip ci]"
+          git push origin HEAD:main
+
+      - name: Upload v50.2b report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-call-up-v50-2b-rollover-evidence
+          path: work/reports/v50-2b-rollover-evidence.json
+          if-no-files-found: ignore
