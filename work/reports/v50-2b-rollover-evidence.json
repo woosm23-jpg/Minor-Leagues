@@ -1,0 +1,47 @@
+{
+  "schema": "THE_CALL_UP_V50_2B_ROLLOVER_EVIDENCE",
+  "pass": true,
+  "verifiedEvidenceCommit": "f28e03a44a249c65e217dcca370059542dcad821",
+  "source": "Production Snapshot v2",
+  "evidence": {
+    "completed2026": {
+      "year": 2026,
+      "worldGamesCompleted": 10710,
+      "worldGamesTotal": 10710
+    },
+    "next2027": {
+      "year": 2027,
+      "startDate": "2027-03-25",
+      "worldGamesCompleted": 0,
+      "worldGamesTotal": 12150
+    },
+    "ecology": {
+      "retired": 82,
+      "generated": 82,
+      "totalRetired": 82,
+      "totalGenerated": 82
+    },
+    "levelRosterCounts": {
+      "MLB": 840,
+      "AAA": 837,
+      "AA": 804,
+      "HIGH_A": 839,
+      "A": 898
+    },
+    "saveRoundTrip": true,
+    "originalDurationSeconds": 404.6
+  },
+  "continuity": {
+    "seasonApiRolloverSurfaceUnchanged": true,
+    "rolloverSurfaceSha256": "89f0590c6ba8dfd81ff2dbbb088026bee46ccef15aea4ff4764f167646759aa9",
+    "productionOffseasonEcologyUnchanged": true,
+    "productionSeasonFactoryUnchanged": true,
+    "seasonRolloverServiceUnchanged": true,
+    "seasonSerializationUnchanged": true
+  },
+  "currentDataRuntimeGate": {
+    "v50_2aPass": true,
+    "snapshotScheduleGames": 10710,
+    "worldMode": "PRODUCTION_REAL"
+  }
+}
