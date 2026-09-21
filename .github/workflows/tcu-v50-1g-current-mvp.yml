@@ -1,0 +1,73 @@
+name: THE CALL-UP v50.1g Current MVP Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/tcu-v50-1g-current-mvp.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  current-mvp:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify v50.1g baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object work/scripts/verify-season-organization-v20.js)" = "967d5daa9b61db4920501ae3adf83978697690ae"
+          test "$(git hash-object work/scripts/verify-season-promotion-ai-v22.js)" = "76f53364b57a138a98b45bd6627603424c174e16"
+          test "$(git hash-object work/scripts/verify-season-multi-level-v23.js)" = "90dd5df6b81010a4e369065ddfd73a33abeecd16"
+          test "$(git hash-object work/scripts/verify-season-mlb-replacement-v24.js)" = "58ac8f9685c82b6e776185c288dc12dc14faaf19"
+          test "$(git hash-object work/scripts/verify-season-condition.js)" = "4c41771c7c9c4f6410462956d8a313842541dfd4"
+          test "$(git hash-object work/scripts/verify-season-save-checkpoint-v15.js)" = "1f284f762b76422efc4e1dfffcaf439954cb8783"
+          test "$(git hash-object work/scripts/verify-season-export-import-v16.js)" = "1c039e8661a32b834ab3362d39803ea2d41b2dda"
+          test "$(git hash-object work/src/api/seasonApi.js)" = "ae3f22620b054788e9d9fae8b5f0c6604445c2f4"
+          test -f work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+
+      - name: Install unified current MVP gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'aW1wb3J0IGZzIGZyb20gIm5vZGU6ZnMiOwppbXBvcnQgb3MgZnJvbSAibm9kZTpvcyI7CmltcG9ydCBwYXRoIGZyb20gIm5vZGU6cGF0aCI7CmltcG9ydCB7IHNwYXduU3luYyB9IGZyb20gIm5vZGU6Y2hpbGRfcHJvY2VzcyI7CmltcG9ydCBhc3NlcnQgZnJvbSAibm9kZTphc3NlcnQvc3RyaWN0IjsKCmNvbnN0IERFRkFVTFRfT1VUUFVUID0gInJlcG9ydHMvdjUwLTFnLWN1cnJlbnQtbXZwLWdhdGUuanNvbiI7CgpmdW5jdGlvbiBhcmcobmFtZSwgZmFsbGJhY2sgPSBudWxsKSB7CiAgY29uc3QgcHJlZml4ID0gYC0tJHtuYW1lfT1gOwogIGNvbnN0IGZvdW5kID0gcHJvY2Vzcy5hcmd2LmZpbmQoKHZhbHVlKSA9PiB2YWx1ZS5zdGFydHNXaXRoKHByZWZpeCkpOwogIHJldHVybiBmb3VuZCA/IGZvdW5kLnNsaWNlKHByZWZpeC5sZW5ndGgpIDogZmFsbGJhY2s7Cn0KCmNvbnN0IHZlcmlmeSA9IHByb2Nlc3MuYXJndi5pbmNsdWRlcygiLS12ZXJpZnkiKTsKY29uc3Qgb3V0cHV0UGF0aCA9IGFyZygib3V0cHV0IiwgREVGQVVMVF9PVVRQVVQpOwpjb25zdCB0ZW1wRGlyID0gZnMubWtkdGVtcFN5bmMocGF0aC5qb2luKG9zLnRtcGRpcigpLCAidGN1LXY1MC0xZy0iKSk7Cgpjb25zdCBjb21wb25lbnRzID0gWwogIHsKICAgIGlkOiAidjUwLjFhIiwKICAgIHRpdGxlOiAib3JnYW5pemF0aW9uIGRlcHRoIiwKICAgIHNjcmlwdDogInNjcmlwdHMvdmVyaWZ5LXNlYXNvbi1vcmdhbml6YXRpb24tdjIwLmpzIiwKICAgIHNjaGVtYTogIlRIRV9DQUxMX1VQX1Y1MF8xQV9PUkdBTklaQVRJT05fREVQVEgiLAogICAgYXJnczogWyItLXNlZWRzPTEiXQogIH0sCiAgewogICAgaWQ6ICJ2NTAuMWIiLAogICAgdGl0bGU6ICJwcm9tb3Rpb24gYW5kIGFkamFjZW50IG1vdmVtZW50IiwKICAgIHNjcmlwdDogInNjcmlwdHMvdmVyaWZ5LXNlYXNvbi1wcm9tb3Rpb24tYWktdjIyLmpzIiwKICAgIHNjaGVtYTogIlRIRV9DQUxMX1VQX1Y1MF8xQl9QUk9NT1RJT05fR0FURSIsCiAgICBhcmdzOiBbXQogIH0sCiAgewogICAgaWQ6ICJ2NTAuMWMiLAogICAgdGl0bGU6ICJmaXZlLWxldmVsIGxhZGRlciIsCiAgICBzY3JpcHQ6ICJzY3JpcHRzL3ZlcmlmeS1zZWFzb24tbXVsdGktbGV2ZWwtdjIzLmpzIiwKICAgIHNjaGVtYTogIlRIRV9DQUxMX1VQX1Y1MF8xQ19GVUxMX0xBRERFUl9HQVRFIiwKICAgIGFyZ3M6IFsiLS1zZWVkcz0xIiwgIi0tc3RhcnQ9MSIsICItLXF1aWV0Il0KICB9LAogIHsKICAgIGlkOiAidjUwLjFkIiwKICAgIHRpdGxlOiAiTUxCIGNhbGwtdXAgYW5kIHJlcGxhY2VtZW50IiwKICAgIHNjcmlwdDogInNjcmlwdHMvdmVyaWZ5LXNlYXNvbi1tbGItcmVwbGFjZW1lbnQtdjI0LmpzIiwKICAgIHNjaGVtYTogIlRIRV9DQUxMX1VQX1Y1MF8xRF9NTEJfQ0FMTFVQX1JFUExBQ0VNRU5UIiwKICAgIGFyZ3M6IFtdCiAgfSwKICB7CiAgICBpZDogInY1MC4xZSIsCiAgICB0aXRsZTogImluanVyeSBmYXRpZ3VlIGZvcm0iLAogICAgc2NyaXB0OiAic2NyaXB0cy92ZXJpZnktc2Vhc29uLWNvbmRpdGlvbi5qcyIsCiAgICBzY2hlbWE6ICJUSEVfQ0FMTF9VUF9WNTBfMUVfQ09ORElUSU9OX1JFR1JFU1NJT04iLAogICAgYXJnczogW10KICB9LAogIHsKICAgIGlkOiAidjUwLjFmIiwKICAgIHRpdGxlOiAic2F2ZSBjaGVja3BvaW50IHRyYW5zZmVyIiwKICAgIHNjcmlwdDogInNjcmlwdHMvdmVyaWZ5LXNlYXNvbi1zYXZlLWNoZWNrcG9pbnQtdjE1LmpzIiwKICAgIHNjaGVtYTogIlRIRV9DQUxMX1VQX1Y1MF8xRl9TQVZFX1RSQU5TRkVSX1JFR1JFU1NJT04iLAogICAgYXJnczogW10KICB9Cl07CgpmdW5jdGlvbiBydW5Db21wb25lbnQoY29tcG9uZW50KSB7CiAgY29uc3Qgb3V0ID0gcGF0aC5qb2luKHRlbXBEaXIsIGAke2NvbXBvbmVudC5pZC5yZXBsYWNlKCIuIiwgIi0iKX0uanNvbmApOwogIGNvbnN0IHJlc3VsdCA9IHNwYXduU3luYygKICAgIHByb2Nlc3MuZXhlY1BhdGgsCiAgICBbY29tcG9uZW50LnNjcmlwdCwgIi0tdmVyaWZ5IiwgLi4uY29tcG9uZW50LmFyZ3MsIGAtLW91dHB1dD0ke291dH1gXSwKICAgIHsKICAgICAgY3dkOiBwcm9jZXNzLmN3ZCgpLAogICAgICBlbmNvZGluZzogInV0ZjgiLAogICAgICBtYXhCdWZmZXI6IDY0ICogMTAyNCAqIDEwMjQKICAgIH0KICApOwoKICBpZiAocmVzdWx0LnN0YXR1cyAhPT0gMCkgewogICAgY29uc3Qgc3Rkb3V0ID0gU3RyaW5nKHJlc3VsdC5zdGRvdXQgPz8gIiIpLnNsaWNlKC0xMjAwMCk7CiAgICBjb25zdCBzdGRlcnIgPSBTdHJpbmcocmVzdWx0LnN0ZGVyciA/PyAiIikuc2xpY2UoLTEyMDAwKTsKICAgIHRocm93IG5ldyBFcnJvcigKICAgICAgYCR7Y29tcG9uZW50LmlkfSAke2NvbXBvbmVudC50aXRsZX0gZ2F0ZSBmYWlsZWQgKGV4aXQgJHtyZXN1bHQuc3RhdHVzfSlcbmAgKwogICAgICBgU1RET1VUOlxuJHtzdGRvdXR9XG5TVERFUlI6XG4ke3N0ZGVycn1gCiAgICApOwogIH0KCiAgYXNzZXJ0Lm9rKGZzLmV4aXN0c1N5bmMob3V0KSwgYCR7Y29tcG9uZW50LmlkfTogcmVwb3J0IG1pc3NpbmdgKTsKICBjb25zdCByZXBvcnQgPSBKU09OLnBhcnNlKGZzLnJlYWRGaWxlU3luYyhvdXQsICJ1dGY4IikpOwogIGFzc2VydC5lcXVhbChyZXBvcnQuc2NoZW1hLCBjb21wb25lbnQuc2NoZW1hLCBgJHtjb21wb25lbnQuaWR9OiByZXBvcnQgc2NoZW1hIGRyaWZ0YCk7CiAgYXNzZXJ0LmVxdWFsKHJlcG9ydC5wYXNzLCB0cnVlLCBgJHtjb21wb25lbnQuaWR9OiBwYXNzIGZsYWcgbWlzc2luZ2ApOwogIGFzc2VydC5lcXVhbChyZXBvcnQudmVyaWZpZWQsIHRydWUsIGAke2NvbXBvbmVudC5pZH06IHZlcmlmeSBmbGFnIG1pc3NpbmdgKTsKICBhc3NlcnQuZXF1YWwocmVwb3J0LnNvdXJjZSwgIlByb2R1Y3Rpb24gU25hcHNob3QgdjIiLCBgJHtjb21wb25lbnQuaWR9OiBzb3VyY2UgZHJpZnRgKTsKCiAgcmV0dXJuIHsKICAgIGlkOiBjb21wb25lbnQuaWQsCiAgICB0aXRsZTogY29tcG9uZW50LnRpdGxlLAogICAgc2NyaXB0OiBjb21wb25lbnQuc2NyaXB0LAogICAgc2NoZW1hOiByZXBvcnQuc2NoZW1hLAogICAgcGFzczogcmVwb3J0LnBhc3MsCiAgICB2ZXJpZmllZDogcmVwb3J0LnZlcmlmaWVkLAogICAgc291cmNlOiByZXBvcnQuc291cmNlCiAgfTsKfQoKbGV0IHJlc3VsdHM7CnRyeSB7CiAgcmVzdWx0cyA9IGNvbXBvbmVudHMubWFwKHJ1bkNvbXBvbmVudCk7Cn0gZmluYWxseSB7CiAgZnMucm1TeW5jKHRlbXBEaXIsIHsgcmVjdXJzaXZlOiB0cnVlLCBmb3JjZTogdHJ1ZSB9KTsKfQoKYXNzZXJ0LmVxdWFsKHJlc3VsdHMubGVuZ3RoLCA2KTsKYXNzZXJ0Lm9rKHJlc3VsdHMuZXZlcnkoKHJvdykgPT4gcm93LnBhc3MgJiYgcm93LnZlcmlmaWVkKSk7Cgpjb25zdCByZXBvcnQgPSB7CiAgc2NoZW1hOiAiVEhFX0NBTExfVVBfVjUwXzFHX0NVUlJFTlRfTVZQX0dBVEUiLAogIHBhc3M6IHRydWUsCiAgdmVyaWZpZWQ6IHZlcmlmeSwKICBzb3VyY2U6ICJQcm9kdWN0aW9uIFNuYXBzaG90IHYyIiwKICBjb21wb25lbnRDb3VudDogcmVzdWx0cy5sZW5ndGgsCiAgY29tcG9uZW50czogcmVzdWx0cywKICBpbnZhcmlhbnRzOiB7CiAgICBhbGxGb2N1c2VkR2F0ZXNQYXNzZWQ6IHRydWUsCiAgICBwcm9kdWN0aW9uU25hcHNob3RWMjogdHJ1ZSwKICAgIGZpdmVMZXZlbE9yZ2FuaXphdGlvbjogdHJ1ZSwKICAgIHByb21vdGlvbkFuZENhbGx1cFJlZ3Jlc3Npb246IHRydWUsCiAgICBpbmp1cnlGYXRpZ3VlRm9ybVJlZ3Jlc3Npb246IHRydWUsCiAgICBzYXZlQ2hlY2twb2ludFRyYW5zZmVyUmVncmVzc2lvbjogdHJ1ZQogIH0KfTsKCmZzLndyaXRlRmlsZVN5bmMob3V0cHV0UGF0aCwgYCR7SlNPTi5zdHJpbmdpZnkocmVwb3J0LCBudWxsLCAyKX1cbmAsICJ1dGY4Iik7CmNvbnNvbGUubG9nKEpTT04uc3RyaW5naWZ5KHJlcG9ydCwgbnVsbCwgMikpOwo=' | base64 -d > work/scripts/verify-v50-1g-current-mvp.mjs
+          node --check work/scripts/verify-v50-1g-current-mvp.mjs
+
+      - name: Run unified current MVP gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          node scripts/verify-v50-1g-current-mvp.mjs --verify --output=reports/v50-1g-current-mvp-gate.json
+          cat reports/v50-1g-current-mvp-gate.json
+
+      - name: Commit verified v50.1g
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add work/scripts/verify-v50-1g-current-mvp.mjs work/reports/v50-1g-current-mvp-gate.json
+          git rm .github/workflows/tcu-v50-1g-current-mvp.yml
+          git commit -m "v50.1g: add unified current MVP gate [skip ci]"
+          git push origin HEAD:main
+
+      - name: Upload v50.1g report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-call-up-v50-1g-current-mvp
+          path: work/reports/v50-1g-current-mvp-gate.json
+          if-no-files-found: ignore
