@@ -1,0 +1,55 @@
+{
+  "schema": "THE_CALL_UP_V53_ARBITRATION_FREE_AGENCY_GATE",
+  "pass": true,
+  "source": "Production Snapshot v2",
+  "ruleset": {
+    "id": "ruleset_2026",
+    "arbitrationYears": 3,
+    "freeAgencyYears": 6,
+    "superTwoPercent": 0.22,
+    "superTwoMinimumPriorSeasonDays": 86,
+    "qualifyingOfferValue2026": 22025000,
+    "futureCbaStatus": "UNVERIFIED_PENDING_NEW_CBA"
+  },
+  "arbitration": {
+    "superTwoCutoffDays": 490,
+    "finalOfferHearing": true,
+    "playerFigure": 2425000,
+    "teamFigure": 1975000
+  },
+  "freeAgency": {
+    "balanced": {
+      "model": "market_model_v53_1",
+      "aav": 21925000,
+      "years": 5,
+      "totalGuarantee": 109625000,
+      "expectedRole": "STARTER",
+      "quality": 0.7664
+    },
+    "security": {
+      "model": "market_model_v53_1",
+      "aav": 20600000,
+      "years": 6,
+      "totalGuarantee": 123600000,
+      "expectedRole": "STARTER",
+      "quality": 0.7664
+    },
+    "betOnMyself": {
+      "model": "market_model_v53_1",
+      "aav": 23675000,
+      "years": 4,
+      "totalGuarantee": 94700000,
+      "expectedRole": "STARTER",
+      "quality": 0.7664
+    },
+    "offerCount": 8,
+    "counterRound": true,
+    "signing": true
+  },
+  "production": {
+    "marketStates": 4218,
+    "userStatus": "CONTROLLED",
+    "realBaselineUnknownSafe": true,
+    "saveRestore": true
+  }
+}

@@ -24,9 +24,10 @@ import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
 import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
 import { createRosterControlState, normalizeRosterControlState, advanceRosterControlToDate, getRosterControlPublicView, knownFortyManCount, prepareAaaMlbRosterMove } from "../engine/career/rosterControlState.js";
+import { createContractMarketState, normalizeContractMarketState, refreshContractMarketState, getContractMarketPublicView } from "../engine/career/contractMarket.js";
 
 const sessions = new Map();
-const CURRENT_GAME_VERSION = "full_career_roster_rules_v52";
+const CURRENT_GAME_VERSION = "full_career_arbitration_free_agency_v53";
 
 function freeze(value) {
   if (Array.isArray(value)) return Object.freeze(value.map(freeze));
@@ -290,6 +291,38 @@ function advanceCurrentOrganizationRosterControlStates(session, date) {
 
 function currentOrganizationKnownFortyManCount(session) {
   return knownFortyManCount(session.rosterControlStates ?? {}, currentOrganizationPlayerIds(session));
+}
+
+function initializeContractMarketStates(fixture, contractStates, { startDate = fixture?.startDate ?? "2026-04-01" } = {}) {
+  const states = {};
+  for (const roster of allFixtureRosters(fixture)) {
+    for (const id of Object.keys(roster.players ?? {})) {
+      if (states[id]) continue;
+      states[id] = createContractMarketState({ playerId: id, startDate });
+      states[id] = refreshContractMarketState(states[id], {
+        contractState: contractStates[id],
+        currentDate: startDate,
+        priorSeasonServiceDays: 0
+      });
+    }
+  }
+  return states;
+}
+
+function normalizeContractMarketStatesForFixture(fixture, contractStates, existing = {}, { currentDate = fixture?.startDate ?? "2026-04-01" } = {}) {
+  const states = structuredClone(existing ?? {});
+  for (const roster of allFixtureRosters(fixture)) {
+    for (const id of Object.keys(roster.players ?? {})) {
+      states[id] = normalizeContractMarketState(states[id] ?? null, { playerId: id, startDate: currentDate });
+      const priorYear = String(Number(currentDate.slice(0, 4)) - 1);
+      states[id] = refreshContractMarketState(states[id], {
+        contractState: contractStates[id],
+        currentDate,
+        priorSeasonServiceDays: Number(contractStates[id]?.serviceBySeason?.[priorYear] ?? 0)
+      });
+    }
+  }
+  return states;
 }
 
 function currentMlbPlayerIds(session) {
@@ -775,6 +808,12 @@ function advanceCompletedProductionSeason(session) {
     startDate: nextStartDate,
     resetSeason: true
   });
+  session.contractMarketStates = normalizeContractMarketStatesForFixture(
+    session.fixture,
+    session.contractStates,
+    session.contractMarketStates ?? {},
+    { currentDate: nextStartDate }
+  );
   const reset = resetSeasonStatesForNewYear({ playerStates: ecology.playerStates, pitcherStates: ecology.pitcherStates, roleStates: session.roleStates, startDate: nextStartDate });
   session.playerStates = reset.playerStates;
   session.pitcherStates = reset.pitcherStates;
@@ -1025,6 +1064,7 @@ function playerDetailView(session, playerId, leaders = null) {
       currentDate: session.state.currentDate
     }),
     rosterControl: getRosterControlPublicView(session.rosterControlStates?.[playerId] ?? null),
+    contractMarket: getContractMarketPublicView(session.contractMarketStates?.[playerId] ?? null),
     seasonLine,
     seasonLinesByLevel,
     roleState: getRolePublicView(roleState, { currentDate: session.state.currentDate }),
@@ -1636,6 +1676,7 @@ function catchUpLegacyLevelStates(session) {
   const originalPitcherStates = session.pitcherStates;
   const originalContractStates = session.contractStates;
   const originalRosterControlStates = session.rosterControlStates;
+  const originalContractMarketStates = session.contractMarketStates;
   const originalRoleStates = session.roleStates;
   const originalPlayerStateDate = session.playerStateDate;
   const startDate = session.fixture.startDate ?? originalState.startDate ?? originalState.currentDate;
@@ -1648,6 +1689,7 @@ function catchUpLegacyLevelStates(session) {
   session.pitcherStates = initializePitcherStates(session.fixture);
   session.contractStates = initializeContractStates(session.fixture, { startDate });
   session.rosterControlStates = initializeRosterControlStates(session.fixture, { startDate });
+  session.contractMarketStates = initializeContractMarketStates(session.fixture, session.contractStates, { startDate });
   reconcileCurrentMlbServiceDate(session, startDate);
   session.roleStates = createOrganizationRoleStates(session.fixture, { startDate });
   session.playerStateDate = startDate;
@@ -1682,6 +1724,7 @@ function catchUpLegacyLevelStates(session) {
   session.pitcherStates = { ...originalPitcherStates };
   session.contractStates = originalContractStates;
   session.rosterControlStates = originalRosterControlStates;
+  session.contractMarketStates = originalContractMarketStates;
   for (const level of missingLevels) {
     if (reconstructedStates[level]) session.levelStates[level] = reconstructedStates[level];
     const league = levelLeague(session, level);
@@ -1707,11 +1750,12 @@ function createSessionFromFixture(fixture, { seed, startDate, dataUniverse = nul
   const scoutingStates = initializeScoutingStates(fixture, playerStates, pitcherStates, { startDate });
   const contractStates = initializeContractStates(fixture, { startDate });
   const rosterControlStates = initializeRosterControlStates(fixture, { startDate });
+  const contractMarketStates = initializeContractMarketStates(fixture, contractStates, { startDate });
   const initialLevel = fixture.organization?.userLevel ?? roleStates[fixture.userPlayerId]?.level ?? "AAA";
   const session = {
     fixture, state: levelStates.AAA, levelStates,
     dataUniverse: normalizeSaveUniverse(dataUniverse ?? createSyntheticUniverseDescriptor({ startDate, sourceVersion: CURRENT_GAME_VERSION }), { startDate, sourceVersion: CURRENT_GAME_VERSION }),
-    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates,
+    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates, contractMarketStates,
     roleStates, organizationState: createOrganizationReviewState({ startDate }),
     careerEventState: createCareerEventState({ userPlayerId: fixture.userPlayerId, startDate, initialLevel }),
     leagueEcologyState: fixture.worldMode === "PRODUCTION_REAL" ? createProductionEcologyState({ fixture }) : null,
@@ -1800,6 +1844,12 @@ const seasonApi = Object.freeze({
     restored.rosterControlStates = normalizeRosterControlStatesForFixture(restored.fixture, restored.rosterControlStates ?? {}, {
       startDate: restored.playerStateDate ?? restored.fixture.startDate ?? restored.state.currentDate
     });
+    restored.contractMarketStates = normalizeContractMarketStatesForFixture(
+      restored.fixture,
+      restored.contractStates,
+      restored.contractMarketStates ?? {},
+      { currentDate: restored.playerStateDate ?? restored.fixture.startDate ?? restored.state.currentDate }
+    );
     const hadScoutingStates = Boolean(restored.scoutingStates);
     // Legacy v43 saves had no scouting state. Backfill at the restore date so
     // past review cycles are not retroactively replayed. Existing v44 states

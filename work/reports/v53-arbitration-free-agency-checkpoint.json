@@ -1,0 +1,34 @@
+{
+  "schema": "THE_CALL_UP_V53_ARBITRATION_FREE_AGENCY_CHECKPOINT",
+  "pass": true,
+  "version": "v53",
+  "ruleset": "ruleset_2026",
+  "features": {
+    "standardArbitration": true,
+    "superTwo": true,
+    "tenderNonTender": true,
+    "finalOfferHearing": true,
+    "agentStrategies": true,
+    "freeAgentMarket": true,
+    "offerExpiry": true,
+    "counterOffers": true,
+    "signingTerms": true,
+    "qualifyingOffer2026Metadata": true,
+    "futureCbaGuard": true,
+    "saveRestore": true,
+    "seasonRollover": true,
+    "playerUi": true
+  },
+  "regression": {
+    "v52RosterRules": true,
+    "v51ContractService": true,
+    "v50_1CurrentMvp": true,
+    "v50_2ProductionDataRuntime": true
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v53_PRODUCTION.html",
+    "bytes": 66753283,
+    "sha256": "48ac1b2d29bc60c58088e739bbc4a8b888791492517edd7dbdf2462896fbeef8"
+  },
+  "next": "v54 Trade System"
+}

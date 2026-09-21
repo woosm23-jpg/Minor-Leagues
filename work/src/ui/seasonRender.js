@@ -520,6 +520,7 @@ function contractStatusLabel(value) {
     PRE_ARBITRATION: "Pre-Arbitration",
     ARBITRATION_ELIGIBLE: "연봉 조정 대상",
     FREE_AGENCY_ELIGIBLE: "FA 자격",
+    SIGNED_CONTRACT: "계약 보유",
     UNKNOWN_REAL_BASELINE: "과거 서비스타임 미확인",
     UNKNOWN: "확인 불가"
   })[value] ?? value ?? "-";
@@ -544,6 +545,7 @@ function playerContractView(player) {
   if (!contract) return `<section class="card player-detail-card player-contract-card"><p class="season-empty">계약/서비스타임 데이터가 없습니다.</p></section>`;
   const service = contract.service ?? {};
   const roster = player.rosterControl ?? null;
+  const market = player.contractMarket ?? null;
   const unknown = contract.baseline === "UNKNOWN_REAL_WORLD";
   const serviceText = unknown ? "Unknown" : (service.display ?? "0.000");
   const baselineText = unknown ? "실존 데이터 미확인" : "세이브 시작 기준 0";
@@ -559,8 +561,11 @@ function playerContractView(player) {
       <div><span>40-man</span><b>${roster?.on40Man === true ? "등록" : roster?.on40Man === false ? "미등록" : "Unknown"}</b><small>${roster?.assignmentStatus ?? "-"}</small></div>
       <div><span>Options</span><b>${roster?.options?.remaining === null || roster?.options?.remaining === undefined ? "Unknown" : `${roster.options.remaining}년 남음`}</b><small>이번 시즌 ${roster?.options?.assignmentsThisSeason ?? 0}/${roster?.options?.maxAssignmentsPerSeason ?? 5}회 · 마이너 ${roster?.options?.minorDaysThisSeason ?? 0}일</small></div>
       <div><span>DFA / Waivers</span><b>${roster?.dfa?.status ?? "없음"}</b><small>${roster?.dfa?.deadlineDate ? `처리 기한 ${roster.dfa.deadlineDate}` : "현재 pending transaction 없음"}</small></div>
+      <div><span>Arbitration / FA</span><b>${market?.status ?? "CONTROLLED"}</b><small>${market?.eligibility?.arbitration ?? "NOT_ELIGIBLE"} · FA ${market?.eligibility?.freeAgency ? "YES" : "NO"}</small></div>
+      <div><span>Agent</span><b>${market?.agentStrategy ?? "BALANCED"}</b><small>시장 오퍼 ${market?.freeAgency?.openOffers ?? 0}개</small></div>
+      <div><span>Rules</span><b>ruleset_2026</b><small>2027+ CBA 미확정 · versioned ruleset</small></div>
     </div>
-    <p class="condition-note">v52는 40-man·Minor League options·DFA·outright waivers를 명시적 상태로 추적합니다. 20일 이상 optioned minor assignment는 해당 시즌 option year 1개를 사용하며, optional assignment는 시즌 최대 5회입니다. 실존 선수의 과거 option/40-man 이력은 Snapshot에 없으면 임의 추정하지 않습니다.</p>
+    <p class="condition-note">v53은 arbitration과 free-agency 시장을 계약 엔진에 추가합니다. 시장가치는 OVR을 달러로 직접 바꾸지 않고 미래 기여도·나이·내구성·트랙레코드·평판·포지션 수요를 사용합니다. 2027+ 실제 CBA는 2026-09 현재 미확정이므로 별도 ruleset이 나오기 전까지 이 세이브는 ruleset_2026 시뮬레이션 규칙을 고정합니다. 실제 조직 이동 transaction layer는 v54에서 FA signing과 trade가 함께 공유합니다.</p>
   </section>`;
 }
 

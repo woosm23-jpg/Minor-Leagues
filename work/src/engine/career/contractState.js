@@ -2,7 +2,7 @@ import { classifyContractControl, getContractRuleset, serviceParts } from "./con
 
 const CONTRACT_STATE_VERSION = 1;
 const BASELINE_VALUES = new Set(["KNOWN_ZERO", "UNKNOWN_REAL_WORLD"]);
-const CONTRACT_KINDS = new Set(["MINOR_LEAGUE_CONTROL", "MLB_CONTROL", "REAL_WORLD_UNKNOWN"]);
+const CONTRACT_KINDS = new Set(["MINOR_LEAGUE_CONTROL", "MLB_CONTROL", "MLB_GUARANTEED", "REAL_WORLD_UNKNOWN"]);
 
 function clone(value) {
   return structuredClone(value);
@@ -119,7 +119,39 @@ function validateContractState(state, label = "contractState") {
     if (value !== null && (!Number.isFinite(Number(value)) || Number(value) < 0)) throw new RangeError(`${label}.terms.${key}가 잘못되었습니다.`);
   }
   if (typeof state.terms.currency !== "string" || !state.terms.currency) throw new TypeError(`${label}.terms.currency가 필요합니다.`);
+  if (state.terms.signedDate !== undefined && state.terms.signedDate !== null) assertIsoDate(state.terms.signedDate, `${label}.terms.signedDate`);
+  for (const key of ["startSeason", "endSeason"]) if (state.terms[key] !== undefined && state.terms[key] !== null && !Number.isInteger(state.terms[key])) throw new RangeError(`${label}.terms.${key}가 잘못되었습니다.`);
+  if (state.terms.signingOrganizationId !== undefined && state.terms.signingOrganizationId !== null && typeof state.terms.signingOrganizationId !== "string") throw new TypeError(`${label}.terms.signingOrganizationId가 잘못되었습니다.`);
   return true;
+}
+
+function applyGuaranteedContractTerms(state, {
+  signedDate, startSeason, years, totalGuarantee, aav,
+  expectedRole = null, organizationId = null
+}) {
+  validateContractState(state);
+  assertIsoDate(signedDate, "contract signedDate");
+  if (!Number.isInteger(startSeason)) throw new RangeError("contract startSeason이 필요합니다.");
+  if (!Number.isInteger(years) || years < 1) throw new RangeError("contract years가 잘못되었습니다.");
+  if (!Number.isFinite(Number(totalGuarantee)) || Number(totalGuarantee) <= 0) throw new RangeError("contract totalGuarantee가 잘못되었습니다.");
+  if (!Number.isFinite(Number(aav)) || Number(aav) <= 0) throw new RangeError("contract aav가 잘못되었습니다.");
+  const next = clone(state);
+  next.hasMlbContract = true;
+  next.terms = {
+    ...next.terms,
+    kind: "MLB_GUARANTEED",
+    years,
+    totalGuarantee: Math.round(Number(totalGuarantee)),
+    aav: Math.round(Number(aav)),
+    salaryBasis: Math.round(Number(aav)),
+    expectedRole,
+    signedDate,
+    startSeason,
+    endSeason: startSeason + years - 1,
+    signingOrganizationId: organizationId === null ? null : String(organizationId)
+  };
+  validateContractState(next);
+  return next;
 }
 
 function normalizeContractState(existing, options) {
@@ -233,13 +265,17 @@ function getContractPublicView(state, { currentLevel = null, currentDate = null 
       aav: state.terms.aav,
       salaryBasis: state.terms.salaryBasis,
       currency: state.terms.currency,
-      expectedRole: state.terms.expectedRole
+      expectedRole: state.terms.expectedRole,
+      signedDate: state.terms.signedDate ?? null,
+      startSeason: state.terms.startSeason ?? null,
+      endSeason: state.terms.endSeason ?? null,
+      signingOrganizationId: state.terms.signingOrganizationId ?? null
     }),
     arbitration: Object.freeze({
       standardEligibleYears: ruleset.arbitrationYears,
       superTwoMinimumPriorSeasonDays: ruleset.superTwoMinimumPriorSeasonDays,
       superTwoPercent: ruleset.superTwoPercent,
-      detailedEvaluation: "DEFERRED_V53"
+      detailedEvaluation: "ACTIVE_V53"
     }),
     freeAgency: Object.freeze({ eligibleYears: ruleset.freeAgencyYears }),
     ruleSummary: Object.freeze({
@@ -259,5 +295,6 @@ export {
   addContractServiceDays,
   advanceContractStateToDate,
   creditContractServiceDate,
-  getContractPublicView
+  getContractPublicView,
+  applyGuaranteedContractTerms
 };

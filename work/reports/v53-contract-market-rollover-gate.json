@@ -1,0 +1,15 @@
+{
+  "schema": "THE_CALL_UP_V53_CONTRACT_MARKET_ROLLOVER_GATE",
+  "pass": true,
+  "source": "Production Snapshot v2",
+  "completed2026": {
+    "worldGames": 10710
+  },
+  "next2027": {
+    "startDate": "2027-03-25",
+    "userMarketStatus": "CONTROLLED"
+  },
+  "marketStates": 4289,
+  "futureCbaPolicy": "FROZEN_RULESET_2026_UNTIL_VERSIONED_REPLACEMENT",
+  "saveRoundTrip": true
+}
