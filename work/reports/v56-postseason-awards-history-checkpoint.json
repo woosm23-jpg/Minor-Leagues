@@ -1,0 +1,54 @@
+{
+  "schema": "THE_CALL_UP_V56_POSTSEASON_AWARDS_HISTORY_CHECKPOINT",
+  "pass": true,
+  "ruleset": {
+    "id": "ruleset_2026_postseason",
+    "officialFormatVerified": "2026-09-22",
+    "teams": 12,
+    "rosterSize": 26
+  },
+  "features": {
+    "postseasonField": true,
+    "official2026SeedingShape": true,
+    "tiebreakChain": true,
+    "roundRosters": true,
+    "separatePostseasonStats": true,
+    "championFinalization": true,
+    "worldSeriesMvp": true,
+    "mvp": true,
+    "cyYoung": true,
+    "silverSlugger": true,
+    "goldGloveDeferredUntilFieldingValueStore": true,
+    "annualHistoryArchive": true,
+    "championshipParticipationDistinction": true,
+    "careerEvents": true,
+    "midPostseasonSaveRestore": true,
+    "legacyOffseasonAutoBridge": true,
+    "mobileHistoryUi": true
+  },
+  "performance": {
+    "getSeasonWarmAverageMs": 2.941,
+    "browserTabTimingsMs": {
+      "homeToPlayer": 1.8,
+      "playerToLeague": 1.2,
+      "standingsToLeaders": 1.9,
+      "leadersToProspects": 1.6,
+      "leagueToHome": 1.3
+    }
+  },
+  "regression": {
+    "v55_1Performance": true,
+    "v55FullOffseason": true,
+    "v54TradeSystem": true,
+    "v54TradeRollover": true,
+    "v50_1CurrentMvp": true,
+    "v50_2ProductionRuntime": true,
+    "originalComprehensiveRun": 35679850081
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v56_PRODUCTION.html",
+    "bytes": 66826635,
+    "sha256": "4473c67ddf7657027e4eab8c788a0f245dae4c66cd712fcc2d80ec9d244698ae"
+  },
+  "next": "v57 Draft / International"
+}

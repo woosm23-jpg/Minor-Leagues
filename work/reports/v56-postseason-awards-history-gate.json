@@ -1,0 +1,39 @@
+{
+  "schema": "THE_CALL_UP_V56_POSTSEASON_AWARDS_HISTORY_GATE",
+  "pass": true,
+  "ruleset": {
+    "id": "ruleset_2026_postseason",
+    "teamsPerLeague": 6,
+    "rosterSize": 26,
+    "rounds": [
+      "WILD_CARD",
+      "DIVISION_SERIES",
+      "LCS",
+      "WORLD_SERIES"
+    ]
+  },
+  "postseason": {
+    "fieldTeams": 12,
+    "wildCardSeries": 4,
+    "divisionSeries": 4,
+    "lcsSeries": 2,
+    "worldSeries": 1,
+    "regularStatsFrozen": true,
+    "midPostseasonSaveRestore": true,
+    "championFinalized": true,
+    "postseasonStatsSeparate": true
+  },
+  "awards": {
+    "mvp": true,
+    "cyYoung": true,
+    "silverSlugger": true,
+    "worldSeriesMvp": true,
+    "goldGloveDeferred": true,
+    "methodologyTransparent": true
+  },
+  "history": {
+    "seasonArchive": true,
+    "championshipParticipationDistinguished": true,
+    "autoOffseasonCompatibility": true
+  }
+}

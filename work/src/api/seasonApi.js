@@ -6,7 +6,7 @@ import { createCareerSeasonFixture, createDemoSeasonFixture, createSeasonGameFix
 import { createProductionCareerSeasonFixture, ensureProductionSeasonFixture, getProductionOrganizationOptions, getProductionOrganizationTeamIds, rehomeProductionUserOrganization, createNextProductionSeasonFixture } from "../services/productionSeasonFactory.js";
 import { buildCareerCreationPlan, getCareerCreationCatalog } from "../services/careerCreationService.js";
 import { simulateSeasonFixtureGame } from "../services/seasonGameService.js";
-import { createSeasonState, getAllPlayerSeasonBatting, getGamesOnDate, getNextTeamGame, getPlayerSeasonBattingLine, getPlayerSeasonPitchingLine, getRecentTeamResults, getSeriesGames, getStandingsTable, getUserSeasonLine, recordSeasonGame, setSeasonCurrentDate } from "../engine/season/seasonState.js";
+import { createSeasonState, getAllPlayerSeasonBatting, getAllPlayerSeasonPitching, getGamesOnDate, getNextTeamGame, getPlayerSeasonBattingLine, getPlayerSeasonPitchingLine, getRecentTeamResults, getSeriesGames, getStandingsTable, getUserSeasonLine, recordSeasonGame, setSeasonCurrentDate } from "../engine/season/seasonState.js";
 import { applyAnnualPositionPlayerDevelopment, applyPositionPlayerGame, createPositionPlayerSeasonState, getPositionPlayerSeasonView, getSeasonDevelopedPlayer, getSeasonEffectivePlayer, recoverPositionPlayer, setPositionPlayerTrainingFocus, normalizePositionPlayerSeasonState } from "../engine/season/playerSeasonState.js";
 import { applyAnnualPitcherSeasonDevelopment, applyPitcherSeasonGame, createPitcherSeasonState, getPitcherSeasonView, getSeasonDevelopedPitcher, recoverPitcherSeasonState, normalizePitcherSeasonState, pitcherAvailability } from "../engine/season/pitcherSeasonState.js";
 import { healthAvailability, maybeApplyInjury } from "../engine/season/injuryState.js";
@@ -28,10 +28,11 @@ import { createContractMarketState, normalizeContractMarketState, refreshContrac
 import { createTradeState, normalizeTradeState, requestTradeState, addTradeRumor, recordTrade, getTradePublicView } from "../engine/career/tradeState.js";
 import { executeTrade } from "../services/tradeService.js";
 import { OFFSEASON_PHASES, createOffseasonState, normalizeOffseasonState, completeOffseasonPhase, getOffseasonPublicView } from "../engine/career/offseasonPipeline.js";
+import { POSTSEASON_RULESET_2026, POSTSEASON_ROUND_ORDER, createPostseasonState, normalizePostseasonState, getPostseasonPublicView, createHistoryState, normalizeHistoryState, appendSeasonHistory, getHistoryPublicView } from "../engine/career/postseasonHistory.js";
 
 const sessions = new Map();
 const heavyReadModelCaches = new WeakMap();
-const CURRENT_GAME_VERSION = "full_career_offseason_pipeline_v55";
+const CURRENT_GAME_VERSION = "full_career_postseason_awards_history_v56";
 
 function heavyReadModelCache(session) {
   let cache=heavyReadModelCaches.get(session);
@@ -820,6 +821,227 @@ function applySeasonEndAgingIfNeeded(session) {
   return { appliedPosition, appliedPitcher, developedPosition, developedPitcher, migrations };
 }
 
+function mlbTeamMetadata(session) {
+  const rows=(session.dataUniverse?.data?.teams ?? []).filter((team)=>team.level==="MLB" && team.active!==false);
+  const map=new Map(rows.map((team)=>[String(team.id),{
+    id:String(team.id),name:team.name,shortName:team.abbreviation||team.name,
+    leagueId:String(team.leagueId ?? ""),divisionId:String(team.divisionId ?? "")
+  }]));
+  if(map.size!==30) throw new RangeError(`postseason MLB team metadata가 30팀이 아닙니다: ${map.size}`);
+  return map;
+}
+function postseasonRecordPct(w,l){ const g=Number(w)+Number(l); return g>0?Number(w)/g:0; }
+function recordAgainst(session,teamId,predicate,{afterDate=null}={}){
+  const state=stateForLevel(session,"MLB");let w=0,l=0;
+  for(const game of state.schedule){
+    if(game.status!=="FINAL") continue;
+    if(afterDate && game.date<afterDate) continue;
+    const isAway=game.awayTeamId===teamId,isHome=game.homeTeamId===teamId;
+    if(!isAway&&!isHome) continue;
+    const opponent=isAway?game.homeTeamId:game.awayTeamId;
+    if(!predicate(opponent)) continue;
+    if(game.winnerTeamId===teamId) w+=1; else l+=1;
+  }
+  return {w,l,pct:postseasonRecordPct(w,l)};
+}
+function compareTwoTeamTiebreak(session,aId,bId,meta,year){
+  const a=String(aId),b=String(bId);
+  const directA=recordAgainst(session,a,(opp)=>opp===b),directB=recordAgainst(session,b,(opp)=>opp===a);
+  if(directA.pct!==directB.pct) return directB.pct-directA.pct;
+  const aMeta=meta.get(a),bMeta=meta.get(b);
+  const divA=recordAgainst(session,a,(opp)=>meta.get(String(opp))?.divisionId===aMeta.divisionId);
+  const divB=recordAgainst(session,b,(opp)=>meta.get(String(opp))?.divisionId===bMeta.divisionId);
+  if(divA.pct!==divB.pct) return divB.pct-divA.pct;
+  const lgA=recordAgainst(session,a,(opp)=>meta.get(String(opp))?.leagueId===aMeta.leagueId);
+  const lgB=recordAgainst(session,b,(opp)=>meta.get(String(opp))?.leagueId===bMeta.leagueId);
+  if(lgA.pct!==lgB.pct) return lgB.pct-lgA.pct;
+  const secondHalf=`${year}-${POSTSEASON_RULESET_2026.secondHalfStartMonthDay}`;
+  const shA=recordAgainst(session,a,(opp)=>meta.get(String(opp))?.leagueId===aMeta.leagueId,{afterDate:secondHalf});
+  const shB=recordAgainst(session,b,(opp)=>meta.get(String(opp))?.leagueId===bMeta.leagueId,{afterDate:secondHalf});
+  if(shA.pct!==shB.pct) return shB.pct-shA.pct;
+  const standings=stateForLevel(session,"MLB").standings;
+  const diffA=(standings[a]?.RS??0)-(standings[a]?.RA??0),diffB=(standings[b]?.RS??0)-(standings[b]?.RA??0);
+  if(diffA!==diffB) return diffB-diffA;
+  return a.localeCompare(b);
+}
+function rankTeamIds(session,ids,meta,year){
+  const standings=stateForLevel(session,"MLB").standings;
+  return [...ids].sort((a,b)=>{
+    const ra=standings[a],rb=standings[b];
+    const pctA=postseasonRecordPct(ra.W,ra.L),pctB=postseasonRecordPct(rb.W,rb.L);
+    if(pctA!==pctB) return pctB-pctA;
+    return compareTwoTeamTiebreak(session,a,b,meta,year);
+  });
+}
+function buildPostseasonField(session){
+  const year=Number(String(session.fixture.startDate).slice(0,4));
+  const meta=mlbTeamMetadata(session);
+  const leagueIds=[...new Set([...meta.values()].map((row)=>row.leagueId))].sort();
+  if(leagueIds.length!==2) throw new RangeError(`postseason league count가 2가 아닙니다: ${leagueIds.length}`);
+  const standings=stateForLevel(session,"MLB").standings;
+  const leagues={};
+  for(const leagueId of leagueIds){
+    const leagueTeams=[...meta.values()].filter((row)=>row.leagueId===leagueId);
+    const divisionIds=[...new Set(leagueTeams.map((row)=>row.divisionId))];
+    if(divisionIds.length!==3) throw new RangeError(`league ${leagueId} division count가 3이 아닙니다.`);
+    const divisionWinners=divisionIds.map((divisionId)=>rankTeamIds(session,leagueTeams.filter((row)=>row.divisionId===divisionId).map((row)=>row.id),meta,year)[0]);
+    const seededDivisionWinners=rankTeamIds(session,divisionWinners,meta,year);
+    const remaining=rankTeamIds(session,leagueTeams.map((row)=>row.id).filter((id)=>!divisionWinners.includes(id)),meta,year);
+    const seeds=[...seededDivisionWinners,...remaining.slice(0,3)].map((teamId,index)=>{
+      const standing=standings[teamId],team=meta.get(teamId);
+      return {seed:index+1,teamId,teamName:team.name,shortName:team.shortName,divisionId:team.divisionId,W:standing.W,L:standing.L,runDiff:standing.RS-standing.RA};
+    });
+    leagues[leagueId]={leagueId,label:leagueId==="103"?"AL":leagueId==="104"?"NL":`L${leagueId}`,seeds};
+  }
+  return {rulesetId:POSTSEASON_RULESET_2026.id,leagues,tiebreakOrder:[...POSTSEASON_RULESET_2026.tiebreakOrder]};
+}
+function rosterPlayerIdsInOrder(roster,{excludeId=null,forceIncludeId=null}={}){
+  const hitters=[],pitchers=[];
+  const push=(arr,id)=>{if(!id||id===excludeId||arr.includes(id))return;arr.push(id);};
+  for(const id of roster.lineup??[]) push(hitters,id);
+  for(const row of roster.bench??[]) push(hitters,row.playerId);
+  if(forceIncludeId&&(roster.positionPlayers??[]).includes(forceIncludeId)) push(hitters,forceIncludeId);
+  for(const id of roster.positionPlayers??[]) push(hitters,id);
+  for(const id of roster.starters??[]) push(pitchers,id);
+  if(forceIncludeId&&(roster.pitchers??[]).includes(forceIncludeId)) push(pitchers,forceIncludeId);
+  for(const id of roster.bullpen??[]) push(pitchers,id);
+  for(const id of roster.pitchers??[]) push(pitchers,id);
+  let chosenHitters=hitters.slice(0,13),chosenPitchers=pitchers.slice(0,13);
+  if(forceIncludeId&&hitters.includes(forceIncludeId)&&!chosenHitters.includes(forceIncludeId)) chosenHitters=[...chosenHitters.slice(0,12),forceIncludeId];
+  if(forceIncludeId&&pitchers.includes(forceIncludeId)&&!chosenPitchers.includes(forceIncludeId)) chosenPitchers=[...chosenPitchers.slice(0,12),forceIncludeId];
+  const ids=[...chosenHitters,...chosenPitchers];
+  if(ids.length!==POSTSEASON_RULESET_2026.rosterSize) throw new RangeError(`${roster.team?.name??roster.team?.id} postseason roster가 26명이 아닙니다: ${ids.length}`);
+  return ids;
+}
+function userPostseasonSelection(session,field){
+  const playerId=session.fixture.userPlayerId,teamId=String(userTeamIdForLevel(session,"MLB"));
+  const playoffTeam=Object.values(field.leagues).some((league)=>league.seeds.some((row)=>row.teamId===teamId));
+  const atMlb=currentUserLevel(session)==="MLB",role=session.roleStates?.[playerId]?.role??null;
+  const health=session.playerStates?.[playerId]?.health??session.pitcherStates?.[playerId]?.health??null;
+  const healthy=healthAvailability(health)!=="INJURED";
+  const onRoster=Boolean(playoffTeam&&atMlb&&healthy&&!["CALL_UP_DEPTH","AAA_STARTER"].includes(role));
+  return {playerId,teamId,playoffTeam,atMlb,role,healthy,onRoster,appearedGames:0};
+}
+function createPostseasonRosters(session,field,user){
+  const mlb=session.fixture.levelLeagues.MLB,out={};
+  for(const league of Object.values(field.leagues)) for(const seed of league.seeds){
+    const roster=mlb.rosters[seed.teamId];
+    if(!roster) throw new RangeError(`postseason roster source가 없습니다: ${seed.teamId}`);
+    const isUserTeam=seed.teamId===user.teamId;
+    out[seed.teamId]=rosterPlayerIdsInOrder(roster,{excludeId:isUserTeam&&!user.onRoster?session.fixture.userPlayerId:null,forceIncludeId:isUserTeam&&user.onRoster?session.fixture.userPlayerId:null});
+  }
+  return out;
+}
+function ensurePostseasonState(session){
+  if(!worldComplete(session)) throw new RangeError("정규시즌 완료 후 postseason을 시작할 수 있습니다.");
+  const year=Number(String(session.fixture.startDate).slice(0,4));
+  if(session.postseasonState?.seasonYear===year) return session.postseasonState;
+  const field=buildPostseasonField(session),user=userPostseasonSelection(session,field),rosters=createPostseasonRosters(session,field,user);
+  session.postseasonState=createPostseasonState({seasonYear:year,field,rosters,user});
+  if(user.onRoster) session.careerEventState=appendCareerEvent(session.careerEventState,{type:"POSTSEASON_ROSTER",date:`${year}-09-29`,playerId:user.playerId,importance:"MAJOR",source:"POSTSEASON_ROSTER_SELECTION",level:"MLB",teamId:user.teamId,reasonCodes:["POSTSEASON_26_MAN"]});
+  return session.postseasonState;
+}
+function filteredRosterForPostseason(roster,ids){
+  const set=new Set(ids);
+  return freeze({...roster,
+    players:Object.fromEntries(Object.entries(roster.players??{}).filter(([id])=>set.has(id))),
+    names:Object.fromEntries(Object.entries(roster.names??{}).filter(([id])=>set.has(id))),
+    lineup:(roster.lineup??[]).filter((id)=>set.has(id)),
+    lineupSlots:(roster.lineupSlots??[]).filter((row)=>set.has(row.starterId)),
+    bench:(roster.bench??[]).filter((row)=>set.has(row.playerId)),
+    defense:Object.fromEntries(Object.entries(roster.defense??{}).filter(([,id])=>set.has(id))),
+    positionPlayers:(roster.positionPlayers??[]).filter((id)=>set.has(id)),
+    starters:(roster.starters??[]).filter((id)=>set.has(id)),
+    bullpen:(roster.bullpen??[]).filter((id)=>set.has(id)),
+    pitchers:(roster.pitchers??[]).filter((id)=>set.has(id))
+  });
+}
+function postseasonFixtureForGame(session,awayTeamId,homeTeamId){
+  const mlb=session.fixture.levelLeagues.MLB,rosters={...mlb.rosters};
+  for(const teamId of [awayTeamId,homeTeamId]) rosters[teamId]=filteredRosterForPostseason(mlb.rosters[teamId],session.postseasonState.rosters[teamId]);
+  return freeze({...session.fixture,levelLeagues:{...session.fixture.levelLeagues,MLB:freeze({...mlb,rosters:freeze(rosters)})}});
+}
+const POST_BAT_KEYS=["PA","AB","R","H","doubles","triples","HR","RBI","BB","HBP","SO","SF","GDP","TB","SB","CS"];
+const POST_PITCH_KEYS=["BF","outsRecorded","H","doubles","triples","HR","BB","HBP","SO","R","Pitches"];
+function addBattingTotals(store,map){for(const[id,line]of Object.entries(map??{})){if(Number(line?.PA??0)<=0)continue;const c=store[id]??{G:0,...Object.fromEntries(POST_BAT_KEYS.map((k)=>[k,0]))};c.G+=1;for(const k of POST_BAT_KEYS)c[k]+=Number(line?.[k]??0);store[id]=c;}}
+function addPitchingTotals(store,map,starterId){for(const[id,line]of Object.entries(map??{})){if(Number(line?.BF??0)<=0&&Number(line?.Pitches??0)<=0)continue;const c=store[id]??{G:0,GS:0,...Object.fromEntries(POST_PITCH_KEYS.map((k)=>[k,0]))};c.G+=1;if(id===starterId)c.GS+=1;for(const k of POST_PITCH_KEYS)c[k]+=Number(line?.[k]??0);store[id]=c;}}
+function postseasonDate(year,round,leagueLabel,gameIndex){let key=round;if(round==="DIVISION_SERIES")key=`${leagueLabel}_DIVISION_SERIES`;if(round==="LCS")key=`${leagueLabel}_LCS`;const dates=POSTSEASON_RULESET_2026.scheduleMonthDays[key];return `${year}-${dates[Math.min(gameIndex,dates.length-1)]}`;}
+function seedForTeam(state,teamId){for(const league of Object.values(state.field.leagues)){const row=league.seeds.find((seed)=>seed.teamId===teamId);if(row)return row.seed;}return 99;}
+function regularStanding(session,teamId){return stateForLevel(session,"MLB").standings[teamId];}
+function simulatePostseasonSeries(session,{round,leagueId,leagueLabel,teamAId,teamBId,highTeamId,seriesId}){
+  const cfg=POSTSEASON_RULESET_2026.rounds[round],winsNeeded=Math.floor(cfg.bestOf/2)+1,lowTeamId=highTeamId===teamAId?teamBId:teamAId;
+  let highWins=0,lowWins=0;const games=[];
+  for(let gameIndex=0;gameIndex<cfg.bestOf&&highWins<winsNeeded&&lowWins<winsNeeded;gameIndex+=1){
+    const highHome=cfg.homePattern[gameIndex]===1,homeTeamId=highHome?highTeamId:lowTeamId,awayTeamId=highHome?lowTeamId:highTeamId;
+    const gameId=`POST_${session.postseasonState.seasonYear}_${seriesId}_G${gameIndex+1}`;
+    const game={gameId,date:postseasonDate(session.postseasonState.seasonYear,round,leagueLabel,gameIndex),awayTeamId,homeTeamId,status:"SCHEDULED",seriesId,seriesGame:gameIndex+1,gamesInSeries:cfg.bestOf,awayRotationIndex:gameIndex%5,homeRotationIndex:gameIndex%5};
+    const fixture=createSeasonGameFixture({seasonFixture:postseasonFixtureForGame(session,awayTeamId,homeTeamId),scheduleGame:game,playerStates:session.playerStates,pitcherStates:session.pitcherStates,roleStates:session.roleStates,level:"MLB"});
+    const result=simulateSeasonFixtureGame(fixture,{seed:`${session.fixture.seed}:POST:${gameId}`});
+    const ba=battingMapFromResult(result,"away"),bh=battingMapFromResult(result,"home"),pa=pitchingMapFromResult(result,"away"),ph=pitchingMapFromResult(result,"home");
+    addBattingTotals(session.postseasonState.stats.batting,ba);addBattingTotals(session.postseasonState.stats.batting,bh);
+    addPitchingTotals(session.postseasonState.stats.pitching,pa,fixture.initialState.currentPitcherId.away);addPitchingTotals(session.postseasonState.stats.pitching,ph,fixture.initialState.currentPitcherId.home);
+    if(round==="WORLD_SERIES"){addBattingTotals(session.postseasonState.stats.worldSeriesBatting,ba);addBattingTotals(session.postseasonState.stats.worldSeriesBatting,bh);addPitchingTotals(session.postseasonState.stats.worldSeriesPitching,pa,fixture.initialState.currentPitcherId.away);addPitchingTotals(session.postseasonState.stats.worldSeriesPitching,ph,fixture.initialState.currentPitcherId.home);}
+    const winnerTeamId=result.awayRuns>result.homeRuns?awayTeamId:homeTeamId;if(winnerTeamId===highTeamId)highWins+=1;else lowWins+=1;
+    const uid=session.fixture.userPlayerId;if(Number(ba[uid]?.PA??0)>0||Number(bh[uid]?.PA??0)>0||Number(pa[uid]?.BF??0)>0||Number(ph[uid]?.BF??0)>0)session.postseasonState.user.appearedGames+=1;
+    games.push({gameId,date:game.date,awayTeamId,homeTeamId,awayRuns:result.awayRuns,homeRuns:result.homeRuns,winnerTeamId});
+  }
+  const winnerTeamId=highWins>lowWins?highTeamId:lowTeamId;
+  return {seriesId,round,leagueId,leagueLabel,teamAId,teamBId,highTeamId,lowTeamId,bestOf:cfg.bestOf,games,winnerTeamId,loserTeamId:winnerTeamId===teamAId?teamBId:teamAId};
+}
+function roundSeriesSpecs(session,round){
+  const state=session.postseasonState,specs=[];
+  if(round==="WILD_CARD"){
+    for(const league of Object.values(state.field.leagues)){const s=Object.fromEntries(league.seeds.map((row)=>[row.seed,row.teamId]));specs.push({round,leagueId:league.leagueId,leagueLabel:league.label,teamAId:s[3],teamBId:s[6],highTeamId:s[3],seriesId:`${league.label}_WC_3_6`});specs.push({round,leagueId:league.leagueId,leagueLabel:league.label,teamAId:s[4],teamBId:s[5],highTeamId:s[4],seriesId:`${league.label}_WC_4_5`});}
+  }else if(round==="DIVISION_SERIES"){
+    for(const league of Object.values(state.field.leagues)){const s=Object.fromEntries(league.seeds.map((row)=>[row.seed,row.teamId])),wc=state.rounds.WILD_CARD.filter((row)=>row.leagueId===league.leagueId),w36=wc.find((row)=>row.seriesId.endsWith("3_6")).winnerTeamId,w45=wc.find((row)=>row.seriesId.endsWith("4_5")).winnerTeamId;specs.push({round,leagueId:league.leagueId,leagueLabel:league.label,teamAId:s[1],teamBId:w45,highTeamId:s[1],seriesId:`${league.label}_DS_1`});specs.push({round,leagueId:league.leagueId,leagueLabel:league.label,teamAId:s[2],teamBId:w36,highTeamId:s[2],seriesId:`${league.label}_DS_2`});}
+  }else if(round==="LCS"){
+    for(const league of Object.values(state.field.leagues)){const ds=state.rounds.DIVISION_SERIES.filter((row)=>row.leagueId===league.leagueId),a=ds[0].winnerTeamId,b=ds[1].winnerTeamId,high=seedForTeam(state,a)<=seedForTeam(state,b)?a:b;specs.push({round,leagueId:league.leagueId,leagueLabel:league.label,teamAId:a,teamBId:b,highTeamId:high,seriesId:`${league.label}_LCS`});}
+  }else if(round==="WORLD_SERIES"){
+    const lcs=state.rounds.LCS,a=lcs.find((row)=>row.leagueLabel==="AL")?.winnerTeamId??lcs[0].winnerTeamId,b=lcs.find((row)=>row.leagueLabel==="NL")?.winnerTeamId??lcs[1].winnerTeamId;
+    const meta=mlbTeamMetadata(session),year=state.seasonYear,cmp=compareTwoTeamTiebreak(session,a,b,meta,year),sa=regularStanding(session,a),sb=regularStanding(session,b),pctA=postseasonRecordPct(sa.W,sa.L),pctB=postseasonRecordPct(sb.W,sb.L),high=pctA!==pctB?(pctA>pctB?a:b):(cmp<=0?a:b);
+    specs.push({round,leagueId:"WS",leagueLabel:"WS",teamAId:a,teamBId:b,highTeamId:high,seriesId:"WORLD_SERIES"});
+  }
+  return specs;
+}
+function winnerRow(session,playerId,line,score){const identity=playerIdentity(session,playerId);return {playerId,name:identity.name,teamId:identity.teamId,team:identity.team?.shortName??identity.team?.name??null,position:identity.primaryPosition??identity.role??null,score:Number(score.toFixed(3)),line};}
+function offenseAwardScore(line){return Number(line.OPS??0)*240+Number(line.HR??0)*2.2+Number(line.RBI??0)*0.55+Number(line.SB??0)*0.45+Number(line.H??0)*0.18+Number(line.BB??0)*0.12;}
+function cyAwardScore(line){return Number(line.IP??0)*0.42+Number(line.SO??0)*0.72-Math.max(0,Number(line.RA9??0)-2.5)*8-Number(line.BB??0)*0.15;}
+function regularSeasonAwards(session){
+  const state=stateForLevel(session,"MLB"),meta=mlbTeamMetadata(session),batting=getAllPlayerSeasonBatting(state),pitching=getAllPlayerSeasonPitching(state),leagues={};
+  for(const leagueId of [...new Set([...meta.values()].map((row)=>row.leagueId))]){
+    const hitterRows=Object.entries(batting).map(([id,line])=>({id,line,identity:playerIdentity(session,id)})).filter((row)=>meta.get(String(row.identity.teamId))?.leagueId===leagueId&&Number(row.line.PA??0)>=150);
+    const pitcherRows=Object.entries(pitching).map(([id,line])=>({id,line,identity:playerIdentity(session,id)})).filter((row)=>meta.get(String(row.identity.teamId))?.leagueId===leagueId&&Number(row.line.outsRecorded??0)>=150);
+    hitterRows.sort((a,b)=>offenseAwardScore(b.line)-offenseAwardScore(a.line)||a.id.localeCompare(b.id));pitcherRows.sort((a,b)=>cyAwardScore(b.line)-cyAwardScore(a.line)||a.id.localeCompare(b.id));
+    const silverSlugger=["C","1B","2B","3B","SS","LF","CF","RF","DH"].map((position)=>{const rows=hitterRows.filter((row)=>(row.identity.primaryPosition??"DH")===position);return rows[0]?{position,...winnerRow(session,rows[0].id,rows[0].line,offenseAwardScore(rows[0].line))}:null;}).filter(Boolean);
+    leagues[leagueId]={label:leagueId==="103"?"AL":leagueId==="104"?"NL":`L${leagueId}`,mvp:hitterRows[0]?winnerRow(session,hitterRows[0].id,hitterRows[0].line,offenseAwardScore(hitterRows[0].line)):null,cyYoung:pitcherRows[0]?winnerRow(session,pitcherRows[0].id,pitcherRows[0].line,cyAwardScore(pitcherRows[0].line)):null,silverSlugger};
+  }
+  return {methodology:{mvp:"OFFENSE_VALUE_PROXY_V56",cyYoung:"RUN_PREVENTION_STRIKEOUT_INNINGS_PROXY_V56",silverSlugger:"OFFENSE_BY_POSITION_V56",goldGlove:"DEFERRED_FIELDING_EVENT_TOTALS_REQUIRED"},leagues};
+}
+function worldSeriesMvp(session){
+  const state=session.postseasonState,champion=state.championTeamId,candidates=new Set([...Object.keys(state.stats.worldSeriesBatting),...Object.keys(state.stats.worldSeriesPitching)]),rows=[];
+  for(const id of candidates){const identity=playerIdentity(session,id);if(String(identity.teamId)!==String(champion))continue;const b=state.stats.worldSeriesBatting[id]??{},p=state.stats.worldSeriesPitching[id]??{},score=Number(b.TB??0)*1.8+Number(b.H??0)*0.5+Number(b.HR??0)*3+Number(b.RBI??0)*1.4+Number(b.BB??0)*0.4+Number(p.SO??0)*0.65+Number(p.outsRecorded??0)*0.18-Number(p.R??0)*1.8;rows.push({id,identity,b,p,score});}
+  rows.sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));const top=rows[0];return top?{playerId:top.id,name:top.identity.name,teamId:top.identity.teamId,position:top.identity.primaryPosition??top.identity.role??null,score:Number(top.score.toFixed(3)),batting:top.b,pitching:top.p}:null;
+}
+function finalizeSeasonHistory(session){
+  const year=Number(String(session.fixture.startDate).slice(0,4));session.historyState=normalizeHistoryState(session.historyState);if(session.historyState.seasons.some((row)=>row.seasonYear===year))return;if(session.postseasonState?.status!=="COMPLETE")throw new RangeError("postseason 완료 후 history를 확정할 수 있습니다.");
+  const awards=regularSeasonAwards(session);awards.worldSeriesMvp=worldSeriesMvp(session);
+  const userId=session.fixture.userPlayerId,userTeamId=String(userTeamIdForLevel(session,"MLB")),userRegular=getPlayerSeasonBattingLine(stateForLevel(session,"MLB"),userId),userPost=structuredClone(session.postseasonState.stats.batting[userId]??{G:0,PA:0,AB:0,R:0,H:0,doubles:0,triples:0,HR:0,RBI:0,BB:0,HBP:0,SO:0,SF:0,GDP:0,TB:0,SB:0,CS:0}),wonAwards=[];
+  for(const league of Object.values(awards.leagues)){if(league.mvp?.playerId===userId)wonAwards.push("MVP");if(league.cyYoung?.playerId===userId)wonAwards.push("CY_YOUNG");for(const row of league.silverSlugger??[])if(row.playerId===userId)wonAwards.push(`SILVER_SLUGGER_${row.position}`);}
+  if(awards.worldSeriesMvp?.playerId===userId)wonAwards.push("WORLD_SERIES_MVP");
+  const champion=session.postseasonState.championTeamId,championshipStatus=champion===userTeamId?(session.postseasonState.user.onRoster&&session.postseasonState.user.appearedGames>0?"ROSTER_CHAMPION":"ORG_CHAMPION_NO_ROSTER"):"NONE",meta=mlbTeamMetadata(session);
+  session.historyState=appendSeasonHistory(session.historyState,{seasonYear:year,championTeamId:champion,championName:meta.get(champion)?.name??champion,runnerUpTeamId:session.postseasonState.runnerUpTeamId,runnerUpName:meta.get(session.postseasonState.runnerUpTeamId)?.name??session.postseasonState.runnerUpTeamId,postseason:{field:structuredClone(session.postseasonState.field),rounds:structuredClone(session.postseasonState.rounds),completedDate:session.postseasonState.completedDate},awards,user:{regularSeason:userRegular,postseason:userPost,postseasonRoster:session.postseasonState.user.onRoster,postseasonAppearances:session.postseasonState.user.appearedGames,championshipStatus,awards:wonAwards}});
+  if(championshipStatus==="ROSTER_CHAMPION")session.careerEventState=appendCareerEvent(session.careerEventState,{type:"WORLD_SERIES_CHAMPION",date:session.postseasonState.completedDate,playerId:userId,importance:"CAREER",source:"POSTSEASON_FINAL",level:"MLB",teamId:champion,reasonCodes:["WORLD_SERIES_CHAMPION","POSTSEASON_ROSTER_PARTICIPANT"]});
+  for(const award of wonAwards)session.careerEventState=appendCareerEvent(session.careerEventState,{type:"MAJOR_AWARD",date:session.postseasonState.completedDate,playerId:userId,importance:award==="MVP"||award==="WORLD_SERIES_MVP"?"CAREER":"MAJOR",source:"SEASON_AWARDS",level:"MLB",teamId:userTeamId,reasonCodes:[award],statValue:award});
+}
+function advancePostseasonRoundInternal(session){
+  const state=ensurePostseasonState(session);if(state.status==="COMPLETE")return false;const round=state.currentRound,results=roundSeriesSpecs(session,round).map((spec)=>simulatePostseasonSeries(session,spec));state.rounds[round]=results;const idx=POSTSEASON_ROUND_ORDER.indexOf(round);
+  if(round==="WORLD_SERIES"){state.status="COMPLETE";state.currentRound=null;state.championTeamId=results[0].winnerTeamId;state.runnerUpTeamId=results[0].loserTeamId;state.completedDate=results[0].games.at(-1).date;finalizeSeasonHistory(session);}else state.currentRound=POSTSEASON_ROUND_ORDER[idx+1];
+  return true;
+}
+function completePostseasonAndHistoryInternal(session){
+  ensurePostseasonState(session);let safety=0;while(session.postseasonState?.status==="ACTIVE"){advancePostseasonRoundInternal(session);safety+=1;if(safety>POSTSEASON_ROUND_ORDER.length+1)throw new RangeError("postseason safety limit를 초과했습니다.");}finalizeSeasonHistory(session);
+}
+
 function offseasonSeasonYear(session) {
   const year=Number(String(session.fixture?.startDate ?? session.state?.startDate ?? session.state?.currentDate).slice(0,4));
   if(!Number.isInteger(year)) throw new RangeError("offseason season year를 확인할 수 없습니다.");
@@ -859,12 +1081,14 @@ function offseasonReviewSnapshot(session) {
     stats:{G:line.G,H:line.H,HR:line.HR,RBI:line.RBI,SB:line.SB,AVG:line.AVG,OBP:line.OBP,SLG:line.SLG},
     contractStatus:contract?.status ?? null,
     serviceDisplay:contract?.service?.display ?? null,
-    tradeCount:trade?.lastTrade ? 1 : 0
+    tradeCount:trade?.lastTrade ? 1 : 0,
+    history:(session.historyState?.seasons ?? []).find((row)=>row.seasonYear===offseasonSeasonYear(session))?.user ?? null
   };
 }
 
 function ensureOffseasonState(session) {
   if(!worldComplete(session)) throw new RangeError("정규시즌이 완료되어야 offseason을 시작할 수 있습니다.");
+  completePostseasonAndHistoryInternal(session);
   if(session.fixture?.worldMode!=="PRODUCTION_REAL") throw new RangeError("v55 offseason은 Production 커리어에서 지원합니다.");
   const year=offseasonSeasonYear(session);
   if(session.offseasonState && session.offseasonState.seasonYear===year) return session.offseasonState;
@@ -1006,6 +1230,7 @@ function rolloverCompletedProductionSeason(session) {
   });
   session.fixture = ecology.fixture;
   session.leagueEcologyState = ecology.ecologyState;
+  session.postseasonState = null;
   session.contractStates = normalizeContractStatesForFixture(session.fixture, session.contractStates ?? {}, {
     startDate: nextStartDate,
     resetClock: true
@@ -1845,7 +2070,7 @@ function snapshot(session) {
   const worldLeagueCompleted = Object.values(session.levelStates ?? { AAA: session.state }).reduce((sum, row) => sum + row.completedGames, 0);
   const worldLeagueTotal = Object.values(session.levelStates ?? { AAA: session.state }).reduce((sum, row) => sum + row.schedule.length, 0);
   return freeze({
-    apiVersion: "internal_season_api_v24", seasonId: session.state.seasonId, seasonYear: Number(String(session.fixture.startDate ?? session.state.startDate).slice(0,4)), startDate: session.fixture.startDate ?? session.state.startDate, status: session.offseasonState?.status === "ACTIVE" ? "OFFSEASON" : worldComplete(session) ? "COMPLETE" : "REGULAR_SEASON", currentDate: session.state.currentDate,
+    apiVersion: "internal_season_api_v24", seasonId: session.state.seasonId, seasonYear: Number(String(session.fixture.startDate ?? session.state.startDate).slice(0,4)), startDate: session.fixture.startDate ?? session.state.startDate, status: session.offseasonState?.status === "ACTIVE" ? "OFFSEASON" : session.postseasonState?.status === "ACTIVE" ? "POSTSEASON" : worldComplete(session) ? "COMPLETE" : "REGULAR_SEASON", currentDate: session.state.currentDate,
     currentLevel: level, userTeam: state.teams[userTeamId], userPlayer: userPlayerView(session, leaders), record: teamRecord(session, level), userSeasonLine: userLine, userStatsByLevel: levelStats,
     userRole: (() => {
       const playingTime = getPositionPlayingTimeView(session.playerStates?.[session.fixture.userPlayerId] ?? null, userRoleState);
@@ -1865,6 +2090,8 @@ function snapshot(session) {
     dataUniverse: session.dataUniverse ? { schemaVersion: session.dataUniverse.schemaVersion, origin: session.dataUniverse.origin, sourceSnapshot: session.dataUniverse.sourceSnapshot, copiedAtCareerStart: session.dataUniverse.copiedAtCareerStart, snapshotDate: session.dataUniverse.snapshotDate, independent: session.dataUniverse.independent } : null,
     leagueEcology: session.leagueEcologyState ? { year: session.leagueEcologyState.year, totalRetired: session.leagueEcologyState.totalRetired, totalGenerated: session.leagueEcologyState.totalGenerated, lastOffseason: session.leagueEcologyState.lastOffseason } : null,
     offseason: getOffseasonPublicView(session.offseasonState),
+    postseason: getPostseasonPublicView(session.postseasonState),
+    history: getHistoryPublicView(session.historyState),
     lastProgress: session.lastProgress ?? null,
     activeGame, activeScheduleGameId: session.activeScheduleGameId, activeLevel: session.activeLevel ?? null
   });
@@ -1995,7 +2222,7 @@ function createSessionFromFixture(fixture, { seed, startDate, dataUniverse = nul
   const session = {
     fixture, state: levelStates.AAA, levelStates,
     dataUniverse: normalizeSaveUniverse(dataUniverse ?? createSyntheticUniverseDescriptor({ startDate, sourceVersion: CURRENT_GAME_VERSION }), { startDate, sourceVersion: CURRENT_GAME_VERSION }),
-    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates, contractMarketStates, tradeState, offseasonState: null,
+    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates, contractMarketStates, tradeState, offseasonState: null, postseasonState: null, historyState: createHistoryState(),
     roleStates, organizationState: createOrganizationReviewState({ startDate }),
     careerEventState: createCareerEventState({ userPlayerId: fixture.userPlayerId, startDate, initialLevel }),
     leagueEcologyState: fixture.worldMode === "PRODUCTION_REAL" ? createProductionEcologyState({ fixture }) : null,
@@ -2095,6 +2322,8 @@ const seasonApi = Object.freeze({
     restored.offseasonState = normalizeOffseasonState(restored.offseasonState ?? null, {
       userPlayerId: restored.fixture.userPlayerId
     });
+    restored.postseasonState = normalizePostseasonState(restored.postseasonState ?? null);
+    restored.historyState = normalizeHistoryState(restored.historyState ?? null);
     const hadScoutingStates = Boolean(restored.scoutingStates);
     // Legacy v43 saves had no scouting state. Backfill at the restore date so
     // past review cycles are not retroactively replayed. Existing v44 states
@@ -2235,6 +2464,8 @@ const seasonApi = Object.freeze({
     applySeasonEndAgingIfNeeded(session);
     return snapshot(session);
   },
+  startPostseason(seasonId) { const session=assertSession(seasonId); ensurePostseasonState(session); return snapshot(session); },
+  advancePostseasonRound(seasonId) { const session=assertSession(seasonId); if(session.postseasonState?.status==="COMPLETE") return snapshot(session); advancePostseasonRoundInternal(session); return snapshot(session); },
   startOffseason(seasonId) { const session=assertSession(seasonId); ensureOffseasonState(session); return snapshot(session); },
   advanceOffseasonPhase(seasonId) { const session=assertSession(seasonId); if(session.offseasonState?.status==="COMPLETE") return snapshot(session); advanceOffseasonPhaseInternal(session); return snapshot(session); },
   advanceToNextSeason(seasonId) { const session = assertSession(seasonId); return completeOffseasonToOpeningDayInternal(session); },

@@ -161,6 +161,20 @@ function offseasonPhaseLabel(phase) {
   })[phase] ?? phase ?? "완료";
 }
 
+function postseasonRoundLabel(round) {
+  return ({WILD_CARD:"Wild Card Series",DIVISION_SERIES:"Division Series",LCS:"League Championship Series",WORLD_SERIES:"World Series"})[round] ?? round ?? "완료";
+}
+function postseasonCard(snapshot) {
+  const post=snapshot.postseason;
+  if(snapshot.status!=="POSTSEASON"||!post) return "";
+  const completed=Object.values(post.rounds ?? {}).reduce((n,rows)=>n+(rows?.length ?? 0),0);
+  return `<section class="card next-game-card postseason-card">
+    <div class="section-head"><strong>Postseason</strong><span>${esc(postseasonRoundLabel(post.currentRound))}</span></div>
+    <div class="matchup-large"><div><span>현재 라운드</span><strong>${esc(postseasonRoundLabel(post.currentRound))}</strong></div><b>→</b><div class="right"><span>완료 시리즈</span><strong>${completed}</strong></div></div>
+    <div class="progress-actions"><button type="button" class="primary" data-season-action="POSTSEASON_NEXT">라운드 진행</button></div>
+    <p class="condition-note">정규시즌 기록은 동결되어 있으며 postseason 통계는 별도 저장됩니다. 사용자 선수의 26인 roster 포함도 자동 보장되지 않습니다.</p>
+  </section>`;
+}
 function offseasonCard(snapshot) {
   const off=snapshot.offseason;
   if(snapshot.status!=="OFFSEASON"||!off) return "";
@@ -174,7 +188,7 @@ function offseasonCard(snapshot) {
 }
 
 function nextGameCard(snapshot) {
-  if (snapshot.status === "OFFSEASON") return "";
+  if (snapshot.status === "OFFSEASON" || snapshot.status === "POSTSEASON") return "";
   const userLevel = snapshot.organization?.userLevel ?? "AAA";
   const userLevelSummary = snapshot.organization?.levelSummaries?.find((row) => row.level === userLevel) ?? null;
   if (userLevelSummary && !userLevelSummary.simulated) {
@@ -182,7 +196,12 @@ function nextGameCard(snapshot) {
       <p class="season-empty">현재 실제 일정은 A / High-A(A+) / AA / AAA / MLB 전체에 연결되어 있습니다. ${esc(levelLabel(userLevel))} 일정 상태를 다시 확인해주세요.</p></section>`;
   }
   const game = snapshot.nextGame;
-  if (!game) return `<section class="card next-game-card"><div class="section-head"><strong>정규시즌 종료</strong><span>${snapshot.record.W}-${snapshot.record.L}</span></div><p class="season-empty">정규시즌 일정이 모두 끝났습니다.</p>${snapshot.status === "COMPLETE" ? `<div class="progress-actions"><button type="button" class="primary" data-season-action="START_OFFSEASON">오프시즌 시작</button></div>` : ""}</section>`;
+  if (!game) {
+    const complete=snapshot.status==="COMPLETE";
+    const postDone=snapshot.postseason?.status==="COMPLETE";
+    const action=complete ? (postDone ? `<button type="button" class="primary" data-season-action="START_OFFSEASON">오프시즌 시작</button>` : `<button type="button" class="primary" data-season-action="START_POSTSEASON">포스트시즌 시작</button>`) : "";
+    return `<section class="card next-game-card"><div class="section-head"><strong>정규시즌 종료</strong><span>${snapshot.record.W}-${snapshot.record.L}</span></div><p class="season-empty">정규시즌 일정이 모두 끝났습니다.</p>${action?`<div class="progress-actions">${action}</div>`:""}</section>`;
+  }
   const userHome = game.userSide === "home";
   const user = snapshot.userTeam.shortName;
   const opp = game.opponent.shortName;
@@ -300,7 +319,7 @@ function homeCareerFeedPreview(snapshot) {
 
 function homeView(snapshot, uiState = {}) {
   const saveStatus = uiState.saveMessage ? `<p class="home-save-status">${esc(uiState.saveMessage)}</p>` : "";
-  return `${recordCard(snapshot)}${conditionCard(snapshot)}${roleStatusCard(snapshot)}${pitchingStaffCard(snapshot)}${offseasonCard(snapshot)}${nextGameCard(snapshot)}${progressStopCard(snapshot)}${homeCareerFeedPreview(snapshot)}${recentResults(snapshot)}${saveStatus}
+  return `${recordCard(snapshot)}${conditionCard(snapshot)}${roleStatusCard(snapshot)}${pitchingStaffCard(snapshot)}${postseasonCard(snapshot)}${offseasonCard(snapshot)}${nextGameCard(snapshot)}${progressStopCard(snapshot)}${homeCareerFeedPreview(snapshot)}${recentResults(snapshot)}${saveStatus}
     <p class="status">다른 팀 경기도 동일한 PA/Game 엔진으로 시뮬레이션되어 순위에 반영됩니다. 조직·전체 커리어 피드·저장 관리는 더보기에서 확인할 수 있습니다.</p>`;
 }
 
@@ -464,6 +483,9 @@ function careerEventLabel(event) {
   if (event.type === "PLAYER_PROMOTED") return `승격 · ${levelLabel(event.fromLevel)} → ${levelLabel(event.toLevel)}`;
   if (event.type === "PLAYER_DEMOTED") return `강등 · ${levelLabel(event.fromLevel)} → ${levelLabel(event.toLevel)}`;
   if (event.type === "PLAYER_TRADED") return "트레이드";
+  if (event.type === "POSTSEASON_ROSTER") return "포스트시즌 로스터 합류";
+  if (event.type === "WORLD_SERIES_CHAMPION") return "월드시리즈 우승";
+  if (event.type === "MAJOR_AWARD") return `주요 수상 · ${(event.reasonCodes ?? [])[0] ?? "AWARD"}`;
   if (event.type === "ROLE_CHANGED") return `역할 변경 · ${roleLabel(event.fromRole)} → ${roleLabel(event.toRole)}`;
   if (event.type === "PRO_DEBUT") return "프로 데뷔";
   if (event.type === "MLB_DEBUT") return "MLB 데뷔";
@@ -507,6 +529,9 @@ function careerEventDetail(event) {
   if (event.type === "CAREER_STARTED") return `${levelLabel(event.level)} 레벨에서 시작`;
   if (event.type === "LEVEL_ASSIGNED") return "초기 조직 배정";
   if (event.type === "PLAYER_TRADED") return `${event.fromOrganizationId ?? "-"} → ${event.toOrganizationId ?? "-"} · ${levelLabel(event.level)}`;
+  if (event.type === "POSTSEASON_ROSTER") return "26인 포스트시즌 로스터";
+  if (event.type === "WORLD_SERIES_CHAMPION") return "포스트시즌 로스터 참가 우승";
+  if (event.type === "MAJOR_AWARD") return (event.reasonCodes ?? []).join(" · ");
   if (event.type === "ROLE_CHANGED") return `${levelLabel(event.level)} · 조직 역할 검토`;
   if (event.type === "PRO_DEBUT") return contextual(`${levelLabel(event.level)} 공식 경기 첫 출전`);
   if (event.type === "MLB_DEBUT") return contextual("메이저리그 공식 경기 첫 출전");
@@ -840,7 +865,7 @@ function organizationView(snapshot, uiState = {}) {
 }
 
 function moreSectionNav(section) {
-  const tabs = [["ORG", "Organization", "조직"], ["FEED", "Career Feed", "커리어"], ["SETTINGS", "Settings", "설정"]];
+  const tabs = [["ORG", "Organization", "조직"], ["FEED", "Career Feed", "커리어"], ["HISTORY", "League History", "역사"], ["SETTINGS", "Settings", "설정"]];
   return `<div class="subnav more-subnav" aria-label="더보기 메뉴">${tabs.map(([key,en,ko]) => `<button type="button" data-more-section="${key}" class="${section === key ? "active" : ""}"><strong>${ko}</strong><small>${en}</small></button>`).join("")}</div>`;
 }
 
@@ -854,6 +879,14 @@ function careerFeedView(snapshot) {
   </section>`;
 }
 
+function historyView(snapshot) {
+  const seasons=snapshot.history?.seasons ?? [];
+  return `<section class="card player-detail-card history-card">
+    <div class="section-head"><strong>League History</strong><span>${snapshot.history?.totalSeasons ?? seasons.length} seasons</span></div>
+    ${seasons.length===0?`<p class="season-empty">아직 확정된 시즌 아카이브가 없습니다.</p>`:`<div class="career-timeline-list">${seasons.map((row)=>`<div class="career-timeline-row"><span>${row.seasonYear}</span><div><strong>${esc(row.championName ?? row.championTeamId)} 우승</strong><small>Runner-up ${esc(row.runnerUpName ?? row.runnerUpTeamId)} · 내 결과 ${esc(row.user?.championshipStatus ?? "NONE")} · 수상 ${(row.user?.awards ?? []).map(esc).join(", ") || "없음"}</small></div></div>`).join("")}</div>`}
+    <p class="condition-note">정규시즌과 postseason 기록은 분리 보존됩니다. Gold Glove는 OAA-like/Fielding Runs 누적 store가 완성되기 전에는 선정하지 않습니다.</p>
+  </section>`;
+}
 function settingsView(snapshot, uiState = {}) {
   return `<section class="card settings-summary-card">
     <div class="section-head"><strong>Settings</strong><span>MVP 1.0</span></div>
@@ -867,8 +900,8 @@ function settingsView(snapshot, uiState = {}) {
 }
 
 function moreView(snapshot, uiState = {}) {
-  const section = ["ORG", "FEED", "SETTINGS"].includes(uiState.moreSection) ? uiState.moreSection : "ORG";
-  const body = section === "FEED" ? careerFeedView(snapshot) : section === "SETTINGS" ? settingsView(snapshot, uiState) : organizationView(snapshot, uiState);
+  const section = ["ORG", "FEED", "HISTORY", "SETTINGS"].includes(uiState.moreSection) ? uiState.moreSection : "ORG";
+  const body = section === "FEED" ? careerFeedView(snapshot) : section === "HISTORY" ? historyView(snapshot) : section === "SETTINGS" ? settingsView(snapshot, uiState) : organizationView(snapshot, uiState);
   return `${moreSectionNav(section)}${body}`;
 }
 
@@ -901,6 +934,9 @@ function majorEventTitle(event) {
   if (event.type === "PLAYER_PROMOTED") return `${levelLabel(event.toLevel)} 승격`;
   if (event.type === "PLAYER_DEMOTED") return `${levelLabel(event.toLevel)} 재배치`;
   if (event.type === "PLAYER_TRADED") return "TRADED";
+  if (event.type === "POSTSEASON_ROSTER") return "POSTSEASON";
+  if (event.type === "WORLD_SERIES_CHAMPION") return "WORLD CHAMPION";
+  if (event.type === "MAJOR_AWARD") return "AWARD";
   return "커리어 모먼트";
 }
 

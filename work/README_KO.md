@@ -4,28 +4,29 @@
 
 ## 현재 체크포인트
 
-- 기능 기준선: **v55 Full Offseason**
-- 성능 체크포인트: **v55.1 Performance**
+- 성능 기준선: **v55.1 Performance**
+- 현재 개발: **v56 Postseason / Awards / History**
 - Save schema: v2
-- gameVersion은 v55와 호환 유지
+- ruleset: `ruleset_2026`
 - Complete Edition: 아직 아님
 
-## v55.1 Performance
+## v56 Postseason / Awards / History
 
-기능을 줄이지 않고 모바일 체감속도를 개선합니다.
+정규시즌 종료와 오프시즌 사이에 MLB postseason과 연도 아카이브를 삽입합니다.
 
-- 월드 Top 100 유망주 read-model 캐시
-- 조직 depth/read-model 캐시
-- 이미 freeze된 대형 데이터 재귀 복사 방지
-- 일반 자동저장을 idle 직렬 큐로 이동
-- 일반 동작의 저장 대기 + 중복 렌더 제거
-- 수동저장/마일스톤/커리어 이탈은 저장 완료 보장
-- cache는 세이브에 포함하지 않음
-- 조직/scouting review 시 cache invalidation
-- 390x844 브라우저 탭 timing gate
-
-선수 수, 리그 수, 시뮬레이션 정확도는 줄이지 않습니다.
+- 리그별 6팀, 전체 12팀
+- 상위 지구 우승 2팀 first-round bye
+- Wild Card 3전 2선승
+- Division Series 5전 3선승
+- LCS / World Series 7전 4선승
+- postseason 26인 roster, 최대 투수 13명
+- 정규시즌과 postseason 통계를 분리
+- MVP / Cy Young / Silver Slugger / World Series MVP 기록
+- Gold Glove는 수비 가치 누적 store가 완성될 때까지 선정 보류
+- champion / runner-up / awards / 사용자 postseason 참가 여부를 연도별 history에 저장
+- 사용자 조직 우승과 실제 postseason roster 참가 우승을 구분
+- 기존 offseason API는 postseason과 history를 자동 확정한 뒤 v55 파이프라인으로 연결
 
 ## 다음 단계
 
-v56 Postseason / Awards / History
+v57 Draft / International

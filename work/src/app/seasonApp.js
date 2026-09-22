@@ -348,7 +348,7 @@ function startSeasonApp(root) {
         renderHome();
       },
       onMoreSection(section) {
-        moreSection = ["ORG", "FEED", "SETTINGS"].includes(section) ? section : "ORG";
+        moreSection = ["ORG", "FEED", "HISTORY", "SETTINGS"].includes(section) ? section : "ORG";
         playerDetail = null;
         renderHome();
       },
@@ -486,6 +486,8 @@ function startSeasonApp(root) {
         const previousStatus = snapshot.status;
         const previousYear = snapshot.seasonYear;
         const previousCareerSequence = latestCareerSequence(snapshot);
+        if (action === "START_POSTSEASON") snapshot = seasonApi.startPostseason(snapshot.seasonId);
+        if (action === "POSTSEASON_NEXT") snapshot = seasonApi.advancePostseasonRound(snapshot.seasonId);
         if (action === "START_OFFSEASON") snapshot = seasonApi.startOffseason(snapshot.seasonId);
         if (action === "OFFSEASON_NEXT") snapshot = seasonApi.advanceOffseasonPhase(snapshot.seasonId);
         if (action === "SIM_GAME") snapshot = seasonApi.simulateCurrentGame(snapshot.seasonId);

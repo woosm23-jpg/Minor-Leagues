@@ -1,0 +1,17 @@
+{
+  "schema": "THE_CALL_UP_V56_BROWSER_SMOKE",
+  "pass": true,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "checks": {
+    "historyTab": true,
+    "postseasonBundled": true,
+    "version": true,
+    "pageErrors": 0,
+    "consoleErrors": 0
+  },
+  "errors": [],
+  "consoleErrors": []
+}
