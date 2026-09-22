@@ -121,6 +121,22 @@ function startSeasonApp(root) {
     }
   };
 
+  let autosaveQueue = Promise.resolve(true);
+  const waitForAutosaveIdle = () => new Promise((resolve) => {
+    if (typeof globalThis.requestIdleCallback === "function") {
+      globalThis.requestIdleCallback(() => resolve(), { timeout: 750 });
+    } else {
+      globalThis.setTimeout(resolve, 0);
+    }
+  });
+  const queueAutosave = ({ milestone = null } = {}) => {
+    autosaveQueue = autosaveQueue.catch(() => false).then(async () => {
+      await waitForAutosaveIdle();
+      return autosave({ milestone });
+    });
+    return autosaveQueue;
+  };
+
   let careerRenderTimer = null;
   const scheduleCareerCreationRender = () => {
     if (careerRenderTimer != null) clearTimeout(careerRenderTimer);
@@ -287,7 +303,7 @@ function startSeasonApp(root) {
   };
 
   const goToCareerSelect = async () => {
-    if (snapshot && currentSaveId) await autosave();
+    if (snapshot && currentSaveId) await queueAutosave();
     snapshot = null;
     currentSaveId = null;
     currentSaveLabel = null;
@@ -365,8 +381,7 @@ function startSeasonApp(root) {
       async onTrainingFocus(focus) {
         snapshot = seasonApi.setTrainingFocus(snapshot.seasonId, focus);
         renderHome();
-        await autosave();
-        renderHome();
+        void queueAutosave();
       },
       async onImportFile(file) {
         try {
@@ -419,12 +434,13 @@ function startSeasonApp(root) {
           if (snapshot.activeGame) {
             gameView = "GAME";
             renderGame();
-            void autosave();
+            void queueAutosave();
           }
           return;
         }
         if (action === "SAVE") {
           try {
+            await autosaveQueue.catch(() => false);
             const meta = await seasonSaveService.saveSeason(snapshot.seasonId, { saveId: currentSaveId });
             currentSaveLabel = meta.label;
             saveMessage = "수동 저장 완료";
@@ -482,8 +498,12 @@ function startSeasonApp(root) {
           : previousStatus !== "COMPLETE" && snapshot.status === "COMPLETE" ? "SEASON_END" : null;
         tab = "HOME";
         renderHome();
-        await autosave({ milestone });
-        renderHome();
+        if (milestone) {
+          await queueAutosave({ milestone });
+          renderHome();
+        } else {
+          void queueAutosave();
+        }
       }
     }, tab, saveUi());
   };
@@ -493,7 +513,7 @@ function startSeasonApp(root) {
     else snapshot = seasonApi.getSeason(snapshot.seasonId);
     tab = "HOME";
     renderHome();
-    await autosave();
+    await queueAutosave();
     snapshot = seasonApi.getSeason(snapshot.seasonId);
     renderHome();
   };
@@ -508,7 +528,7 @@ function startSeasonApp(root) {
         majorEvent = latestMajorCareerEvent(snapshot, previousCareerSequence) ?? majorEvent;
         const milestone = previousStatus !== "COMPLETE" && snapshot.status === "COMPLETE" ? "SEASON_END" : null;
         renderGame();
-        void autosave({ milestone });
+        void queueAutosave({ milestone });
       },
       onRunningChoice(choice) {
         const previousStatus = snapshot.status;
@@ -517,7 +537,7 @@ function startSeasonApp(root) {
         majorEvent = latestMajorCareerEvent(snapshot, previousCareerSequence) ?? majorEvent;
         const milestone = previousStatus !== "COMPLETE" && snapshot.status === "COMPLETE" ? "SEASON_END" : null;
         renderGame();
-        void autosave({ milestone });
+        void queueAutosave({ milestone });
       },
       onView(view) {
         gameView = view === "BOX" ? "BOX" : "GAME";

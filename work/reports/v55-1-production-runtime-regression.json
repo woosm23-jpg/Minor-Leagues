@@ -1,0 +1,109 @@
+{
+  "schema": "THE_CALL_UP_V50_2A_PRODUCTION_DATA_RUNTIME",
+  "pass": true,
+  "verified": true,
+  "source": "Production Snapshot v2",
+  "snapshot": {
+    "id": "mlb-milb-2026-2026-09-20-v2-production",
+    "date": "2026-09-20",
+    "contentHash": "fnv1a32:21eb3434",
+    "teams": 150,
+    "players": 5429,
+    "activePlayers": 4217,
+    "statsRows": 80606,
+    "scheduleGames": 10710,
+    "parks": 30,
+    "availability": {
+      "ACTIVE": 4217,
+      "INJURED_60": 436,
+      "INJURED_SHORT": 366,
+      "TEMP_INACTIVE": 14,
+      "INJURED_FULL_SEASON": 181,
+      "REHAB": 45,
+      "DEVELOPMENT_LIST": 149,
+      "NOT_REPORTED": 11,
+      "RESTRICTED": 9,
+      "ADMIN_LEAVE": 1
+    }
+  },
+  "dataGate": {
+    "teamCounts": {
+      "MLB": 30,
+      "AAA": 30,
+      "AA": 30,
+      "HIGH_A": 30,
+      "A": 30
+    },
+    "schedules": {
+      "MLB": 2430,
+      "AAA": 2250,
+      "AA": 2070,
+      "HIGH_A": 1980,
+      "A": 1980
+    },
+    "historySeasons": [
+      2024,
+      2025,
+      2026
+    ],
+    "historyGroups": [
+      "hitting",
+      "pitching",
+      "fielding"
+    ],
+    "runtimeUniverseValidation": true
+  },
+  "runtimeGate": {
+    "organizations": 30,
+    "selectedOrganization": "Arizona Diamondbacks",
+    "worldMode": "PRODUCTION_REAL",
+    "startDate": "2026-03-25",
+    "userLevel": "A",
+    "userAssignments": [
+      "A"
+    ],
+    "levels": {
+      "MLB": {
+        "teams": 30,
+        "scheduleGames": 2430,
+        "affiliateTeamId": "109",
+        "affiliatePlayers": 28,
+        "affiliatePositionPlayers": 14,
+        "affiliatePitchers": 14
+      },
+      "AAA": {
+        "teams": 30,
+        "scheduleGames": 2250,
+        "affiliateTeamId": "2310",
+        "affiliatePlayers": 27,
+        "affiliatePositionPlayers": 12,
+        "affiliatePitchers": 15
+      },
+      "AA": {
+        "teams": 30,
+        "scheduleGames": 2070,
+        "affiliateTeamId": "5368",
+        "affiliatePlayers": 28,
+        "affiliatePositionPlayers": 12,
+        "affiliatePitchers": 16
+      },
+      "HIGH_A": {
+        "teams": 30,
+        "scheduleGames": 1980,
+        "affiliateTeamId": "419",
+        "affiliatePlayers": 26,
+        "affiliatePositionPlayers": 13,
+        "affiliatePitchers": 13
+      },
+      "A": {
+        "teams": 30,
+        "scheduleGames": 1980,
+        "affiliateTeamId": "516",
+        "affiliatePlayers": 31,
+        "affiliatePositionPlayers": 15,
+        "affiliatePitchers": 16
+      }
+    },
+    "restoreRoundTrip": true
+  }
+}

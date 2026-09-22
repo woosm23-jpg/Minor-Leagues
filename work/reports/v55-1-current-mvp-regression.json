@@ -1,0 +1,71 @@
+{
+  "schema": "THE_CALL_UP_V50_1G_CURRENT_MVP_GATE",
+  "pass": true,
+  "verified": true,
+  "source": "Production Snapshot v2",
+  "componentCount": 6,
+  "components": [
+    {
+      "id": "v50.1a",
+      "title": "organization depth",
+      "script": "scripts/verify-season-organization-v20.js",
+      "schema": "THE_CALL_UP_V50_1A_ORGANIZATION_DEPTH",
+      "pass": true,
+      "verified": true,
+      "source": "Production Snapshot v2"
+    },
+    {
+      "id": "v50.1b",
+      "title": "promotion and adjacent movement",
+      "script": "scripts/verify-season-promotion-ai-v22.js",
+      "schema": "THE_CALL_UP_V50_1B_PROMOTION_GATE",
+      "pass": true,
+      "verified": true,
+      "source": "Production Snapshot v2"
+    },
+    {
+      "id": "v50.1c",
+      "title": "five-level ladder",
+      "script": "scripts/verify-season-multi-level-v23.js",
+      "schema": "THE_CALL_UP_V50_1C_FULL_LADDER_GATE",
+      "pass": true,
+      "verified": true,
+      "source": "Production Snapshot v2"
+    },
+    {
+      "id": "v50.1d",
+      "title": "MLB call-up and replacement",
+      "script": "scripts/verify-season-mlb-replacement-v24.js",
+      "schema": "THE_CALL_UP_V50_1D_MLB_CALLUP_REPLACEMENT",
+      "pass": true,
+      "verified": true,
+      "source": "Production Snapshot v2"
+    },
+    {
+      "id": "v50.1e",
+      "title": "injury fatigue form",
+      "script": "scripts/verify-season-condition.js",
+      "schema": "THE_CALL_UP_V50_1E_CONDITION_REGRESSION",
+      "pass": true,
+      "verified": true,
+      "source": "Production Snapshot v2"
+    },
+    {
+      "id": "v50.1f",
+      "title": "save checkpoint transfer",
+      "script": "scripts/verify-season-save-checkpoint-v15.js",
+      "schema": "THE_CALL_UP_V50_1F_SAVE_TRANSFER_REGRESSION",
+      "pass": true,
+      "verified": true,
+      "source": "Production Snapshot v2"
+    }
+  ],
+  "invariants": {
+    "allFocusedGatesPassed": true,
+    "productionSnapshotV2": true,
+    "fiveLevelOrganization": true,
+    "promotionAndCallupRegression": true,
+    "injuryFatigueFormRegression": true,
+    "saveCheckpointTransferRegression": true
+  }
+}

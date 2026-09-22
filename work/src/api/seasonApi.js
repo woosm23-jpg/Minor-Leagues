@@ -30,9 +30,51 @@ import { executeTrade } from "../services/tradeService.js";
 import { OFFSEASON_PHASES, createOffseasonState, normalizeOffseasonState, completeOffseasonPhase, getOffseasonPublicView } from "../engine/career/offseasonPipeline.js";
 
 const sessions = new Map();
+const heavyReadModelCaches = new WeakMap();
 const CURRENT_GAME_VERSION = "full_career_offseason_pipeline_v55";
 
+function heavyReadModelCache(session) {
+  let cache=heavyReadModelCaches.get(session);
+  if(!cache){
+    cache={worldProspects:null,organization:null,stats:{worldProspects:{hits:0,misses:0},organization:{hits:0,misses:0}}};
+    heavyReadModelCaches.set(session,cache);
+  }
+  return cache;
+}
+
+function cachedWorldProspectRankings(session) {
+  const cache=heavyReadModelCache(session);
+  const current=cache.worldProspects;
+  if(current && current.fixture===session.fixture && current.scoutingStates===session.scoutingStates){
+    cache.stats.worldProspects.hits+=1;
+    return current.value;
+  }
+  cache.stats.worldProspects.misses+=1;
+  const value=freeze(worldProspectRankings(session));
+  cache.worldProspects={fixture:session.fixture,scoutingStates:session.scoutingStates,value};
+  return value;
+}
+
+function cachedOrganizationView(session) {
+  const cache=heavyReadModelCache(session);
+  const current=cache.organization;
+  if(current && current.fixture===session.fixture && current.organizationState===session.organizationState && current.scoutingStates===session.scoutingStates){
+    cache.stats.organization.hits+=1;
+    return current.value;
+  }
+  cache.stats.organization.misses+=1;
+  const value=freeze(organizationView(session));
+  cache.organization={fixture:session.fixture,organizationState:session.organizationState,scoutingStates:session.scoutingStates,value};
+  return value;
+}
+
+function performanceDiagnostics(session) {
+  const stats=heavyReadModelCache(session).stats;
+  return freeze({worldProspects:{...stats.worldProspects},organization:{...stats.organization}});
+}
+
 function freeze(value) {
+  if (value && typeof value === "object" && Object.isFrozen(value)) return value;
   if (Array.isArray(value)) return Object.freeze(value.map(freeze));
   if (value && typeof value === "object") return Object.freeze(Object.fromEntries(Object.entries(value).map(([k, v]) => [k, freeze(v)])));
   return value;
@@ -1816,7 +1858,7 @@ function snapshot(session) {
         roleFit: getRoleFitFeedback(userRoleState, playingTime, { currentDate: session.state.currentDate })
       };
     })(),
-    nextGame: scheduleGameView(session, nextGame, level), currentSeries: currentSeriesView(session, nextGame, level), standings, leaders, organization: organizationView(session), worldProspectRankings: worldProspectRankings(session), careerTimeline: getCareerTimelinePublicView(session.careerEventState),
+    nextGame: scheduleGameView(session, nextGame, level), currentSeries: currentSeriesView(session, nextGame, level), standings, leaders, organization: cachedOrganizationView(session), worldProspectRankings: cachedWorldProspectRankings(session), careerTimeline: getCareerTimelinePublicView(session.careerEventState),
     levelStandings: Object.fromEntries(SIMULATED_LEVELS.map((itemLevel) => [itemLevel, getStandingsTable(stateForLevel(session, itemLevel))])),
     pitchingStaff: userPitchingStaffView(session, level), recentResults: recentResultsView(session, level),
     progress: { gamesPlayed, totalGames: userSchedule.length, leagueGamesCompleted: state.completedGames, leagueGamesTotal: state.schedule.length, worldLeagueGamesCompleted: worldLeagueCompleted, worldLeagueGamesTotal: worldLeagueTotal },
@@ -2002,6 +2044,7 @@ const seasonApi = Object.freeze({
     return createSessionFromFixture(fixture, { seed, startDate, dataUniverse: createSyntheticUniverseDescriptor({ startDate, sourceVersion: CURRENT_GAME_VERSION }) });
   },
   getSeason(seasonId) { return snapshot(assertSession(seasonId)); },
+  getPerformanceDiagnostics(seasonId) { return performanceDiagnostics(assertSession(seasonId)); },
   getPlayerDetail(seasonId, playerId) {
     const session = assertSession(seasonId);
     return freeze(playerDetailView(session, playerId));

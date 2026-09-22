@@ -1,0 +1,24 @@
+{
+  "schema": "THE_CALL_UP_V55_1_BROWSER_PERFORMANCE",
+  "pass": true,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "timingsMs": {
+    "homeToPlayer": 2.1,
+    "playerToLeague": 1.6,
+    "standingsToLeaders": 1.1,
+    "leadersToProspects": 2.7,
+    "leagueToHome": 1
+  },
+  "checks": {
+    "boot": true,
+    "performanceVersion": true,
+    "pageErrors": 0,
+    "consoleErrors": 0,
+    "allTabHandlersUnder1000ms": true
+  },
+  "errors": [],
+  "consoleErrors": []
+}

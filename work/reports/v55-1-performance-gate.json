@@ -1,0 +1,21 @@
+{
+  "schema": "THE_CALL_UP_V55_1_PERFORMANCE_GATE",
+  "pass": true,
+  "cache": {
+    "warmWorldProspectHits": 5,
+    "warmOrganizationHits": 5,
+    "reviewInvalidates": true,
+    "cacheNotSerialized": true
+  },
+  "timingsMs": {
+    "getSeasonWarm": [
+      4.389,
+      3.332,
+      3.249,
+      3.33,
+      3.088
+    ],
+    "getSeasonWarmAverage": 3.478,
+    "simulateCurrentGame": 1928.384
+  }
+}

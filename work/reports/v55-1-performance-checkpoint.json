@@ -1,0 +1,46 @@
+{
+  "schema": "THE_CALL_UP_V55_1_PERFORMANCE_CHECKPOINT",
+  "pass": true,
+  "features": {
+    "worldProspectCache": true,
+    "organizationReadModelCache": true,
+    "frozenFastPath": true,
+    "idleAutosaveQueue": true,
+    "nonBlockingNormalAutosave": true,
+    "manualSaveFlush": true,
+    "cacheInvalidationOnReview": true,
+    "cacheExcludedFromSave": true,
+    "mobileTimingGate": true
+  },
+  "performance": {
+    "getSeasonWarm": [
+      4.389,
+      3.332,
+      3.249,
+      3.33,
+      3.088
+    ],
+    "getSeasonWarmAverage": 3.478,
+    "simulateCurrentGame": 1928.384
+  },
+  "browser": {
+    "homeToPlayer": 2.1,
+    "playerToLeague": 1.6,
+    "standingsToLeaders": 1.1,
+    "leadersToProspects": 2.7,
+    "leagueToHome": 1
+  },
+  "regression": {
+    "v55FullOffseason": true,
+    "v54TradeSystem": true,
+    "v54TradeRollover": true,
+    "v50_1CurrentMvp": true,
+    "v50_2ProductionRuntime": true
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v55_1_PERFORMANCE.html",
+    "bytes": 66789616,
+    "sha256": "cec7a90f2ac386fbcfb3b6b92a116da762725baa1d5bb89482bea15ea926f356"
+  },
+  "next": "v56 Postseason / Awards / History"
+}
