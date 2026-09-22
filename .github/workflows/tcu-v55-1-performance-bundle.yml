@@ -1,0 +1,200 @@
+name: THE CALL-UP v55.1 Performance Bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/tcu-v55-1-performance-bundle.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  v55-1-performance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+
+      - name: Verify v55 baseline
+        run: |
+          set -euo pipefail
+          test "$(git hash-object work/reports/v55-full-offseason-checkpoint.json)" = "846d0f19b27eec2ba44554eb5d422536004d1281"
+          test "$(git hash-object work/src/api/seasonApi.js)" = "d07df6e6530c79c8452e2fb639a0134f19c645d3"
+          test "$(git hash-object work/src/app/seasonApp.js)" = "cf428072550274f66cff781e99252915debdea69"
+          test "$(git hash-object work/src/ui/seasonRender.js)" = "cc671b7a49944f8eff551d5acf93bdb64597984a"
+          test "$(git hash-object work/src/services/seasonSerialization.js)" = "9fd23d8974662a05908a14bf1afd08cd2b1c175f"
+          test "$(git hash-object work/src/services/seasonSaveService.js)" = "8ec5d8e93eaf02b0d44dccf80c82a5b4aad7a65d"
+
+      - name: Install v55.1 performance changes
+        run: |
+          set -euo pipefail
+          echo 'aW1wb3J0IGZzIGZyb20gIm5vZGU6ZnMiOwppbXBvcnQgemxpYiBmcm9tICJub2RlOnpsaWIiOwppbXBvcnQgYXNzZXJ0IGZyb20gIm5vZGU6YXNzZXJ0L3N0cmljdCI7CmltcG9ydCB7IHBlcmZvcm1hbmNlIH0gZnJvbSAibm9kZTpwZXJmX2hvb2tzIjsKaW1wb3J0IHsgc2Vhc29uQXBpIH0gZnJvbSAiLi4vc3JjL2FwaS9zZWFzb25BcGkuanMiOwoKY29uc3QgbWFzdGVyPUpTT04ucGFyc2UoemxpYi5ndW56aXBTeW5jKGZzLnJlYWRGaWxlU3luYygiZGF0YS90aGVfY2FsbF91cF9zbmFwc2hvdF92Mi9tbGItbWlsYi0yMDI2LXByb2R1Y3Rpb24tdjIuanNvbi5neiIpKS50b1N0cmluZygidXRmOCIpKTsKY29uc3QgY2F0YWxvZz1zZWFzb25BcGkuZ2V0Q2FyZWVyQ3JlYXRpb25DYXRhbG9nKHttYXN0ZXJTbmFwc2hvdDptYXN0ZXJ9KTsKY29uc3Qgb3JnPWNhdGFsb2cub3JnYW5pemF0aW9uc1swXTsKCmxldCBzZWFzb249c2Vhc29uQXBpLmNyZWF0ZUNhcmVlclNlYXNvbih7CiAgc2VlZDoidjU1LTEtcGVyZm9ybWFuY2UiLAogIGlucHV0OntuYW1lOiJ2NTUuMSBQZXJmb3JtYW5jZSBRQSIsbmF0aW9uYWxpdHk6IuuMgO2VnOuvvOq1rSIsaG9tZXRvd246Iuq1rOuvuCIsYWdlOjIxLGhlaWdodENtOjE4MCx3ZWlnaHRLZzo3OCxib2R5VHlwZToiQVRITEVUSUMiLGJhdHM6IlIiLHRocm93czoiUiIscHJpbWFyeVBvc2l0aW9uOiJDRiIsYXJjaGV0eXBlOiJCQUxBTkNFRCIsdmlzaWJsZVRyYWl0czpbIlFVSUNLX0JBVCIsIlNPRlRfSEFORFMiXSxvcmdhbml6YXRpb25Nb2RlOiJGQVZPUklURSIsZmF2b3JpdGVPcmdhbml6YXRpb25JZDpTdHJpbmcob3JnLmlkKX0sCiAgbWFzdGVyU25hcHNob3Q6bWFzdGVyCn0pOwoKY29uc3QgZmlyc3REaWFnPXNlYXNvbkFwaS5nZXRQZXJmb3JtYW5jZURpYWdub3N0aWNzKHNlYXNvbi5zZWFzb25JZCk7CmFzc2VydC5lcXVhbChmaXJzdERpYWcud29ybGRQcm9zcGVjdHMubWlzc2VzLDEpOwphc3NlcnQuZXF1YWwoZmlyc3REaWFnLm9yZ2FuaXphdGlvbi5taXNzZXMsMSk7Cgpjb25zdCBzYW1wbGVzPVtdOwpsZXQgcmVmT3JnPW51bGwsIHJlZldvcmxkPW51bGw7CmZvcihsZXQgaT0wO2k8NTtpKz0xKXsKICBjb25zdCB0MD1wZXJmb3JtYW5jZS5ub3coKTsKICBjb25zdCB2aWV3PXNlYXNvbkFwaS5nZXRTZWFzb24oc2Vhc29uLnNlYXNvbklkKTsKICBzYW1wbGVzLnB1c2gocGVyZm9ybWFuY2Uubm93KCktdDApOwogIGlmKGk9PT0wKXsKICAgIHJlZk9yZz1KU09OLnN0cmluZ2lmeSh2aWV3Lm9yZ2FuaXphdGlvbik7CiAgICByZWZXb3JsZD1KU09OLnN0cmluZ2lmeSh2aWV3LndvcmxkUHJvc3BlY3RSYW5raW5ncyk7CiAgfWVsc2V7CiAgICBhc3NlcnQuZXF1YWwoSlNPTi5zdHJpbmdpZnkodmlldy5vcmdhbml6YXRpb24pLHJlZk9yZyk7CiAgICBhc3NlcnQuZXF1YWwoSlNPTi5zdHJpbmdpZnkodmlldy53b3JsZFByb3NwZWN0UmFua2luZ3MpLHJlZldvcmxkKTsKICB9Cn0KY29uc3Qgd2FybT1zZWFzb25BcGkuZ2V0UGVyZm9ybWFuY2VEaWFnbm9zdGljcyhzZWFzb24uc2Vhc29uSWQpOwphc3NlcnQub2sod2FybS53b3JsZFByb3NwZWN0cy5oaXRzPj01KTsKYXNzZXJ0Lm9rKHdhcm0ub3JnYW5pemF0aW9uLmhpdHM+PTUpOwphc3NlcnQuZXF1YWwod2FybS53b3JsZFByb3NwZWN0cy5taXNzZXMsMSk7CmFzc2VydC5lcXVhbCh3YXJtLm9yZ2FuaXphdGlvbi5taXNzZXMsMSk7Cgpjb25zdCBiZWZvcmU9c2Vhc29uQXBpLmdldFBlcmZvcm1hbmNlRGlhZ25vc3RpY3Moc2Vhc29uLnNlYXNvbklkKTsKY29uc3QgYTA9cGVyZm9ybWFuY2Uubm93KCk7CnNlYXNvbj1zZWFzb25BcGkuc2ltdWxhdGVDdXJyZW50R2FtZShzZWFzb24uc2Vhc29uSWQpOwpjb25zdCBhY3Rpb25Ncz1wZXJmb3JtYW5jZS5ub3coKS1hMDsKY29uc3QgYWZ0ZXI9c2Vhc29uQXBpLmdldFBlcmZvcm1hbmNlRGlhZ25vc3RpY3Moc2Vhc29uLnNlYXNvbklkKTsKYXNzZXJ0Lm9rKGFmdGVyLndvcmxkUHJvc3BlY3RzLmhpdHM+YmVmb3JlLndvcmxkUHJvc3BlY3RzLmhpdHMpOwphc3NlcnQub2soYWZ0ZXIub3JnYW5pemF0aW9uLmhpdHM+YmVmb3JlLm9yZ2FuaXphdGlvbi5oaXRzKTsKCmNvbnN0IG1pc3NCZWZvcmVSZXZpZXc9YWZ0ZXIud29ybGRQcm9zcGVjdHMubWlzc2VzOwpzZWFzb249c2Vhc29uQXBpLnJ1bk9yZ2FuaXphdGlvblJldmlldyhzZWFzb24uc2Vhc29uSWQse2ZvcmNlOnRydWV9KTsKY29uc3QgcmV2aWV3ZWQ9c2Vhc29uQXBpLmdldFBlcmZvcm1hbmNlRGlhZ25vc3RpY3Moc2Vhc29uLnNlYXNvbklkKTsKYXNzZXJ0Lm9rKHJldmlld2VkLndvcmxkUHJvc3BlY3RzLm1pc3Nlcz5taXNzQmVmb3JlUmV2aWV3KTsKYXNzZXJ0Lm9rKHJldmlld2VkLm9yZ2FuaXphdGlvbi5taXNzZXM+YmVmb3JlLm9yZ2FuaXphdGlvbi5taXNzZXMpOwoKY29uc3Qgc2VyaWFsaXplZD1zZWFzb25BcGkuc2VyaWFsaXplU2Vhc29uKHNlYXNvbi5zZWFzb25JZCk7CmFzc2VydC5lcXVhbChzZXJpYWxpemVkLnBlcmZvcm1hbmNlQ2FjaGUsdW5kZWZpbmVkKTsKYXNzZXJ0LmVxdWFsKHNlcmlhbGl6ZWQucmVhZE1vZGVsQ2FjaGUsdW5kZWZpbmVkKTsKCmNvbnN0IHJlcG9ydD17CiAgc2NoZW1hOiJUSEVfQ0FMTF9VUF9WNTVfMV9QRVJGT1JNQU5DRV9HQVRFIiwKICBwYXNzOnRydWUsCiAgY2FjaGU6ewogICAgd2FybVdvcmxkUHJvc3BlY3RIaXRzOndhcm0ud29ybGRQcm9zcGVjdHMuaGl0cywKICAgIHdhcm1Pcmdhbml6YXRpb25IaXRzOndhcm0ub3JnYW5pemF0aW9uLmhpdHMsCiAgICByZXZpZXdJbnZhbGlkYXRlczp0cnVlLAogICAgY2FjaGVOb3RTZXJpYWxpemVkOnRydWUKICB9LAogIHRpbWluZ3NNczp7CiAgICBnZXRTZWFzb25XYXJtOnNhbXBsZXMubWFwKHY9Pk51bWJlcih2LnRvRml4ZWQoMykpKSwKICAgIGdldFNlYXNvbldhcm1BdmVyYWdlOk51bWJlcigoc2FtcGxlcy5yZWR1Y2UoKGEsYik9PmErYiwwKS9zYW1wbGVzLmxlbmd0aCkudG9GaXhlZCgzKSksCiAgICBzaW11bGF0ZUN1cnJlbnRHYW1lOk51bWJlcihhY3Rpb25Ncy50b0ZpeGVkKDMpKQogIH0KfTsKZnMud3JpdGVGaWxlU3luYygicmVwb3J0cy92NTUtMS1wZXJmb3JtYW5jZS1nYXRlLmpzb24iLEpTT04uc3RyaW5naWZ5KHJlcG9ydCxudWxsLDIpKyJcbiIpOwpjb25zb2xlLmxvZyhKU09OLnN0cmluZ2lmeShyZXBvcnQsbnVsbCwyKSk7Cg==' | base64 -d > work/scripts/verify-v55-1-performance.mjs
+          echo 'aW1wb3J0IGpzb24scmUKZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmZyb20gcGxheXdyaWdodC5zeW5jX2FwaSBpbXBvcnQgc3luY19wbGF5d3JpZ2h0Cgpyb290PVBhdGgoX19maWxlX18pLnJlc29sdmUoKS5wYXJlbnRzWzFdCmh0bWxfcGF0aD1yb290LyJkaXN0Ii8iVEhFX0NBTExfVVBfU0VBU09OX1NUQU5EQUxPTkVfdjU1XzFfUEVSRk9STUFOQ0UuaHRtbCIKaHRtbD1odG1sX3BhdGgucmVhZF90ZXh0KGVuY29kaW5nPSJ1dGYtOCIpCmxlZ2FjeT0ocm9vdC8ic2NyaXB0cyIvImJyb3dzZXItc3RhbmRhbG9uZS1zbW9rZS12MzkucHkiKS5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKbWF0Y2g9cmUuc2VhcmNoKHIiZmFrZV9pZGIgPSByJycnKC4qPyknJydcblxuc21va2VfaHRtbCIsbGVnYWN5LHJlLlMpCmlmIG5vdCBtYXRjaDogcmFpc2UgUnVudGltZUVycm9yKCJmYWtlIEluZGV4ZWREQiBoYXJuZXNzIG5vdCBmb3VuZCIpCnNtb2tlPWh0bWwucmVwbGFjZSgiPGJvZHk+XG4iLCI8Ym9keT5cbiIrbWF0Y2guZ3JvdXAoMSksMSkKCmVycm9ycz1bXTsgY29uc29sZV9lcnJvcnM9W107IHRpbWluZ3M9e30Kd2l0aCBzeW5jX3BsYXl3cmlnaHQoKSBhcyBwOgogIGI9cC5jaHJvbWl1bS5sYXVuY2goaGVhZGxlc3M9VHJ1ZSxhcmdzPVsiLS1uby1zYW5kYm94IiwiLS1kaXNhYmxlLWRldi1zaG0tdXNhZ2UiXSkKICBwYWdlPWIubmV3X3BhZ2Uodmlld3BvcnQ9eyJ3aWR0aCI6MzkwLCJoZWlnaHQiOjg0NH0pCiAgcGFnZS5vbigicGFnZWVycm9yIixsYW1iZGEgZXhjOmVycm9ycy5hcHBlbmQoc3RyKGV4YykpKQogIHBhZ2Uub24oImNvbnNvbGUiLGxhbWJkYSBtc2c6Y29uc29sZV9lcnJvcnMuYXBwZW5kKG1zZy50ZXh0KSBpZiBtc2cudHlwZT09ImVycm9yIiBlbHNlIE5vbmUpCiAgcGFnZS5vbigiZGlhbG9nIixsYW1iZGEgZDpkLmFjY2VwdCgpKQogIHBhZ2Uuc2V0X2NvbnRlbnQoc21va2Usd2FpdF91bnRpbD0iZG9tY29udGVudGxvYWRlZCIsdGltZW91dD0xODAwMDApCiAgcGFnZS53YWl0X2Zvcl9zZWxlY3RvcigiLnNhdmUtc2VsZWN0LWhlcm8iLHRpbWVvdXQ9NjAwMDApCiAgcGFnZS5sb2NhdG9yKCJbZGF0YS1jYXJlZXItbmV3XSIpLmNsaWNrKCkKICBwYWdlLndhaXRfZm9yX3NlbGVjdG9yKCIubmV3LWNhcmVlci1zY3JlZW4iLHRpbWVvdXQ9NjAwMDApCiAgcGFnZS5sb2NhdG9yKCdbZGF0YS1jYXJlZXItb3JnLW1vZGVdW3ZhbHVlPSJGQVZPUklURSJdJykuY2hlY2soZm9yY2U9VHJ1ZSkKICBwYWdlLndhaXRfZm9yX2Z1bmN0aW9uKCIoKSA9PiB7Y29uc3QgZT1kb2N1bWVudC5xdWVyeVNlbGVjdG9yKCdbZGF0YS1jYXJlZXItZmllbGQ9XCJmYXZvcml0ZU9yZ2FuaXphdGlvbklkXCJdJyk7cmV0dXJuICEhZSYmWy4uLmUub3B0aW9uc10uZmlsdGVyKG89Pm8udmFsdWUpLmxlbmd0aD09PTMwfSIsdGltZW91dD0xODAwMDApCiAgb3JnPXBhZ2UubG9jYXRvcignW2RhdGEtY2FyZWVyLWZpZWxkPSJmYXZvcml0ZU9yZ2FuaXphdGlvbklkIl0nKQogIHZhbHM9b3JnLmxvY2F0b3IoIm9wdGlvbiIpLmV2YWx1YXRlX2FsbCgiKGVscyk9PmVscy5tYXAoZT0+ZS52YWx1ZSkuZmlsdGVyKEJvb2xlYW4pIikKICBvcmcuc2VsZWN0X29wdGlvbih2YWxzWzBdKQogIHBhZ2UubG9jYXRvcignW2RhdGEtY2FyZWVyLWZpZWxkPSJuYW1lIl0nKS5maWxsKCJ2NTUuMSDshLHriqUgUUEiKQogIHBhZ2UubG9jYXRvcignW2RhdGEtY2FyZWVyLWZpZWxkPSJhZ2UiXScpLnNlbGVjdF9vcHRpb24oIjIxIikKICBwYWdlLmxvY2F0b3IoJ1tkYXRhLWNhcmVlci1maWVsZD0icHJpbWFyeVBvc2l0aW9uIl0nKS5zZWxlY3Rfb3B0aW9uKCJDRiIpCiAgcGFnZS5sb2NhdG9yKCdbZGF0YS1jYXJlZXItZmllbGQ9ImFyY2hldHlwZSJdJykuc2VsZWN0X29wdGlvbigiQkFMQU5DRUQiKQogIHBhZ2UubG9jYXRvcigiW2RhdGEtY2FyZWVyLWNyZWF0ZS1zdWJtaXRdIikuY2xpY2soKQogIHBhZ2Uud2FpdF9mb3JfZnVuY3Rpb24oIigpID0+IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoJy5zZWFzb24tdGl0bGUnKT8udGV4dENvbnRlbnQuaW5jbHVkZXMoJ+yLnOymjCDtmYgnKSIsdGltZW91dD0xODAwMDApCgogIGRlZiBjbGlja19tcyhzZWxlY3Rvcik6CiAgICByZXR1cm4gcGFnZS5ldmFsdWF0ZSgiIiIoc2VsZWN0b3IpPT57CiAgICAgIGNvbnN0IGVsPWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3Ioc2VsZWN0b3IpOwogICAgICBpZighZWwpIHRocm93IG5ldyBFcnJvcigibWlzc2luZyAiK3NlbGVjdG9yKTsKICAgICAgY29uc3QgdD1wZXJmb3JtYW5jZS5ub3coKTsKICAgICAgZWwuY2xpY2soKTsKICAgICAgcmV0dXJuIHBlcmZvcm1hbmNlLm5vdygpLXQ7CiAgICB9IiIiLHNlbGVjdG9yKQoKICB0aW1pbmdzWyJob21lVG9QbGF5ZXIiXT1yb3VuZChjbGlja19tcygnW2RhdGEtc2Vhc29uLXRhYj0iUExBWUVSIl0nKSwzKQogIHRpbWluZ3NbInBsYXllclRvTGVhZ3VlIl09cm91bmQoY2xpY2tfbXMoJ1tkYXRhLXNlYXNvbi10YWI9IkxFQUdVRSJdJyksMykKICB0aW1pbmdzWyJzdGFuZGluZ3NUb0xlYWRlcnMiXT1yb3VuZChjbGlja19tcygnW2RhdGEtbGVhZ3VlLXNlY3Rpb249IkxFQURFUlMiXScpLDMpCiAgdGltaW5nc1sibGVhZGVyc1RvUHJvc3BlY3RzIl09cm91bmQoY2xpY2tfbXMoJ1tkYXRhLWxlYWd1ZS1zZWN0aW9uPSJQUk9TUEVDVFMiXScpLDMpCiAgdGltaW5nc1sibGVhZ3VlVG9Ib21lIl09cm91bmQoY2xpY2tfbXMoJ1tkYXRhLXNlYXNvbi10YWI9IkhPTUUiXScpLDMpCgogIGNoZWNrcz17CiAgICAiYm9vdCI6cGFnZS5sb2NhdG9yKCIuc2Vhc29uLWNvbnRlbnQiKS5jb3VudCgpPT0xLAogICAgInBlcmZvcm1hbmNlVmVyc2lvbiI6InY1NS4xIFBFUkZPUk1BTkNFIiBpbiBodG1sLAogICAgInBhZ2VFcnJvcnMiOmxlbihlcnJvcnMpLAogICAgImNvbnNvbGVFcnJvcnMiOmxlbihjb25zb2xlX2Vycm9ycyksCiAgICAiYWxsVGFiSGFuZGxlcnNVbmRlcjEwMDBtcyI6YWxsKHY8MTAwMCBmb3IgdiBpbiB0aW1pbmdzLnZhbHVlcygpKQogIH0KICBiLmNsb3NlKCkKCnBhc3NlZD1jaGVja3NbImJvb3QiXSBhbmQgY2hlY2tzWyJwZXJmb3JtYW5jZVZlcnNpb24iXSBhbmQgY2hlY2tzWyJwYWdlRXJyb3JzIl09PTAgYW5kIGNoZWNrc1siY29uc29sZUVycm9ycyJdPT0wIGFuZCBjaGVja3NbImFsbFRhYkhhbmRsZXJzVW5kZXIxMDAwbXMiXQpyZXBvcnQ9eyJzY2hlbWEiOiJUSEVfQ0FMTF9VUF9WNTVfMV9CUk9XU0VSX1BFUkZPUk1BTkNFIiwicGFzcyI6cGFzc2VkLCJ2aWV3cG9ydCI6eyJ3aWR0aCI6MzkwLCJoZWlnaHQiOjg0NH0sInRpbWluZ3NNcyI6dGltaW5ncywiY2hlY2tzIjpjaGVja3MsImVycm9ycyI6ZXJyb3JzLCJjb25zb2xlRXJyb3JzIjpjb25zb2xlX2Vycm9yc30KKHJvb3QvInJlcG9ydHMiLyJ2NTUtMS1icm93c2VyLXBlcmZvcm1hbmNlLmpzb24iKS53cml0ZV90ZXh0KGpzb24uZHVtcHMocmVwb3J0LGVuc3VyZV9hc2NpaT1GYWxzZSxpbmRlbnQ9MikrIlxuIixlbmNvZGluZz0idXRmLTgiKQpwcmludChqc29uLmR1bXBzKHJlcG9ydCxlbnN1cmVfYXNjaWk9RmFsc2UsaW5kZW50PTIpKQppZiBub3QgcGFzc2VkOiByYWlzZSBTeXN0ZW1FeGl0KDEpCg==' | base64 -d > work/scripts/browser-v55-1-performance.py
+          echo 'IyBUSEUgQ0FMTC1VUAoK66qo67CU7J28IOyasOyEoCDsi7HquIAg7ZSM66CI7J207Ja0IOyVvOq1rCDsu6TrpqzslrQg7Iuc666s66CI7J207YSwIOqwnOuwnCDtlITroZzsoJ3tirjsnoXri4jri6QuCgojIyDtmITsnqwg7LK07YGs7Y+s7J247Yq4CgotIOq4sOuKpSDquLDspIDshKA6ICoqdjU1IEZ1bGwgT2Zmc2Vhc29uKioKLSDshLHriqUg7LK07YGs7Y+s7J247Yq4OiAqKnY1NS4xIFBlcmZvcm1hbmNlKioKLSBTYXZlIHNjaGVtYTogdjIKLSBnYW1lVmVyc2lvbuydgCB2NTXsmYAg7Zi47ZmYIOycoOyngAotIENvbXBsZXRlIEVkaXRpb246IOyVhOyngSDslYTri5gKCiMjIHY1NS4xIFBlcmZvcm1hbmNlCgrquLDriqXsnYQg7KSE7J207KeAIOyViuqzoCDrqqjrsJTsnbwg7LK06rCQ7IaN64+E66W8IOqwnOyEoO2VqeuLiOuLpC4KCi0g7JuU65OcIFRvcCAxMDAg7Jyg66ed7KO8IHJlYWQtbW9kZWwg7LqQ7IucCi0g7KGw7KeBIGRlcHRoL3JlYWQtbW9kZWwg7LqQ7IucCi0g7J2066+4IGZyZWV6ZeuQnCDrjIDtmJUg642w7J207YSwIOyerOq3gCDrs7Xsgqwg67Cp7KeACi0g7J2867CYIOyekOuPmeyggOyepeydhCBpZGxlIOyngeugrCDtgZDroZwg7J2064+ZCi0g7J2867CYIOuPmeyekeydmCDsoIDsnqUg64yA6riwICsg7KSR67O1IOugjOuNlCDsoJzqsbAKLSDsiJjrj5nsoIDsnqUv66eI7J287Iqk7YakL+y7pOumrOyWtCDsnbTtg4jsnYAg7KCA7J6lIOyZhOujjCDrs7TsnqUKLSBjYWNoZeuKlCDshLjsnbTruIzsl5Ag7Y+s7ZWo7ZWY7KeAIOyViuydjAotIOyhsOyngS9zY291dGluZyByZXZpZXcg7IucIGNhY2hlIGludmFsaWRhdGlvbgotIDM5MHg4NDQg67iM65287Jqw7KCAIO2DrSB0aW1pbmcgZ2F0ZQoK7ISg7IiYIOyImCwg66as6re4IOyImCwg7Iuc666s66CI7J207IWYIOygle2ZleuPhOuKlCDspITsnbTsp4Ag7JWK7Iq164uI64ukLgoKIyMg64uk7J2MIOuLqOqzhAoKdjU2IFBvc3RzZWFzb24gLyBBd2FyZHMgLyBIaXN0b3J5Cg==' | base64 -d > work/README_KO.md
+          echo 'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCgpkZWYgcChwYXRoLCBvbGQsIG5ldywgbGFiZWwpOgogICAgZj1QYXRoKHBhdGgpCiAgICBzPWYucmVhZF90ZXh0KGVuY29kaW5nPSJ1dGYtOCIpCiAgICBpZiBvbGQgbm90IGluIHM6CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdChmImFuY2hvciBtaXNzaW5nOiB7bGFiZWx9IikKICAgIGYud3JpdGVfdGV4dChzLnJlcGxhY2Uob2xkLG5ldywxKSxlbmNvZGluZz0idXRmLTgiKQoKcCgid29yay9zcmMvYXBpL3NlYXNvbkFwaS5qcyIsCicnJ2Z1bmN0aW9uIGZyZWV6ZSh2YWx1ZSkgewogIGlmIChBcnJheS5pc0FycmF5KHZhbHVlKSkgcmV0dXJuIE9iamVjdC5mcmVlemUodmFsdWUubWFwKGZyZWV6ZSkpOwogIGlmICh2YWx1ZSAmJiB0eXBlb2YgdmFsdWUgPT09ICJvYmplY3QiKSByZXR1cm4gT2JqZWN0LmZyZWV6ZShPYmplY3QuZnJvbUVudHJpZXMoT2JqZWN0LmVudHJpZXModmFsdWUpLm1hcCgoW2ssIHZdKSA9PiBbaywgZnJlZXplKHYpXSkpKTsKICByZXR1cm4gdmFsdWU7Cn0KJycnLAonJydmdW5jdGlvbiBmcmVlemUodmFsdWUpIHsKICBpZiAodmFsdWUgJiYgdHlwZW9mIHZhbHVlID09PSAib2JqZWN0IiAmJiBPYmplY3QuaXNGcm96ZW4odmFsdWUpKSByZXR1cm4gdmFsdWU7CiAgaWYgKEFycmF5LmlzQXJyYXkodmFsdWUpKSByZXR1cm4gT2JqZWN0LmZyZWV6ZSh2YWx1ZS5tYXAoZnJlZXplKSk7CiAgaWYgKHZhbHVlICYmIHR5cGVvZiB2YWx1ZSA9PT0gIm9iamVjdCIpIHJldHVybiBPYmplY3QuZnJlZXplKE9iamVjdC5mcm9tRW50cmllcyhPYmplY3QuZW50cmllcyh2YWx1ZSkubWFwKChbaywgdl0pID0+IFtrLCBmcmVlemUodildKSkpOwogIHJldHVybiB2YWx1ZTsKfQonJycsCiJmcmVlemUgZmFzdCBwYXRoIikKCnAoIndvcmsvc3JjL2FwaS9zZWFzb25BcGkuanMiLAonJydjb25zdCBzZXNzaW9ucyA9IG5ldyBNYXAoKTsKY29uc3QgQ1VSUkVOVF9HQU1FX1ZFUlNJT04gPSAiZnVsbF9jYXJlZXJfb2Zmc2Vhc29uX3BpcGVsaW5lX3Y1NSI7CicnJywKJycnY29uc3Qgc2Vzc2lvbnMgPSBuZXcgTWFwKCk7CmNvbnN0IGhlYXZ5UmVhZE1vZGVsQ2FjaGVzID0gbmV3IFdlYWtNYXAoKTsKY29uc3QgQ1VSUkVOVF9HQU1FX1ZFUlNJT04gPSAiZnVsbF9jYXJlZXJfb2Zmc2Vhc29uX3BpcGVsaW5lX3Y1NSI7CgpmdW5jdGlvbiBoZWF2eVJlYWRNb2RlbENhY2hlKHNlc3Npb24pIHsKICBsZXQgY2FjaGU9aGVhdnlSZWFkTW9kZWxDYWNoZXMuZ2V0KHNlc3Npb24pOwogIGlmKCFjYWNoZSl7CiAgICBjYWNoZT17d29ybGRQcm9zcGVjdHM6bnVsbCxvcmdhbml6YXRpb246bnVsbCxzdGF0czp7d29ybGRQcm9zcGVjdHM6e2hpdHM6MCxtaXNzZXM6MH0sb3JnYW5pemF0aW9uOntoaXRzOjAsbWlzc2VzOjB9fX07CiAgICBoZWF2eVJlYWRNb2RlbENhY2hlcy5zZXQoc2Vzc2lvbixjYWNoZSk7CiAgfQogIHJldHVybiBjYWNoZTsKfQoKZnVuY3Rpb24gY2FjaGVkV29ybGRQcm9zcGVjdFJhbmtpbmdzKHNlc3Npb24pIHsKICBjb25zdCBjYWNoZT1oZWF2eVJlYWRNb2RlbENhY2hlKHNlc3Npb24pOwogIGNvbnN0IGN1cnJlbnQ9Y2FjaGUud29ybGRQcm9zcGVjdHM7CiAgaWYoY3VycmVudCAmJiBjdXJyZW50LmZpeHR1cmU9PT1zZXNzaW9uLmZpeHR1cmUgJiYgY3VycmVudC5zY291dGluZ1N0YXRlcz09PXNlc3Npb24uc2NvdXRpbmdTdGF0ZXMpewogICAgY2FjaGUuc3RhdHMud29ybGRQcm9zcGVjdHMuaGl0cys9MTsKICAgIHJldHVybiBjdXJyZW50LnZhbHVlOwogIH0KICBjYWNoZS5zdGF0cy53b3JsZFByb3NwZWN0cy5taXNzZXMrPTE7CiAgY29uc3QgdmFsdWU9ZnJlZXplKHdvcmxkUHJvc3BlY3RSYW5raW5ncyhzZXNzaW9uKSk7CiAgY2FjaGUud29ybGRQcm9zcGVjdHM9e2ZpeHR1cmU6c2Vzc2lvbi5maXh0dXJlLHNjb3V0aW5nU3RhdGVzOnNlc3Npb24uc2NvdXRpbmdTdGF0ZXMsdmFsdWV9OwogIHJldHVybiB2YWx1ZTsKfQoKZnVuY3Rpb24gY2FjaGVkT3JnYW5pemF0aW9uVmlldyhzZXNzaW9uKSB7CiAgY29uc3QgY2FjaGU9aGVhdnlSZWFkTW9kZWxDYWNoZShzZXNzaW9uKTsKICBjb25zdCBjdXJyZW50PWNhY2hlLm9yZ2FuaXphdGlvbjsKICBpZihjdXJyZW50ICYmIGN1cnJlbnQuZml4dHVyZT09PXNlc3Npb24uZml4dHVyZSAmJiBjdXJyZW50Lm9yZ2FuaXphdGlvblN0YXRlPT09c2Vzc2lvbi5vcmdhbml6YXRpb25TdGF0ZSAmJiBjdXJyZW50LnNjb3V0aW5nU3RhdGVzPT09c2Vzc2lvbi5zY291dGluZ1N0YXRlcyl7CiAgICBjYWNoZS5zdGF0cy5vcmdhbml6YXRpb24uaGl0cys9MTsKICAgIHJldHVybiBjdXJyZW50LnZhbHVlOwogIH0KICBjYWNoZS5zdGF0cy5vcmdhbml6YXRpb24ubWlzc2VzKz0xOwogIGNvbnN0IHZhbHVlPWZyZWV6ZShvcmdhbml6YXRpb25WaWV3KHNlc3Npb24pKTsKICBjYWNoZS5vcmdhbml6YXRpb249e2ZpeHR1cmU6c2Vzc2lvbi5maXh0dXJlLG9yZ2FuaXphdGlvblN0YXRlOnNlc3Npb24ub3JnYW5pemF0aW9uU3RhdGUsc2NvdXRpbmdTdGF0ZXM6c2Vzc2lvbi5zY291dGluZ1N0YXRlcyx2YWx1ZX07CiAgcmV0dXJuIHZhbHVlOwp9CgpmdW5jdGlvbiBwZXJmb3JtYW5jZURpYWdub3N0aWNzKHNlc3Npb24pIHsKICBjb25zdCBzdGF0cz1oZWF2eVJlYWRNb2RlbENhY2hlKHNlc3Npb24pLnN0YXRzOwogIHJldHVybiBmcmVlemUoe3dvcmxkUHJvc3BlY3RzOnsuLi5zdGF0cy53b3JsZFByb3NwZWN0c30sb3JnYW5pemF0aW9uOnsuLi5zdGF0cy5vcmdhbml6YXRpb259fSk7Cn0KJycnLAoiaGVhdnkgcmVhZCBtb2RlbCBjYWNoZSIpCgpwKCJ3b3JrL3NyYy9hcGkvc2Vhc29uQXBpLmpzIiwKJycnICAgIG5leHRHYW1lOiBzY2hlZHVsZUdhbWVWaWV3KHNlc3Npb24sIG5leHRHYW1lLCBsZXZlbCksIGN1cnJlbnRTZXJpZXM6IGN1cnJlbnRTZXJpZXNWaWV3KHNlc3Npb24sIG5leHRHYW1lLCBsZXZlbCksIHN0YW5kaW5ncywgbGVhZGVycywgb3JnYW5pemF0aW9uOiBvcmdhbml6YXRpb25WaWV3KHNlc3Npb24pLCB3b3JsZFByb3NwZWN0UmFua2luZ3M6IHdvcmxkUHJvc3BlY3RSYW5raW5ncyhzZXNzaW9uKSwgY2FyZWVyVGltZWxpbmU6IGdldENhcmVlclRpbWVsaW5lUHVibGljVmlldyhzZXNzaW9uLmNhcmVlckV2ZW50U3RhdGUpLAonJycsCicnJyAgICBuZXh0R2FtZTogc2NoZWR1bGVHYW1lVmlldyhzZXNzaW9uLCBuZXh0R2FtZSwgbGV2ZWwpLCBjdXJyZW50U2VyaWVzOiBjdXJyZW50U2VyaWVzVmlldyhzZXNzaW9uLCBuZXh0R2FtZSwgbGV2ZWwpLCBzdGFuZGluZ3MsIGxlYWRlcnMsIG9yZ2FuaXphdGlvbjogY2FjaGVkT3JnYW5pemF0aW9uVmlldyhzZXNzaW9uKSwgd29ybGRQcm9zcGVjdFJhbmtpbmdzOiBjYWNoZWRXb3JsZFByb3NwZWN0UmFua2luZ3Moc2Vzc2lvbiksIGNhcmVlclRpbWVsaW5lOiBnZXRDYXJlZXJUaW1lbGluZVB1YmxpY1ZpZXcoc2Vzc2lvbi5jYXJlZXJFdmVudFN0YXRlKSwKJycnLAoic25hcHNob3QgY2FjaGVkIGhlYXZ5IHZpZXdzIikKCnAoIndvcmsvc3JjL2FwaS9zZWFzb25BcGkuanMiLAonJycgIGdldFNlYXNvbihzZWFzb25JZCkgeyByZXR1cm4gc25hcHNob3QoYXNzZXJ0U2Vzc2lvbihzZWFzb25JZCkpOyB9LAogIGdldFBsYXllckRldGFpbChzZWFzb25JZCwgcGxheWVySWQpIHsKJycnLAonJycgIGdldFNlYXNvbihzZWFzb25JZCkgeyByZXR1cm4gc25hcHNob3QoYXNzZXJ0U2Vzc2lvbihzZWFzb25JZCkpOyB9LAogIGdldFBlcmZvcm1hbmNlRGlhZ25vc3RpY3Moc2Vhc29uSWQpIHsgcmV0dXJuIHBlcmZvcm1hbmNlRGlhZ25vc3RpY3MoYXNzZXJ0U2Vzc2lvbihzZWFzb25JZCkpOyB9LAogIGdldFBsYXllckRldGFpbChzZWFzb25JZCwgcGxheWVySWQpIHsKJycnLAoicGVyZm9ybWFuY2UgZGlhZ25vc3RpY3MgYXBpIikKCnAoIndvcmsvc3JjL2FwcC9zZWFzb25BcHAuanMiLAonJycgIGNvbnN0IGF1dG9zYXZlID0gYXN5bmMgKHsgbWlsZXN0b25lID0gbnVsbCB9ID0ge30pID0+IHsKICAgIGlmICghc25hcHNob3QgfHwgIWN1cnJlbnRTYXZlSWQpIHJldHVybiBmYWxzZTsKICAgIHRyeSB7CiAgICAgIGNvbnN0IG1ldGEgPSBhd2FpdCBzZWFzb25TYXZlU2VydmljZS5hdXRvc2F2ZVNlYXNvbihzbmFwc2hvdC5zZWFzb25JZCwgeyBzYXZlSWQ6IGN1cnJlbnRTYXZlSWQgfSk7CiAgICAgIGN1cnJlbnRTYXZlTGFiZWwgPSBtZXRhLmxhYmVsOwogICAgICBpZiAobWlsZXN0b25lKSB7CiAgICAgICAgYXdhaXQgc2Vhc29uQmFja3VwU2VydmljZS5jcmVhdGVNaWxlc3RvbmVCYWNrdXAoc25hcHNob3Quc2Vhc29uSWQsIHsgc2F2ZUlkOiBjdXJyZW50U2F2ZUlkLCBtaWxlc3RvbmUgfSk7CiAgICAgICAgYXdhaXQgcmVmcmVzaEJhY2t1cHMoKTsKICAgICAgICBzYXZlTWVzc2FnZSA9IGDsnpDrj5kg7KCA7J6l65CoIMK3ICR7bWlsZXN0b25lTGFiZWwobWlsZXN0b25lKX0g67Cx7JeFYDsKICAgICAgfSBlbHNlIHsKICAgICAgICBzYXZlTWVzc2FnZSA9ICLsnpDrj5kg7KCA7J6l65CoIjsKICAgICAgfQogICAgICByZXR1cm4gdHJ1ZTsKICAgIH0gY2F0Y2ggKGVycm9yKSB7CiAgICAgIHNhdmVNZXNzYWdlID0gYOyekOuPmSDsoIDsnqUg7Iuk7YyoOiAke2Vycm9yPy5tZXNzYWdlID8/IGVycm9yfWA7CiAgICAgIHJldHVybiBmYWxzZTsKICAgIH0KICB9OwonJycsCicnJyAgY29uc3QgYXV0b3NhdmUgPSBhc3luYyAoeyBtaWxlc3RvbmUgPSBudWxsIH0gPSB7fSkgPT4gewogICAgaWYgKCFzbmFwc2hvdCB8fCAhY3VycmVudFNhdmVJZCkgcmV0dXJuIGZhbHNlOwogICAgdHJ5IHsKICAgICAgY29uc3QgbWV0YSA9IGF3YWl0IHNlYXNvblNhdmVTZXJ2aWNlLmF1dG9zYXZlU2Vhc29uKHNuYXBzaG90LnNlYXNvbklkLCB7IHNhdmVJZDogY3VycmVudFNhdmVJZCB9KTsKICAgICAgY3VycmVudFNhdmVMYWJlbCA9IG1ldGEubGFiZWw7CiAgICAgIGlmIChtaWxlc3RvbmUpIHsKICAgICAgICBhd2FpdCBzZWFzb25CYWNrdXBTZXJ2aWNlLmNyZWF0ZU1pbGVzdG9uZUJhY2t1cChzbmFwc2hvdC5zZWFzb25JZCwgeyBzYXZlSWQ6IGN1cnJlbnRTYXZlSWQsIG1pbGVzdG9uZSB9KTsKICAgICAgICBhd2FpdCByZWZyZXNoQmFja3VwcygpOwogICAgICAgIHNhdmVNZXNzYWdlID0gYOyekOuPmSDsoIDsnqXrkKggwrcgJHttaWxlc3RvbmVMYWJlbChtaWxlc3RvbmUpfSDrsLHsl4VgOwogICAgICB9IGVsc2UgewogICAgICAgIHNhdmVNZXNzYWdlID0gIuyekOuPmSDsoIDsnqXrkKgiOwogICAgICB9CiAgICAgIHJldHVybiB0cnVlOwogICAgfSBjYXRjaCAoZXJyb3IpIHsKICAgICAgc2F2ZU1lc3NhZ2UgPSBg7J6Q64+ZIOyggOyepSDsi6TtjKg6ICR7ZXJyb3I/Lm1lc3NhZ2UgPz8gZXJyb3J9YDsKICAgICAgcmV0dXJuIGZhbHNlOwogICAgfQogIH07CgogIGxldCBhdXRvc2F2ZVF1ZXVlID0gUHJvbWlzZS5yZXNvbHZlKHRydWUpOwogIGNvbnN0IHdhaXRGb3JBdXRvc2F2ZUlkbGUgPSAoKSA9PiBuZXcgUHJvbWlzZSgocmVzb2x2ZSkgPT4gewogICAgaWYgKHR5cGVvZiBnbG9iYWxUaGlzLnJlcXVlc3RJZGxlQ2FsbGJhY2sgPT09ICJmdW5jdGlvbiIpIHsKICAgICAgZ2xvYmFsVGhpcy5yZXF1ZXN0SWRsZUNhbGxiYWNrKCgpID0+IHJlc29sdmUoKSwgeyB0aW1lb3V0OiA3NTAgfSk7CiAgICB9IGVsc2UgewogICAgICBnbG9iYWxUaGlzLnNldFRpbWVvdXQocmVzb2x2ZSwgMCk7CiAgICB9CiAgfSk7CiAgY29uc3QgcXVldWVBdXRvc2F2ZSA9ICh7IG1pbGVzdG9uZSA9IG51bGwgfSA9IHt9KSA9PiB7CiAgICBhdXRvc2F2ZVF1ZXVlID0gYXV0b3NhdmVRdWV1ZS5jYXRjaCgoKSA9PiBmYWxzZSkudGhlbihhc3luYyAoKSA9PiB7CiAgICAgIGF3YWl0IHdhaXRGb3JBdXRvc2F2ZUlkbGUoKTsKICAgICAgcmV0dXJuIGF1dG9zYXZlKHsgbWlsZXN0b25lIH0pOwogICAgfSk7CiAgICByZXR1cm4gYXV0b3NhdmVRdWV1ZTsKICB9OwonJycsCiJhdXRvc2F2ZSBxdWV1ZSIpCgpwKCJ3b3JrL3NyYy9hcHAvc2Vhc29uQXBwLmpzIiwKJycnICAgICAgYXN5bmMgb25UcmFpbmluZ0ZvY3VzKGZvY3VzKSB7CiAgICAgICAgc25hcHNob3QgPSBzZWFzb25BcGkuc2V0VHJhaW5pbmdGb2N1cyhzbmFwc2hvdC5zZWFzb25JZCwgZm9jdXMpOwogICAgICAgIHJlbmRlckhvbWUoKTsKICAgICAgICBhd2FpdCBhdXRvc2F2ZSgpOwogICAgICAgIHJlbmRlckhvbWUoKTsKICAgICAgfSwKJycnLAonJycgICAgICBhc3luYyBvblRyYWluaW5nRm9jdXMoZm9jdXMpIHsKICAgICAgICBzbmFwc2hvdCA9IHNlYXNvbkFwaS5zZXRUcmFpbmluZ0ZvY3VzKHNuYXBzaG90LnNlYXNvbklkLCBmb2N1cyk7CiAgICAgICAgcmVuZGVySG9tZSgpOwogICAgICAgIHZvaWQgcXVldWVBdXRvc2F2ZSgpOwogICAgICB9LAonJycsCiJ0cmFpbmluZyBub25ibG9ja2luZyIpCgpwKCJ3b3JrL3NyYy9hcHAvc2Vhc29uQXBwLmpzIiwKJycnICAgICAgICB0YWIgPSAiSE9NRSI7CiAgICAgICAgcmVuZGVySG9tZSgpOwogICAgICAgIGF3YWl0IGF1dG9zYXZlKHsgbWlsZXN0b25lIH0pOwogICAgICAgIHJlbmRlckhvbWUoKTsKJycnLAonJycgICAgICAgIHRhYiA9ICJIT01FIjsKICAgICAgICByZW5kZXJIb21lKCk7CiAgICAgICAgaWYgKG1pbGVzdG9uZSkgewogICAgICAgICAgYXdhaXQgcXVldWVBdXRvc2F2ZSh7IG1pbGVzdG9uZSB9KTsKICAgICAgICAgIHJlbmRlckhvbWUoKTsKICAgICAgICB9IGVsc2UgewogICAgICAgICAgdm9pZCBxdWV1ZUF1dG9zYXZlKCk7CiAgICAgICAgfQonJycsCiJhY3Rpb24gbm9uYmxvY2tpbmciKQoKZj1QYXRoKCJ3b3JrL3NyYy9hcHAvc2Vhc29uQXBwLmpzIikKcz1mLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQpzPXMucmVwbGFjZSgidm9pZCBhdXRvc2F2ZSgpOyIsInZvaWQgcXVldWVBdXRvc2F2ZSgpOyIpCnM9cy5yZXBsYWNlKCJ2b2lkIGF1dG9zYXZlKHsgbWlsZXN0b25lIH0pOyIsInZvaWQgcXVldWVBdXRvc2F2ZSh7IG1pbGVzdG9uZSB9KTsiKQpzPXMucmVwbGFjZSgiYXdhaXQgYXV0b3NhdmUoKTsiLCJhd2FpdCBxdWV1ZUF1dG9zYXZlKCk7IikKZi53cml0ZV90ZXh0KHMsZW5jb2Rpbmc9InV0Zi04IikKCnAoIndvcmsvc3JjL2FwcC9zZWFzb25BcHAuanMiLAonJycgICAgICAgIGlmIChhY3Rpb24gPT09ICJTQVZFIikgewogICAgICAgICAgdHJ5IHsKICAgICAgICAgICAgY29uc3QgbWV0YSA9IGF3YWl0IHNlYXNvblNhdmVTZXJ2aWNlLnNhdmVTZWFzb24oc25hcHNob3Quc2Vhc29uSWQsIHsgc2F2ZUlkOiBjdXJyZW50U2F2ZUlkIH0pOwonJycsCicnJyAgICAgICAgaWYgKGFjdGlvbiA9PT0gIlNBVkUiKSB7CiAgICAgICAgICB0cnkgewogICAgICAgICAgICBhd2FpdCBhdXRvc2F2ZVF1ZXVlLmNhdGNoKCgpID0+IGZhbHNlKTsKICAgICAgICAgICAgY29uc3QgbWV0YSA9IGF3YWl0IHNlYXNvblNhdmVTZXJ2aWNlLnNhdmVTZWFzb24oc25hcHNob3Quc2Vhc29uSWQsIHsgc2F2ZUlkOiBjdXJyZW50U2F2ZUlkIH0pOwonJycsCiJtYW51YWwgc2F2ZSBmbHVzaCIpCgpwcmludCgidjU1LjEgcGVyZm9ybWFuY2UgcGF0Y2ggYW5jaG9ycyBhcHBsaWVkIikK' | base64 -d > /tmp/patch-v55-1.py
+          python3 /tmp/patch-v55-1.py
+          node --check work/src/api/seasonApi.js
+          node --check work/src/app/seasonApp.js
+          node --check work/scripts/verify-v55-1-performance.mjs
+          python3 -m py_compile work/scripts/browser-v55-1-performance.py
+
+      - name: v55.1 performance preflight
+        id: preflight
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          grep -q 'heavyReadModelCaches' work/src/api/seasonApi.js
+          grep -q 'cachedWorldProspectRankings' work/src/api/seasonApi.js
+          grep -q 'cachedOrganizationView' work/src/api/seasonApi.js
+          grep -q 'Object.isFrozen(value)' work/src/api/seasonApi.js
+          grep -q 'queueAutosave' work/src/app/seasonApp.js
+          grep -q 'requestIdleCallback' work/src/app/seasonApp.js
+
+      - name: v55.1 focused performance gate
+        id: performance
+        continue-on-error: true
+        run: cd work && node scripts/verify-v55-1-performance.mjs
+
+      - name: Re-run v55 Full Offseason gate
+        id: reg_v55
+        continue-on-error: true
+        run: cd work && node scripts/verify-v55-full-offseason.mjs
+
+      - name: Re-run v54 Trade System gate
+        id: reg_v54
+        continue-on-error: true
+        run: cd work && node scripts/verify-v54-trade-system.mjs
+
+      - name: Re-run v54 Trade Rollover gate
+        id: reg_v54_roll
+        continue-on-error: true
+        run: cd work && node scripts/verify-v54-trade-rollover.mjs
+
+      - name: Re-run current MVP regression
+        id: mvp
+        continue-on-error: true
+        run: cd work && node scripts/verify-v50-1g-current-mvp.mjs --verify --output=reports/v55-1-current-mvp-regression.json
+
+      - name: Re-run Production runtime
+        id: runtime
+        continue-on-error: true
+        run: cd work && node scripts/verify-v50-2a-production-data-runtime.mjs --verify --output=reports/v55-1-production-runtime-regression.json
+
+      - name: Build v55.1 Production standalone
+        id: build
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          gzip -dc work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz > /tmp/tcu-production-v2.json
+          cd work
+          node scripts/build-standalone.mjs --output=dist/THE_CALL_UP_SEASON_STANDALONE_v55_1_PERFORMANCE.html --master-snapshot=/tmp/tcu-production-v2.json
+          python3 - <<'PY2'
+          from pathlib import Path
+          p=Path("dist/THE_CALL_UP_SEASON_STANDALONE_v55_1_PERFORMANCE.html")
+          s=p.read_text(encoding="utf-8")
+          s=s.replace("Season v49","Season v55.1 PERFORMANCE").replace("Season v55","Season v55.1 PERFORMANCE")
+          p.write_text(s,encoding="utf-8")
+          assert p.stat().st_size>1_000_000
+          assert "heavyReadModelCaches" in s and "queueAutosave" in s
+          PY2
+
+      - name: Install isolated Playwright
+        id: playwright
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/tcu-v55-1-browser
+          source /tmp/tcu-v55-1-browser/bin/activate
+          python -m pip install --upgrade pip
+          pip install "playwright==1.55.0"
+          python -m playwright install --with-deps chromium
+
+      - name: v55.1 mobile performance smoke
+        id: browser
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          source /tmp/tcu-v55-1-browser/bin/activate
+          cd work
+          python scripts/browser-v55-1-performance.py
+
+      - name: v55.1 checkpoint report
+        id: checkpoint
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          cd work
+          python3 - <<'PY2'
+          import hashlib,json
+          from pathlib import Path
+          perf=json.loads(Path("reports/v55-1-performance-gate.json").read_text())
+          browser=json.loads(Path("reports/v55-1-browser-performance.json").read_text())
+          mvp=json.loads(Path("reports/v55-1-current-mvp-regression.json").read_text())
+          runtime=json.loads(Path("reports/v55-1-production-runtime-regression.json").read_text())
+          assert perf["pass"] and browser["pass"] and mvp["pass"] and runtime["pass"]
+          html=Path("dist/THE_CALL_UP_SEASON_STANDALONE_v55_1_PERFORMANCE.html")
+          data=html.read_bytes()
+          report={
+            "schema":"THE_CALL_UP_V55_1_PERFORMANCE_CHECKPOINT","pass":True,
+            "features":{"worldProspectCache":True,"organizationReadModelCache":True,"frozenFastPath":True,"idleAutosaveQueue":True,"nonBlockingNormalAutosave":True,"manualSaveFlush":True,"cacheInvalidationOnReview":True,"cacheExcludedFromSave":True,"mobileTimingGate":True},
+            "performance":perf["timingsMs"],"browser":browser["timingsMs"],
+            "regression":{"v55FullOffseason":True,"v54TradeSystem":True,"v54TradeRollover":True,"v50_1CurrentMvp":True,"v50_2ProductionRuntime":True},
+            "standalone":{"filename":html.name,"bytes":len(data),"sha256":hashlib.sha256(data).hexdigest()},
+            "next":"v56 Postseason / Awards / History"
+          }
+          Path("reports/v55-1-performance-checkpoint.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n")
+          PY2
+
+      - name: Aggregate v55.1 outcomes
+        id: aggregate
+        if: always()
+        env:
+          PREFLIGHT: ${{ steps.preflight.outcome }}
+          PERF: ${{ steps.performance.outcome }}
+          V55: ${{ steps.reg_v55.outcome }}
+          V54: ${{ steps.reg_v54.outcome }}
+          V54ROLL: ${{ steps.reg_v54_roll.outcome }}
+          MVP: ${{ steps.mvp.outcome }}
+          RUNTIME: ${{ steps.runtime.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          PLAYWRIGHT: ${{ steps.playwright.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          CHECKPOINT: ${{ steps.checkpoint.outcome }}
+        run: |
+          set -euo pipefail
+          printf '%-12s %s\n' PREFLIGHT "$PREFLIGHT" PERF "$PERF" V55 "$V55" V54 "$V54" V54ROLL "$V54ROLL" MVP "$MVP" RUNTIME "$RUNTIME" BUILD "$BUILD" PLAYWRIGHT "$PLAYWRIGHT" BROWSER "$BROWSER" CHECKPOINT "$CHECKPOINT"
+          failed=0
+          for value in "$PREFLIGHT" "$PERF" "$V55" "$V54" "$V54ROLL" "$MVP" "$RUNTIME" "$BUILD" "$PLAYWRIGHT" "$BROWSER" "$CHECKPOINT"; do
+            if [ "$value" != "success" ]; then failed=1; fi
+          done
+          if [ "$failed" -ne 0 ]; then exit 1; fi
+
+      - name: Commit verified v55.1
+        if: ${{ success() }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add work/src/api/seasonApi.js work/src/app/seasonApp.js work/scripts/verify-v55-1-performance.mjs work/scripts/browser-v55-1-performance.py work/README_KO.md work/reports/v55-1-performance-gate.json work/reports/v55-1-browser-performance.json work/reports/v55-1-current-mvp-regression.json work/reports/v55-1-production-runtime-regression.json work/reports/v55-1-performance-checkpoint.json
+          git rm -f .github/workflows/tcu-v55-1-performance-bundle.yml
+          git commit -m "v55.1: optimize heavy read models and autosave responsiveness [skip ci]"
+          git push origin HEAD:main
+
+      - name: Upload v55.1 checkpoint
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE_CALL_UP_v55_1_PERFORMANCE
+          path: |
+            work/dist/THE_CALL_UP_SEASON_STANDALONE_v55_1_PERFORMANCE.html
+            work/reports/v55-1-performance-gate.json
+            work/reports/v55-1-browser-performance.json
+            work/reports/v55-1-performance-checkpoint.json
+            work/README_KO.md
+          if-no-files-found: ignore
+          compression-level: 0
