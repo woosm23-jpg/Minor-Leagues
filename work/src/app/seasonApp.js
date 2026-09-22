@@ -468,13 +468,18 @@ function startSeasonApp(root) {
           return;
         }
         const previousStatus = snapshot.status;
+        const previousYear = snapshot.seasonYear;
         const previousCareerSequence = latestCareerSequence(snapshot);
+        if (action === "START_OFFSEASON") snapshot = seasonApi.startOffseason(snapshot.seasonId);
+        if (action === "OFFSEASON_NEXT") snapshot = seasonApi.advanceOffseasonPhase(snapshot.seasonId);
         if (action === "SIM_GAME") snapshot = seasonApi.simulateCurrentGame(snapshot.seasonId);
         if (action === "SIM_SERIES") snapshot = seasonApi.simulateCurrentSeries(snapshot.seasonId);
         if (action === "SIM_7_DAYS") snapshot = seasonApi.simulateSevenDays(snapshot.seasonId);
         if (action === "SIM_IMPORTANT") snapshot = seasonApi.simulateToImportantEvent(snapshot.seasonId);
         majorEvent = latestMajorCareerEvent(snapshot, previousCareerSequence);
-        const milestone = previousStatus !== "COMPLETE" && snapshot.status === "COMPLETE" ? "SEASON_END" : null;
+        const milestone = action === "START_OFFSEASON" ? "OFFSEASON_START"
+          : previousStatus === "OFFSEASON" && snapshot.status === "REGULAR_SEASON" && snapshot.seasonYear > previousYear ? "OPENING_DAY"
+          : previousStatus !== "COMPLETE" && snapshot.status === "COMPLETE" ? "SEASON_END" : null;
         tab = "HOME";
         renderHome();
         await autosave({ milestone });

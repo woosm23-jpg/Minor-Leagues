@@ -1,0 +1,18 @@
+{
+  "schema": "THE_CALL_UP_V55_OFFSEASON_BROWSER_SMOKE",
+  "pass": true,
+  "standalone": "THE_CALL_UP_SEASON_STANDALONE_v55_PRODUCTION.html",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "checks": {
+    "normalSeasonBoot": true,
+    "offseasonUiBundled": true,
+    "gameVersion": true,
+    "pageErrors": 0,
+    "consoleErrors": 0
+  },
+  "errors": [],
+  "consoleErrors": []
+}

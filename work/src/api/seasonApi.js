@@ -24,12 +24,13 @@ import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
 import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
 import { createRosterControlState, normalizeRosterControlState, advanceRosterControlToDate, getRosterControlPublicView, knownFortyManCount, prepareAaaMlbRosterMove } from "../engine/career/rosterControlState.js";
-import { createContractMarketState, normalizeContractMarketState, refreshContractMarketState, getContractMarketPublicView } from "../engine/career/contractMarket.js";
+import { createContractMarketState, normalizeContractMarketState, refreshContractMarketState, prepareArbitrationCase, resolveArbitration, getContractMarketPublicView } from "../engine/career/contractMarket.js";
 import { createTradeState, normalizeTradeState, requestTradeState, addTradeRumor, recordTrade, getTradePublicView } from "../engine/career/tradeState.js";
 import { executeTrade } from "../services/tradeService.js";
+import { OFFSEASON_PHASES, createOffseasonState, normalizeOffseasonState, completeOffseasonPhase, getOffseasonPublicView } from "../engine/career/offseasonPipeline.js";
 
 const sessions = new Map();
-const CURRENT_GAME_VERSION = "full_career_trade_system_v54";
+const CURRENT_GAME_VERSION = "full_career_offseason_pipeline_v55";
 
 function freeze(value) {
   if (Array.isArray(value)) return Object.freeze(value.map(freeze));
@@ -777,7 +778,168 @@ function applySeasonEndAgingIfNeeded(session) {
   return { appliedPosition, appliedPitcher, developedPosition, developedPitcher, migrations };
 }
 
-function advanceCompletedProductionSeason(session) {
+function offseasonSeasonYear(session) {
+  const year=Number(String(session.fixture?.startDate ?? session.state?.startDate ?? session.state?.currentDate).slice(0,4));
+  if(!Number.isInteger(year)) throw new RangeError("offseason season year를 확인할 수 없습니다.");
+  return year;
+}
+
+function offseasonPhaseDate(session, phase) {
+  const year=offseasonSeasonYear(session), next=year+1;
+  const map={
+    SEASON_REVIEW:session.state.currentDate,
+    SERVICE_CONTRACT_STATUS:`${next}-01-05`,
+    EXTENSIONS:`${next}-01-07`,
+    NON_TENDER_ARBITRATION:`${next}-01-10`,
+    FREE_AGENCY_TRADES:`${next}-01-15`,
+    ORGANIZATIONAL_CLEANUP:`${next}-01-25`,
+    DEVELOPMENT_AGING:`${next}-02-01`,
+    SCOUTING_REEVALUATION:`${next}-02-05`,
+    RETIREMENT_DECISIONS:`${next}-02-10`,
+    PROJECTED_ROSTERS:`${next}-02-15`,
+    SPRING_TRAINING:`${next}-02-20`,
+    ROSTER_CUTS:`${next}-03-20`,
+    OPENING_DAY:`${next}-03-25`
+  };
+  return map[phase] ?? session.state.currentDate;
+}
+
+function offseasonReviewSnapshot(session) {
+  const level=currentUserLevel(session);
+  const line=getUserSeasonLine(stateForLevel(session,level));
+  const contract=getContractPublicView(session.contractStates?.[session.fixture.userPlayerId] ?? null,{currentLevel:level,currentDate:session.state.currentDate});
+  const trade=getTradePublicView(session.tradeState);
+  return {
+    seasonYear:offseasonSeasonYear(session),
+    organizationId:String(session.fixture.organization?.organizationId ?? session.fixture.organization?.id ?? ""),
+    endLevel:level,
+    role:session.roleStates?.[session.fixture.userPlayerId]?.role ?? null,
+    stats:{G:line.G,H:line.H,HR:line.HR,RBI:line.RBI,SB:line.SB,AVG:line.AVG,OBP:line.OBP,SLG:line.SLG},
+    contractStatus:contract?.status ?? null,
+    serviceDisplay:contract?.service?.display ?? null,
+    tradeCount:trade?.lastTrade ? 1 : 0
+  };
+}
+
+function ensureOffseasonState(session) {
+  if(!worldComplete(session)) throw new RangeError("정규시즌이 완료되어야 offseason을 시작할 수 있습니다.");
+  if(session.fixture?.worldMode!=="PRODUCTION_REAL") throw new RangeError("v55 offseason은 Production 커리어에서 지원합니다.");
+  const year=offseasonSeasonYear(session);
+  if(session.offseasonState && session.offseasonState.seasonYear===year) return session.offseasonState;
+  session.offseasonState=createOffseasonState({
+    seasonYear:year,
+    startDate:session.state.currentDate,
+    userPlayerId:session.fixture.userPlayerId,
+    organizationId:session.fixture.organization?.organizationId ?? session.fixture.organization?.id ?? null,
+    seasonReview:offseasonReviewSnapshot(session)
+  });
+  return session.offseasonState;
+}
+
+function offseasonServiceCohort(session, currentDate) {
+  const views=Object.values(session.contractStates ?? {}).map((state)=>getContractPublicView(state,{currentDate})).filter(Boolean);
+  const serviceYearDays=views.find((view)=>Number.isFinite(view?.ruleSummary?.serviceYearDays))?.ruleSummary?.serviceYearDays ?? 172;
+  const known=views.map((view)=>view.service?.knownTotalDays).filter((days)=>Number.isFinite(days));
+  return {cohort:known.filter((days)=>days>=2*serviceYearDays&&days<3*serviceYearDays)};
+}
+
+function refreshOffseasonContractMarkets(session, currentDate) {
+  const {cohort}=offseasonServiceCohort(session,currentDate);
+  const priorYear=String(Number(currentDate.slice(0,4))-1);
+  const next={...(session.contractMarketStates ?? {})};
+  for(const [playerId,contractState] of Object.entries(session.contractStates ?? {})){
+    const market=normalizeContractMarketState(next[playerId] ?? null,{playerId,startDate:currentDate});
+    next[playerId]=refreshContractMarketState(market,{
+      contractState,
+      currentDate,
+      cohortServiceDays:cohort,
+      priorSeasonServiceDays:Number(contractState.serviceBySeason?.[priorYear] ?? 0)
+    });
+  }
+  session.contractMarketStates=next;
+  return Object.values(next).reduce((counts,state)=>{
+    counts[state.status]=(counts[state.status]??0)+1;
+    return counts;
+  },{});
+}
+
+function settleOffseasonArbitration(session, date) {
+  const {cohort}=offseasonServiceCohort(session,date);
+  let settled=0;
+  const markets={...(session.contractMarketStates ?? {})};
+  const contracts={...(session.contractStates ?? {})};
+  for(const [playerId,market] of Object.entries(markets)){
+    if(market?.status!=="ARBITRATION_ELIGIBLE"||!contracts[playerId]) continue;
+    const pending=prepareArbitrationCase(market,contracts[playerId],{
+      date,cohortServiceDays:cohort,performanceIndex:0.5,trackRecordIndex:0.5,roleValue:0.5
+    });
+    const resolved=resolveArbitration(pending,contracts[playerId],{date,mode:"SETTLEMENT"});
+    markets[playerId]=resolved.marketState;
+    contracts[playerId]=resolved.contractState;
+    settled+=1;
+  }
+  session.contractMarketStates=markets;
+  session.contractStates=contracts;
+  return {settled,nonTendered:0};
+}
+
+function marketStatusCounts(session) {
+  return Object.values(session.contractMarketStates ?? {}).reduce((counts,state)=>{
+    counts[state.status]=(counts[state.status]??0)+1;
+    return counts;
+  },{});
+}
+
+function advanceOffseasonPhaseInternal(session) {
+  const state=ensureOffseasonState(session);
+  if(state.status==="COMPLETE") return false;
+  const phase=state.currentPhase;
+  const date=offseasonPhaseDate(session,phase);
+  let result={};
+  if(phase==="SEASON_REVIEW") result=state.seasonReview;
+  else if(phase==="SERVICE_CONTRACT_STATUS") result={marketStatusCounts:refreshOffseasonContractMarkets(session,date)};
+  else if(phase==="EXTENSIONS") {
+    const user=session.contractMarketStates?.[session.fixture.userPlayerId] ?? null;
+    result={windowRecorded:true,userStatus:user?.status ?? null,automaticSigning:false};
+  }
+  else if(phase==="NON_TENDER_ARBITRATION") result=settleOffseasonArbitration(session,date);
+  else if(phase==="FREE_AGENCY_TRADES") {
+    const user=session.contractMarketStates?.[session.fixture.userPlayerId] ?? null;
+    result={marketStatusCounts:marketStatusCounts(session),userStatus:user?.status ?? null,tradeReviews:session.tradeState?.reviews ?? 0,userTradeRequest:session.tradeState?.agentRequest?.status ?? "NONE"};
+  }
+  else if(phase==="ORGANIZATIONAL_CLEANUP") result={mode:"ATOMIC_OPENING_DAY_ROLLOVER",populationProtected:true};
+  else if(phase==="DEVELOPMENT_AGING") result=applySeasonEndAgingIfNeeded(session);
+  else if(phase==="SCOUTING_REEVALUATION") result={reviewKey:`offseason:${seasonAgingKey(session)}`,idempotent:true};
+  else if(phase==="RETIREMENT_DECISIONS") result={handledByProductionEcologyAtOpeningDay:true};
+  else if(phase==="PROJECTED_ROSTERS") result={handledByProductionEcologyAtOpeningDay:true};
+  else if(phase==="SPRING_TRAINING") result={mode:"ROSTER_PREP_ONLY_V55",detailedSpringGames:"DEFERRED"};
+  else if(phase==="ROSTER_CUTS") result={mode:"OPENING_DAY_NORMALIZATION",fortyManAndOptionsPreserved:true};
+  else if(phase==="OPENING_DAY") {
+    const prior=session.offseasonState;
+    rolloverCompletedProductionSeason(session);
+    result={nextSeasonYear:offseasonSeasonYear(session),startDate:session.fixture.startDate,ecology:session.leagueEcologyState?.lastOffseason ?? null};
+    session.offseasonState=completeOffseasonPhase(prior,{phase,date:session.fixture.startDate,result}).state;
+    return true;
+  }
+  else throw new RangeError(`지원하지 않는 offseason phase입니다: ${phase}`);
+  session.offseasonState=completeOffseasonPhase(session.offseasonState,{phase,date,result}).state;
+  return true;
+}
+
+function completeOffseasonToOpeningDayInternal(session) {
+  ensureOffseasonState(session);
+  let safety=0;
+  while(session.offseasonState?.status==="ACTIVE"){
+    const before=session.offseasonState.currentPhase;
+    advanceOffseasonPhaseInternal(session);
+    if(session.offseasonState?.status==="ACTIVE"&&session.offseasonState.currentPhase===before) throw new RangeError(`offseason phase가 진행되지 않았습니다: ${before}`);
+    safety+=1;
+    if(safety>OFFSEASON_PHASES.length+2) throw new RangeError("offseason phase safety limit를 초과했습니다.");
+  }
+  return snapshot(session);
+}
+
+function rolloverCompletedProductionSeason(session) {
   if (!worldComplete(session)) throw new RangeError("완료된 시즌만 다음 시즌으로 진행할 수 있습니다.");
   if (session.fixture?.worldMode !== "PRODUCTION_REAL") throw new RangeError("현재 다음 시즌 진행은 Production 커리어에서만 지원합니다.");
   clearActiveGame(session);
@@ -1641,7 +1803,7 @@ function snapshot(session) {
   const worldLeagueCompleted = Object.values(session.levelStates ?? { AAA: session.state }).reduce((sum, row) => sum + row.completedGames, 0);
   const worldLeagueTotal = Object.values(session.levelStates ?? { AAA: session.state }).reduce((sum, row) => sum + row.schedule.length, 0);
   return freeze({
-    apiVersion: "internal_season_api_v24", seasonId: session.state.seasonId, seasonYear: Number(String(session.fixture.startDate ?? session.state.startDate).slice(0,4)), startDate: session.fixture.startDate ?? session.state.startDate, status: worldComplete(session) ? "COMPLETE" : "REGULAR_SEASON", currentDate: session.state.currentDate,
+    apiVersion: "internal_season_api_v24", seasonId: session.state.seasonId, seasonYear: Number(String(session.fixture.startDate ?? session.state.startDate).slice(0,4)), startDate: session.fixture.startDate ?? session.state.startDate, status: session.offseasonState?.status === "ACTIVE" ? "OFFSEASON" : worldComplete(session) ? "COMPLETE" : "REGULAR_SEASON", currentDate: session.state.currentDate,
     currentLevel: level, userTeam: state.teams[userTeamId], userPlayer: userPlayerView(session, leaders), record: teamRecord(session, level), userSeasonLine: userLine, userStatsByLevel: levelStats,
     userRole: (() => {
       const playingTime = getPositionPlayingTimeView(session.playerStates?.[session.fixture.userPlayerId] ?? null, userRoleState);
@@ -1660,6 +1822,7 @@ function snapshot(session) {
     progress: { gamesPlayed, totalGames: userSchedule.length, leagueGamesCompleted: state.completedGames, leagueGamesTotal: state.schedule.length, worldLeagueGamesCompleted: worldLeagueCompleted, worldLeagueGamesTotal: worldLeagueTotal },
     dataUniverse: session.dataUniverse ? { schemaVersion: session.dataUniverse.schemaVersion, origin: session.dataUniverse.origin, sourceSnapshot: session.dataUniverse.sourceSnapshot, copiedAtCareerStart: session.dataUniverse.copiedAtCareerStart, snapshotDate: session.dataUniverse.snapshotDate, independent: session.dataUniverse.independent } : null,
     leagueEcology: session.leagueEcologyState ? { year: session.leagueEcologyState.year, totalRetired: session.leagueEcologyState.totalRetired, totalGenerated: session.leagueEcologyState.totalGenerated, lastOffseason: session.leagueEcologyState.lastOffseason } : null,
+    offseason: getOffseasonPublicView(session.offseasonState),
     lastProgress: session.lastProgress ?? null,
     activeGame, activeScheduleGameId: session.activeScheduleGameId, activeLevel: session.activeLevel ?? null
   });
@@ -1790,7 +1953,7 @@ function createSessionFromFixture(fixture, { seed, startDate, dataUniverse = nul
   const session = {
     fixture, state: levelStates.AAA, levelStates,
     dataUniverse: normalizeSaveUniverse(dataUniverse ?? createSyntheticUniverseDescriptor({ startDate, sourceVersion: CURRENT_GAME_VERSION }), { startDate, sourceVersion: CURRENT_GAME_VERSION }),
-    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates, contractMarketStates, tradeState,
+    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates, contractMarketStates, tradeState, offseasonState: null,
     roleStates, organizationState: createOrganizationReviewState({ startDate }),
     careerEventState: createCareerEventState({ userPlayerId: fixture.userPlayerId, startDate, initialLevel }),
     leagueEcologyState: fixture.worldMode === "PRODUCTION_REAL" ? createProductionEcologyState({ fixture }) : null,
@@ -1886,6 +2049,9 @@ const seasonApi = Object.freeze({
       { currentDate: restored.playerStateDate ?? restored.fixture.startDate ?? restored.state.currentDate }
     );
     restored.tradeState = normalizeTradeState(restored.tradeState ?? null, { startDate: restored.fixture.startDate ?? restored.state.currentDate, userPlayerId: restored.fixture.userPlayerId });
+    restored.offseasonState = normalizeOffseasonState(restored.offseasonState ?? null, {
+      userPlayerId: restored.fixture.userPlayerId
+    });
     const hadScoutingStates = Boolean(restored.scoutingStates);
     // Legacy v43 saves had no scouting state. Backfill at the restore date so
     // past review cycles are not retroactively replayed. Existing v44 states
@@ -2026,7 +2192,9 @@ const seasonApi = Object.freeze({
     applySeasonEndAgingIfNeeded(session);
     return snapshot(session);
   },
-  advanceToNextSeason(seasonId) { const session = assertSession(seasonId); return advanceCompletedProductionSeason(session); },
+  startOffseason(seasonId) { const session=assertSession(seasonId); ensureOffseasonState(session); return snapshot(session); },
+  advanceOffseasonPhase(seasonId) { const session=assertSession(seasonId); if(session.offseasonState?.status==="COMPLETE") return snapshot(session); advanceOffseasonPhaseInternal(session); return snapshot(session); },
+  advanceToNextSeason(seasonId) { const session = assertSession(seasonId); return completeOffseasonToOpeningDayInternal(session); },
   requestTrade,
   executeTradeProposal,
   closeActiveGame(seasonId) { const session=assertSession(seasonId); clearActiveGame(session); return snapshot(session); },

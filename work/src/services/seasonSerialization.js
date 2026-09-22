@@ -3,11 +3,12 @@ import { validateContractState } from "../engine/career/contractState.js";
 import { validateRosterControlState } from "../engine/career/rosterControlState.js";
 import { validateContractMarketState } from "../engine/career/contractMarket.js";
 import { validateTradeState } from "../engine/career/tradeState.js";
+import { validateOffseasonState } from "../engine/career/offseasonPipeline.js";
 import { CAREER_EVENT_TYPES } from "../engine/career/careerEvents.js";
 
 const SAVE_FORMAT = "THE_CALL_UP_SEASON_SAVE";
 const SAVE_SCHEMA_VERSION = 2;
-const GAME_VERSION = "full_career_trade_system_v54";
+const GAME_VERSION = "full_career_offseason_pipeline_v55";
 const VALIDATION_MODES = Object.freeze(["LIGHT", "FULL"]);
 const ROLE_VALUES = new Set(["STARTER", "PLATOON", "ROTATION", "BENCH", "UTILITY", "CALL_UP_DEPTH", "AAA_STARTER"]);
 
@@ -139,6 +140,7 @@ function validateCommon(payload) {
   if (payload.rosterControlStates !== undefined && payload.rosterControlStates !== null) assertObject(payload.rosterControlStates, "payload.rosterControlStates");
   if (payload.contractMarketStates !== undefined && payload.contractMarketStates !== null) assertObject(payload.contractMarketStates, "payload.contractMarketStates");
   if (payload.tradeState !== undefined && payload.tradeState !== null) assertObject(payload.tradeState, "payload.tradeState");
+  if (payload.offseasonState !== undefined && payload.offseasonState !== null) { assertObject(payload.offseasonState, "payload.offseasonState"); validateOffseasonState(payload.offseasonState, "payload.offseasonState"); }
   if (payload.levelSeasons !== undefined && payload.levelSeasons !== null) assertObject(payload.levelSeasons, "payload.levelSeasons");
   if (payload.dataUniverse !== undefined && payload.dataUniverse !== null) normalizeSaveUniverse(payload.dataUniverse, { startDate: payload.fixture?.startDate ?? payload.season?.startDate ?? payload.season?.currentDate, sourceVersion: payload.gameVersion ?? "legacy" });
   if (typeof payload.seasonId !== "string" || !payload.seasonId) throw new TypeError("payload.seasonId가 필요합니다.");
@@ -419,6 +421,7 @@ function serializeSeasonSession(session, { activeGameCheckpoint = null } = {}) {
     rosterControlStates: session.rosterControlStates ?? null,
     contractMarketStates: session.contractMarketStates ?? null,
     tradeState: session.tradeState ?? null,
+    offseasonState: session.offseasonState ?? null,
     leagueEcologyState: session.leagueEcologyState ?? null,
     playerStateDate: session.playerStateDate,
     activeGameCheckpoint,
@@ -448,6 +451,7 @@ function restoreSeasonSession(payload) {
     rosterControlStates: restored.rosterControlStates ?? null,
     contractMarketStates: restored.contractMarketStates ?? null,
     tradeState: restored.tradeState ?? null,
+    offseasonState: restored.offseasonState ?? null,
     leagueEcologyState: restored.leagueEcologyState ?? null,
     playerStateDate: restored.playerStateDate,
     activeGameId: null,

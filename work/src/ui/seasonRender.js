@@ -143,7 +143,38 @@ function conditionCard(snapshot) {
   </section>`;
 }
 
+function offseasonPhaseLabel(phase) {
+  return ({
+    SEASON_REVIEW:"시즌 리뷰",
+    SERVICE_CONTRACT_STATUS:"서비스·계약 상태",
+    EXTENSIONS:"연장계약",
+    NON_TENDER_ARBITRATION:"Non-tender·연봉조정",
+    FREE_AGENCY_TRADES:"FA·트레이드 시장",
+    ORGANIZATIONAL_CLEANUP:"조직 정리",
+    DEVELOPMENT_AGING:"성장·에이징",
+    SCOUTING_REEVALUATION:"스카우팅 재평가",
+    RETIREMENT_DECISIONS:"은퇴 결정",
+    PROJECTED_ROSTERS:"예상 로스터",
+    SPRING_TRAINING:"스프링 트레이닝",
+    ROSTER_CUTS:"로스터 컷",
+    OPENING_DAY:"Opening Day"
+  })[phase] ?? phase ?? "완료";
+}
+
+function offseasonCard(snapshot) {
+  const off=snapshot.offseason;
+  if(snapshot.status!=="OFFSEASON"||!off) return "";
+  const pct=Math.round((off.completedCount/Math.max(1,off.totalPhases))*100);
+  return `<section class="card next-game-card offseason-card">
+    <div class="section-head"><strong>Offseason Pipeline</strong><span>${off.completedCount}/${off.totalPhases} · ${pct}%</span></div>
+    <div class="matchup-large"><div><span>현재 단계</span><strong>${esc(offseasonPhaseLabel(off.currentPhase))}</strong></div><b>→</b><div class="right"><span>목표</span><strong>Opening Day</strong></div></div>
+    <div class="progress-actions"><button type="button" class="primary" data-season-action="OFFSEASON_NEXT">다음 단계</button></div>
+    <p class="condition-note">v55는 각 오프시즌 단계를 저장하고 중복 적용을 막습니다. 중간에 앱을 닫아도 저장된 phase에서 이어집니다.</p>
+  </section>`;
+}
+
 function nextGameCard(snapshot) {
+  if (snapshot.status === "OFFSEASON") return "";
   const userLevel = snapshot.organization?.userLevel ?? "AAA";
   const userLevelSummary = snapshot.organization?.levelSummaries?.find((row) => row.level === userLevel) ?? null;
   if (userLevelSummary && !userLevelSummary.simulated) {
@@ -151,7 +182,7 @@ function nextGameCard(snapshot) {
       <p class="season-empty">현재 실제 일정은 A / High-A(A+) / AA / AAA / MLB 전체에 연결되어 있습니다. ${esc(levelLabel(userLevel))} 일정 상태를 다시 확인해주세요.</p></section>`;
   }
   const game = snapshot.nextGame;
-  if (!game) return `<section class="card next-game-card"><div class="section-head"><strong>정규시즌 종료</strong><span>${snapshot.record.W}-${snapshot.record.L}</span></div><p class="season-empty">테스트 시즌 일정이 모두 끝났습니다.</p></section>`;
+  if (!game) return `<section class="card next-game-card"><div class="section-head"><strong>정규시즌 종료</strong><span>${snapshot.record.W}-${snapshot.record.L}</span></div><p class="season-empty">정규시즌 일정이 모두 끝났습니다.</p>${snapshot.status === "COMPLETE" ? `<div class="progress-actions"><button type="button" class="primary" data-season-action="START_OFFSEASON">오프시즌 시작</button></div>` : ""}</section>`;
   const userHome = game.userSide === "home";
   const user = snapshot.userTeam.shortName;
   const opp = game.opponent.shortName;
@@ -269,7 +300,7 @@ function homeCareerFeedPreview(snapshot) {
 
 function homeView(snapshot, uiState = {}) {
   const saveStatus = uiState.saveMessage ? `<p class="home-save-status">${esc(uiState.saveMessage)}</p>` : "";
-  return `${recordCard(snapshot)}${conditionCard(snapshot)}${roleStatusCard(snapshot)}${pitchingStaffCard(snapshot)}${nextGameCard(snapshot)}${progressStopCard(snapshot)}${homeCareerFeedPreview(snapshot)}${recentResults(snapshot)}${saveStatus}
+  return `${recordCard(snapshot)}${conditionCard(snapshot)}${roleStatusCard(snapshot)}${pitchingStaffCard(snapshot)}${offseasonCard(snapshot)}${nextGameCard(snapshot)}${progressStopCard(snapshot)}${homeCareerFeedPreview(snapshot)}${recentResults(snapshot)}${saveStatus}
     <p class="status">다른 팀 경기도 동일한 PA/Game 엔진으로 시뮬레이션되어 순위에 반영됩니다. 조직·전체 커리어 피드·저장 관리는 더보기에서 확인할 수 있습니다.</p>`;
 }
 

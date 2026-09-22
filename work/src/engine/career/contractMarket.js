@@ -144,6 +144,7 @@ function refreshContractMarketState(state, {
   next.lastEvaluationDate = currentDate;
   if (eligibility.serviceDays === null) next.status = "UNKNOWN_BASELINE";
   else if (next.status === "SIGNED" && contractState.terms?.kind === "MLB_GUARANTEED") next.status = "SIGNED";
+  else if (next.status === "ARBITRATION_SETTLED" && next.arbitration?.settledSalary !== null && String(next.arbitration?.preparedDate ?? "").slice(0, 4) === currentDate.slice(0, 4)) next.status = "ARBITRATION_SETTLED";
   else if (eligibility.freeAgency) next.status = "FREE_AGENT_ELIGIBLE";
   else if (["STANDARD", "SUPER_TWO"].includes(eligibility.arbitration)) next.status = "ARBITRATION_ELIGIBLE";
   else next.status = "CONTROLLED";

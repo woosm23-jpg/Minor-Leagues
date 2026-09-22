@@ -1,0 +1,33 @@
+{
+  "schema": "THE_CALL_UP_V55_FULL_OFFSEASON_GATE",
+  "pass": true,
+  "phases": [
+    "SEASON_REVIEW",
+    "SERVICE_CONTRACT_STATUS",
+    "EXTENSIONS",
+    "NON_TENDER_ARBITRATION",
+    "FREE_AGENCY_TRADES",
+    "ORGANIZATIONAL_CLEANUP",
+    "DEVELOPMENT_AGING",
+    "SCOUTING_REEVALUATION",
+    "RETIREMENT_DECISIONS",
+    "PROJECTED_ROSTERS",
+    "SPRING_TRAINING",
+    "ROSTER_CUTS",
+    "OPENING_DAY"
+  ],
+  "pure": {
+    "ordered": true,
+    "idempotentDuplicate": true,
+    "outOfOrderBlocked": true
+  },
+  "production": {
+    "worldGames2026": 10710,
+    "midOffseasonSaveRestore": true,
+    "manualPhaseProgression": true,
+    "autoAdvanceCompatibility": true,
+    "openingDay2027": true,
+    "ecologyYear": 2027,
+    "saveRoundTrip": true
+  }
+}

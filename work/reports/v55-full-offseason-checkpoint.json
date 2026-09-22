@@ -1,0 +1,38 @@
+{
+  "schema": "THE_CALL_UP_V55_FULL_OFFSEASON_CHECKPOINT",
+  "pass": true,
+  "version": "v55",
+  "features": {
+    "orderedPhases": true,
+    "idempotentPhases": true,
+    "midOffseasonSaveRestore": true,
+    "serviceContractClassification": true,
+    "arbitrationSettlement": true,
+    "marketWindow": true,
+    "organizationalCleanupBridge": true,
+    "developmentAgingBridge": true,
+    "scoutingBridge": true,
+    "retirementEcologyBridge": true,
+    "projectedRosters": true,
+    "springTrainingPhase": true,
+    "rosterCutsPhase": true,
+    "openingDayAtomicRollover": true,
+    "mobileUi": true,
+    "legacyAdvanceToNextSeasonCompatibility": true
+  },
+  "regression": {
+    "v54TradeSystem": true,
+    "v54TradeRollover": true,
+    "v53ArbitrationFA": true,
+    "v52RosterRules": true,
+    "v51ContractService": true,
+    "v50_1CurrentMvp": true,
+    "v50_2ProductionRuntime": true
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v55_PRODUCTION.html",
+    "bytes": 66787029,
+    "sha256": "183a51289d4d0fc08991a3c0a14dc623225109b78dd8b780cd48896b9a2023f5"
+  },
+  "next": "v56 Postseason / Awards / History"
+}
