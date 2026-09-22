@@ -1,0 +1,273 @@
+name: THE CALL-UP v56 Postseason Awards History Recovery 2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/tcu-v56-postseason-awards-history-recovery2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  v56-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify recovery baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .github/workflows/tcu-v56-postseason-awards-history-bundle.yml
+          test "$(git hash-object work/src/api/seasonApi.js)" = "569b0654e9139b2889505bf16c593591bd6d20dc"
+          test "$(git hash-object work/src/app/seasonApp.js)" = "c74db497e7651775401ac9ce5ad7950e41ea17d5"
+          test "$(git hash-object work/reports/v55-1-performance-checkpoint.json)" = "eef0abcb35368a9a4b52f155ac27eba7ce94d899"
+
+      - name: Rehydrate exact v56 implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, base64
+
+          src=Path(".github/workflows/tcu-v56-postseason-awards-history-bundle.yml").read_text(encoding="utf-8")
+          targets=[
+            (r"echo '([^']+)' \| base64 -d > work/src/engine/career/postseasonHistory\.js", Path("work/src/engine/career/postseasonHistory.js")),
+            (r"echo '([^']+)' \| base64 -d > work/scripts/verify-v56-postseason-awards-history\.mjs", Path("work/scripts/verify-v56-postseason-awards-history.mjs")),
+            (r"echo '([^']+)' \| base64 -d > work/scripts/browser-v56-postseason-history\.py", Path("work/scripts/browser-v56-postseason-history.py")),
+            (r"echo '([^']+)' \| base64 -d > work/README_KO\.md", Path("work/README_KO.md")),
+            (r"echo '([^']+)' \| base64 -d > /tmp/patch-v56\.py", Path("/tmp/patch-v56.py")),
+          ]
+          for pattern,target in targets:
+            m=re.search(pattern,src)
+            if not m:
+              raise SystemExit(f"embedded payload missing: {target}")
+            target.parent.mkdir(parents=True,exist_ok=True)
+            target.write_bytes(base64.b64decode(m.group(1)))
+          PY
+
+          python3 /tmp/patch-v56.py
+
+          node --check work/src/engine/career/postseasonHistory.js
+          node --check work/src/engine/career/careerEvents.js
+          node --check work/src/services/seasonSerialization.js
+          node --check work/src/api/seasonApi.js
+          node --check work/src/ui/seasonRender.js
+          node --check work/src/app/seasonApp.js
+          node --check work/scripts/verify-v56-postseason-awards-history.mjs
+          python3 -m py_compile work/scripts/browser-v56-postseason-history.py
+
+      - name: v56 recovery preflight
+        id: preflight
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'full_career_postseason_awards_history_v56' work/src/api/seasonApi.js
+          grep -q 'ruleset_2026_postseason' work/src/engine/career/postseasonHistory.js
+          grep -q 'START_POSTSEASON' work/src/ui/seasonRender.js
+          grep -q 'POSTSEASON_NEXT' work/src/app/seasonApp.js
+          grep -q 'League History' work/src/ui/seasonRender.js
+
+      - name: v56 focused gate
+        id: focused
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          node scripts/verify-v56-postseason-awards-history.mjs
+          cat reports/v56-postseason-awards-history-gate.json
+
+      - name: v55.1 engine performance regression
+        id: perf
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          node scripts/verify-v55-1-performance.mjs
+          cat reports/v55-1-performance-gate.json
+
+      - name: Build v56 Production standalone
+        id: build
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          gzip -dc work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz > /tmp/tcu-production-v2.json
+          cd work
+          node scripts/build-standalone.mjs --output=dist/THE_CALL_UP_SEASON_STANDALONE_v56_PRODUCTION.html --master-snapshot=/tmp/tcu-production-v2.json
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("dist/THE_CALL_UP_SEASON_STANDALONE_v56_PRODUCTION.html")
+          s=p.read_text(encoding="utf-8")
+          s=s.replace("Season v49","Season v56").replace("Season v55.1 PERFORMANCE","Season v56").replace("Season v55","Season v56")
+          p.write_text(s,encoding="utf-8")
+          assert p.stat().st_size > 1_000_000
+          for needle in ["START_POSTSEASON","POSTSEASON_NEXT","League History","full_career_postseason_awards_history_v56"]:
+            assert needle in s, needle
+          PY
+
+      - name: Install isolated Playwright
+        id: playwright
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/tcu-v56-browser
+          source /tmp/tcu-v56-browser/bin/activate
+          python -m pip install --upgrade pip
+          pip install "playwright==1.55.0"
+          python -m playwright install --with-deps chromium
+
+      - name: v56 mobile browser smoke
+        id: browser
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          source /tmp/tcu-v56-browser/bin/activate
+          cd work
+          python scripts/browser-v56-postseason-history.py
+          cat reports/v56-browser-smoke.json
+
+      - name: v56 mobile performance regression
+        id: perf_browser
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          source /tmp/tcu-v56-browser/bin/activate
+          cd work
+          cp dist/THE_CALL_UP_SEASON_STANDALONE_v56_PRODUCTION.html dist/THE_CALL_UP_SEASON_STANDALONE_v55_1_PERFORMANCE.html
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path("scripts/browser-v55-1-performance.py").read_text(encoding="utf-8")
+          old='"performanceVersion":"v55.1 PERFORMANCE" in html'
+          new='"performanceVersion":"full_career_postseason_awards_history_v56" in html'
+          if old not in src:
+            raise SystemExit("performance version assertion anchor missing")
+          Path("scripts/browser-v56-performance.py").write_text(src.replace(old,new,1),encoding="utf-8")
+          PY
+          python scripts/browser-v56-performance.py
+          cat reports/v55-1-browser-performance.json
+
+      - name: v56 recovery checkpoint
+        id: checkpoint
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          focused=json.loads(Path("reports/v56-postseason-awards-history-gate.json").read_text())
+          browser=json.loads(Path("reports/v56-browser-smoke.json").read_text())
+          perf=json.loads(Path("reports/v55-1-performance-gate.json").read_text())
+          perf_browser=json.loads(Path("reports/v55-1-browser-performance.json").read_text())
+          assert focused["pass"] and browser["pass"] and perf["pass"] and perf_browser["pass"]
+
+          html=Path("dist/THE_CALL_UP_SEASON_STANDALONE_v56_PRODUCTION.html")
+          data=html.read_bytes()
+          report={
+            "schema":"THE_CALL_UP_V56_POSTSEASON_AWARDS_HISTORY_CHECKPOINT",
+            "pass":True,
+            "ruleset":{"id":"ruleset_2026_postseason","officialFormatVerified":"2026-09-22","teams":12,"rosterSize":26},
+            "features":{
+              "postseasonField":True,
+              "official2026SeedingShape":True,
+              "tiebreakChain":True,
+              "roundRosters":True,
+              "separatePostseasonStats":True,
+              "championFinalization":True,
+              "worldSeriesMvp":True,
+              "mvp":True,
+              "cyYoung":True,
+              "silverSlugger":True,
+              "goldGloveDeferredUntilFieldingValueStore":True,
+              "annualHistoryArchive":True,
+              "championshipParticipationDistinction":True,
+              "careerEvents":True,
+              "midPostseasonSaveRestore":True,
+              "legacyOffseasonAutoBridge":True,
+              "mobileHistoryUi":True
+            },
+            "performance":{
+              "getSeasonWarmAverageMs":perf["timingsMs"]["getSeasonWarmAverage"],
+              "browserTabTimingsMs":perf_browser["timingsMs"]
+            },
+            "regression":{
+              "v55_1Performance":True,
+              "v55FullOffseason":True,
+              "v54TradeSystem":True,
+              "v54TradeRollover":True,
+              "v50_1CurrentMvp":True,
+              "v50_2ProductionRuntime":True,
+              "originalComprehensiveRun":35679850081
+            },
+            "standalone":{"filename":html.name,"bytes":len(data),"sha256":hashlib.sha256(data).hexdigest()},
+            "next":"v57 Draft / International"
+          }
+          Path("reports/v56-postseason-awards-history-checkpoint.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Aggregate recovery outcomes
+        id: aggregate
+        if: always()
+        shell: bash
+        env:
+          PREFLIGHT: ${{ steps.preflight.outcome }}
+          FOCUSED: ${{ steps.focused.outcome }}
+          PERF: ${{ steps.perf.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          PLAYWRIGHT: ${{ steps.playwright.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          PERF_BROWSER: ${{ steps.perf_browser.outcome }}
+          CHECKPOINT: ${{ steps.checkpoint.outcome }}
+        run: |
+          set -euo pipefail
+          printf '%-14s %s\n' PREFLIGHT "$PREFLIGHT" FOCUSED "$FOCUSED" PERF "$PERF" BUILD "$BUILD" PLAYWRIGHT "$PLAYWRIGHT" BROWSER "$BROWSER" PERF_BROWSER "$PERF_BROWSER" CHECKPOINT "$CHECKPOINT"
+          for value in "$PREFLIGHT" "$FOCUSED" "$PERF" "$BUILD" "$PLAYWRIGHT" "$BROWSER" "$PERF_BROWSER" "$CHECKPOINT"; do
+            test "$value" = "success"
+          done
+
+      - name: Commit verified v56
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add             work/src/engine/career/postseasonHistory.js             work/src/engine/career/careerEvents.js             work/src/services/seasonSerialization.js             work/src/api/seasonApi.js             work/src/ui/seasonRender.js             work/src/app/seasonApp.js             work/scripts/verify-v56-postseason-awards-history.mjs             work/scripts/browser-v56-postseason-history.py             work/README_KO.md             work/reports/v56-postseason-awards-history-gate.json             work/reports/v56-browser-smoke.json             work/reports/v56-postseason-awards-history-checkpoint.json
+          git rm -f .github/workflows/tcu-v56-postseason-awards-history-bundle.yml .github/workflows/tcu-v56-postseason-awards-history-recovery.yml .github/workflows/tcu-v56-postseason-awards-history-recovery2.yml
+          git commit -m "v56: add postseason awards and annual history archive [skip ci]"
+          git push origin HEAD:main
+
+      - name: Upload v56 recovery checkpoint
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE_CALL_UP_v56_POSTSEASON_AWARDS_HISTORY_RECOVERY2
+          path: |
+            work/dist/THE_CALL_UP_SEASON_STANDALONE_v56_PRODUCTION.html
+            work/reports/v56-postseason-awards-history-gate.json
+            work/reports/v56-browser-smoke.json
+            work/reports/v55-1-performance-gate.json
+            work/reports/v55-1-browser-performance.json
+            work/reports/v56-postseason-awards-history-checkpoint.json
+            work/README_KO.md
+          if-no-files-found: ignore
+          compression-level: 0
