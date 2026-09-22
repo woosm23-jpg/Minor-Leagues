@@ -6,11 +6,12 @@ import { validateTradeState } from "../engine/career/tradeState.js";
 import { validateOffseasonState } from "../engine/career/offseasonPipeline.js";
 import { validatePostseasonState, validateHistoryState } from "../engine/career/postseasonHistory.js";
 import { validateAmateurAcquisitionState } from "../engine/career/amateurAcquisition.js";
+import { validateRetirementHallState } from "../engine/career/retirementHallOfFame.js";
 import { CAREER_EVENT_TYPES } from "../engine/career/careerEvents.js";
 
 const SAVE_FORMAT = "THE_CALL_UP_SEASON_SAVE";
 const SAVE_SCHEMA_VERSION = 2;
-const GAME_VERSION = "full_career_draft_international_v57";
+const GAME_VERSION = "full_career_retirement_hof_v58";
 const VALIDATION_MODES = Object.freeze(["LIGHT", "FULL"]);
 const ROLE_VALUES = new Set(["STARTER", "PLATOON", "ROTATION", "BENCH", "UTILITY", "CALL_UP_DEPTH", "AAA_STARTER"]);
 
@@ -146,6 +147,7 @@ function validateCommon(payload) {
   if (payload.postseasonState !== undefined && payload.postseasonState !== null) { assertObject(payload.postseasonState, "payload.postseasonState"); validatePostseasonState(payload.postseasonState, "payload.postseasonState"); }
   if (payload.historyState !== undefined && payload.historyState !== null) { assertObject(payload.historyState, "payload.historyState"); validateHistoryState(payload.historyState, "payload.historyState"); }
   if (payload.amateurAcquisitionState !== undefined && payload.amateurAcquisitionState !== null) { assertObject(payload.amateurAcquisitionState, "payload.amateurAcquisitionState"); validateAmateurAcquisitionState(payload.amateurAcquisitionState, "payload.amateurAcquisitionState"); }
+  if (payload.retirementHallState !== undefined && payload.retirementHallState !== null) { assertObject(payload.retirementHallState, "payload.retirementHallState"); validateRetirementHallState(payload.retirementHallState, "payload.retirementHallState"); }
   if (payload.levelSeasons !== undefined && payload.levelSeasons !== null) assertObject(payload.levelSeasons, "payload.levelSeasons");
   if (payload.dataUniverse !== undefined && payload.dataUniverse !== null) normalizeSaveUniverse(payload.dataUniverse, { startDate: payload.fixture?.startDate ?? payload.season?.startDate ?? payload.season?.currentDate, sourceVersion: payload.gameVersion ?? "legacy" });
   if (typeof payload.seasonId !== "string" || !payload.seasonId) throw new TypeError("payload.seasonId가 필요합니다.");
@@ -430,6 +432,7 @@ function serializeSeasonSession(session, { activeGameCheckpoint = null } = {}) {
     postseasonState: session.postseasonState ?? null,
     historyState: session.historyState ?? null,
     amateurAcquisitionState: session.amateurAcquisitionState ?? null,
+    retirementHallState: session.retirementHallState ?? null,
     leagueEcologyState: session.leagueEcologyState ?? null,
     playerStateDate: session.playerStateDate,
     activeGameCheckpoint,
@@ -463,6 +466,7 @@ function restoreSeasonSession(payload) {
     postseasonState: restored.postseasonState ?? null,
     historyState: restored.historyState ?? null,
     amateurAcquisitionState: restored.amateurAcquisitionState ?? null,
+    retirementHallState: restored.retirementHallState ?? null,
     leagueEcologyState: restored.leagueEcologyState ?? null,
     playerStateDate: restored.playerStateDate,
     activeGameId: null,

@@ -881,12 +881,11 @@ function careerFeedView(snapshot) {
 }
 
 function historyView(snapshot) {
-  const seasons=snapshot.history?.seasons ?? [];
-  return `<section class="card player-detail-card history-card">
-    <div class="section-head"><strong>League History</strong><span>${snapshot.history?.totalSeasons ?? seasons.length} seasons</span></div>
-    ${seasons.length===0?`<p class="season-empty">아직 확정된 시즌 아카이브가 없습니다.</p>`:`<div class="career-timeline-list">${seasons.map((row)=>`<div class="career-timeline-row"><span>${row.seasonYear}</span><div><strong>${esc(row.championName ?? row.championTeamId)} 우승</strong><small>Runner-up ${esc(row.runnerUpName ?? row.runnerUpTeamId)} · 내 결과 ${esc(row.user?.championshipStatus ?? "NONE")} · 수상 ${(row.user?.awards ?? []).map(esc).join(", ") || "없음"}</small></div></div>`).join("")}</div>`}
-    <p class="condition-note">정규시즌과 postseason 기록은 분리 보존됩니다. Gold Glove는 OAA-like/Fielding Runs 누적 store가 완성되기 전에는 선정하지 않습니다.</p>
-  </section>`;
+  const seasons=snapshot.history?.seasons ?? [], rh=snapshot.retirementHall ?? null, user=rh?.user ?? {};
+  const latest=rh?.latestBallot, inducted=rh?.inductees ?? [];
+  const controls=user.retired ? `<p class="condition-note">이 커리어는 ${user.retiredYear}년에 은퇴했습니다. 은퇴 보고서와 HOF 투표 이력은 계속 보존됩니다.</p>` : `<div class="progress-actions">${!user.finalSeasonAnnounced?`<button type="button" class="secondary" data-season-action="ANNOUNCE_FINAL_SEASON">마지막 시즌 선언</button>`:""}${["COMPLETE","OFFSEASON"].includes(snapshot.status)?`<button type="button" class="secondary" data-season-action="RETIRE_CAREER">현역 은퇴</button>`:""}</div>`;
+  return `<section class="card player-detail-card history-card"><div class="section-head"><strong>League History</strong><span>${snapshot.history?.totalSeasons ?? seasons.length} seasons</span></div>${seasons.length===0?`<p class="season-empty">아직 확정된 시즌 아카이브가 없습니다.</p>`:`<div class="career-timeline-list">${seasons.map((row)=>`<div class="career-timeline-row"><span>${row.seasonYear}</span><div><strong>${esc(row.championName ?? row.championTeamId)} 우승</strong><small>Runner-up ${esc(row.runnerUpName ?? row.runnerUpTeamId)} · 내 결과 ${esc(row.user?.championshipStatus ?? "NONE")} · 수상 ${(row.user?.awards ?? []).map(esc).join(", ") || "없음"}</small></div></div>`).join("")}</div>`}</section>
+  <section class="card player-detail-card history-card"><div class="section-head"><strong>Hall of Fame</strong><span>${inducted.length} inducted</span></div><p class="condition-note">BBWAA: MLB 10시즌 · 은퇴 후 5 full seasons 대기 · 75% 당선 · 5% 유지 · 최대 10년 · 투표자당 최대 10명. 평가는 실제 커리어/피크/수상/마일스톤/포스트시즌 기록만 사용하며 OVR은 HOF 투표에 쓰지 않습니다.</p>${latest?`<div class="career-timeline-list">${(latest.results??[]).slice().sort((a,b)=>b.votePct-a.votePct).slice(0,10).map(r=>`<div class="career-timeline-row"><span>${latest.electionYear}</span><div><strong>${esc(r.name)} · ${(r.votePct*100).toFixed(1)}%</strong><small>${esc(r.status)} · ballot ${r.yearsOnBallot}</small></div></div>`).join("")}</div>`:`<p class="season-empty">아직 HOF 투표가 없습니다.</p>`}${controls}</section>`;
 }
 function settingsView(snapshot, uiState = {}) {
   return `<section class="card settings-summary-card">

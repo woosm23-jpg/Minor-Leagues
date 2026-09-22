@@ -364,6 +364,8 @@ function advanceProductionOffseasonEcology({ fixture, dataUniverse, playerStates
   });
 
   const retired = rows.filter((row) => retiredIds.has(row.id));
+  const retiredRecords = retired.map((row) => ({ id:row.id,name:row.name,role:row.role,level:row.level,teamId:row.teamId,organizationId:row.organizationId,ovr:row.ovr,player:row.player,developed:row.developed }));
+  const retirementDecisions = retirement.decisions.filter((row) => retiredIds.has(String(row.playerId)));
   const generatedIds = new Set(assignedRows.filter((row) => row.generated).map((row) => row.id));
   const lastOffseason = freeze({
     year,
@@ -398,6 +400,8 @@ function advanceProductionOffseasonEcology({ fixture, dataUniverse, playerStates
     pitcherStates: nextPitcherStates,
     ecologyState: nextEcologyState,
     amateurAcquisitionState: amateur.state,
+    retiredRecords,
+    retirementDecisions,
     summary: lastOffseason
   });
 }

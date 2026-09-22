@@ -1,0 +1,70 @@
+{
+  "schema": "THE_CALL_UP_V58_RETIREMENT_HOF_CHECKPOINT",
+  "pass": true,
+  "rules": {
+    "id": "ruleset_2026_hall_of_fame",
+    "verified": "2026-09-22",
+    "bbwAA": {
+      "minMlbSeasons": 10,
+      "firstBallotYearsAfterFinalSeason": 6,
+      "electionThreshold": 0.75,
+      "retentionThreshold": 0.05,
+      "maxBallotYears": 10,
+      "maxSelectionsPerVoter": 10,
+      "screeningLimit": 40,
+      "virtualVoters": 120
+    },
+    "contemporaryEraPlayers": {
+      "retiredSeasonsRequired": 16,
+      "cycleYears": 3,
+      "classYears": [
+        2026,
+        2029,
+        2032
+      ],
+      "ballotSize": 8,
+      "committeeSize": 16,
+      "maxSelectionsPerVoter": 3,
+      "electionThreshold": 0.75,
+      "minimumVotesForNextCycle": 5
+    }
+  },
+  "features": {
+    "aiRetirementPressure": true,
+    "userNeverForcedByRng": true,
+    "finalSeasonAnnouncement": true,
+    "careerLedger": true,
+    "retiredPlayerArchive": true,
+    "retirementReportNoGrade": true,
+    "bbwAAElection": true,
+    "contemporaryEraPlayers": true,
+    "bestSevenPeak": true,
+    "ballotCompetition": true,
+    "saveRestore": true,
+    "mobileHistoryUi": true
+  },
+  "knownLimits": {
+    "pre2026RealCareerTotals": "SOURCE_SNAPSHOT_HAS_NO_FULL_PRE2026_CAREER_LEDGER",
+    "careerEarningsAndMinorLeagueHistoricalRanks": "DEFERRED_UNTIL_PERSISTENT_ALL_LEVEL_RECORD_LEDGER",
+    "eraCommitteeHistoricalCandidateSet": "SAVE_WORLD_ONLY"
+  },
+  "performance": {
+    "getSeasonWarmAverageMs": 3.747,
+    "browserInteractionMs": {
+      "homeToMore": 41.861,
+      "moreToHistory": 34.342
+    }
+  },
+  "regression": {
+    "v57DraftInternational": true,
+    "v56PostseasonAwardsHistory": true,
+    "v55FullOffseason": true,
+    "v55_1Performance": true
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v58_PRODUCTION.html",
+    "bytes": 66885328,
+    "sha256": "868f7a276dbb52983e0e902088057e666de92d4b8827c808a6d347b185d67ff7"
+  },
+  "next": "v59 Long-run Stress"
+}

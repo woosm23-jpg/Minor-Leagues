@@ -43,3 +43,14 @@ v57 Draft / International
 - Save/restore includes amateur classes, draft results, international signings and reserve state.
 
 Next: v58 Retirement / Hall of Fame.
+
+
+## v58 Retirement / Hall of Fame
+
+- AI retirement remains driven by age, ability, decline, role/opportunity, injury/durability and market context; user retirement is never forced by RNG.
+- Career ledger freezes MLB season totals before players leave active rosters. Retired archives keep identity, totals, peak seasons, awards, championships, retirement context and HOF history while dropping active-only state.
+- User may announce a final season without ratings boosts and may retire after the season. Retirement report deliberately has no letter grade/tier.
+- HOF ruleset_2026: 10 MLB seasons, five full seasons out of MLB before first BBWAA ballot, 75% election, 5% retention, maximum 10 ballot years, maximum 10 selections per voter. Contemporary Era Players cycle is modeled every three years with an eight-player ballot, 16 voters, max three selections and 75% election threshold.
+- HOF evaluation uses career value, best-seven-season peak, longevity, milestones, awards, positional/career context and modest postseason contribution; OVR/hidden true ceiling are not voting inputs.
+
+Next: v59 Long-run Stress.

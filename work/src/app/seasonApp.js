@@ -486,6 +486,8 @@ function startSeasonApp(root) {
         const previousStatus = snapshot.status;
         const previousYear = snapshot.seasonYear;
         const previousCareerSequence = latestCareerSequence(snapshot);
+        if (action === "ANNOUNCE_FINAL_SEASON") snapshot = seasonApi.announceFinalSeason(snapshot.seasonId);
+        if (action === "RETIRE_CAREER") snapshot = seasonApi.retireCareer(snapshot.seasonId);
         if (action === "START_POSTSEASON") snapshot = seasonApi.startPostseason(snapshot.seasonId);
         if (action === "POSTSEASON_NEXT") snapshot = seasonApi.advancePostseasonRound(snapshot.seasonId);
         if (action === "START_OFFSEASON") snapshot = seasonApi.startOffseason(snapshot.seasonId);

@@ -1,0 +1,62 @@
+{
+  "schema": "THE_CALL_UP_V58_RETIREMENT_HOF_GATE",
+  "pass": true,
+  "rules": {
+    "id": "ruleset_2026_hall_of_fame",
+    "verified": "2026-09-22",
+    "bbwAA": {
+      "minMlbSeasons": 10,
+      "firstBallotYearsAfterFinalSeason": 6,
+      "electionThreshold": 0.75,
+      "retentionThreshold": 0.05,
+      "maxBallotYears": 10,
+      "maxSelectionsPerVoter": 10,
+      "screeningLimit": 40,
+      "virtualVoters": 120
+    },
+    "contemporaryEraPlayers": {
+      "retiredSeasonsRequired": 16,
+      "cycleYears": 3,
+      "classYears": [
+        2026,
+        2029,
+        2032
+      ],
+      "ballotSize": 8,
+      "committeeSize": 16,
+      "maxSelectionsPerVoter": 3,
+      "electionThreshold": 0.75,
+      "minimumVotesForNextCycle": 5
+    }
+  },
+  "retirement": {
+    "aiPressureModelPreserved": true,
+    "userNeverForcedByRng": true,
+    "finalSeasonAnnouncement": true,
+    "retiredArchive": true,
+    "retirementReportNoGrade": true
+  },
+  "careerLedger": {
+    "mlbSeasonArchive": true,
+    "peakSeven": true,
+    "awards": true,
+    "championships": true,
+    "saveRestore": true
+  },
+  "hall": {
+    "fiveFullSeasonWait": true,
+    "tenMlbSeasonMinimum": true,
+    "seventyFivePercent": true,
+    "fivePercentRetention": true,
+    "tenBallotYearMaximum": true,
+    "maxTenSelections": true,
+    "virtualVoterCompetition": true,
+    "contemporaryEraCycle": true
+  },
+  "production": {
+    "season2026Archived": true,
+    "openingDay2027": true,
+    "retiredArchived": true
+  },
+  "next": "v59 Long-run Stress"
+}

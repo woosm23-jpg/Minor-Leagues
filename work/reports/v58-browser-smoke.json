@@ -1,0 +1,22 @@
+{
+  "schema": "THE_CALL_UP_V58_BROWSER_SMOKE",
+  "pass": true,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "timingsMs": {
+    "homeToMore": 41.861,
+    "moreToHistory": 34.342
+  },
+  "checks": {
+    "hofUi": true,
+    "retirementUi": true,
+    "version": true,
+    "pageErrors": 0,
+    "consoleErrors": 0,
+    "handlersUnder1000ms": true
+  },
+  "errors": [],
+  "consoleErrors": []
+}

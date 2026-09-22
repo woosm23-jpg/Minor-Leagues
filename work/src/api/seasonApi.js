@@ -30,10 +30,11 @@ import { executeTrade } from "../services/tradeService.js";
 import { OFFSEASON_PHASES, createOffseasonState, normalizeOffseasonState, completeOffseasonPhase, getOffseasonPublicView } from "../engine/career/offseasonPipeline.js";
 import { POSTSEASON_RULESET_2026, POSTSEASON_ROUND_ORDER, createPostseasonState, normalizePostseasonState, getPostseasonPublicView, createHistoryState, normalizeHistoryState, appendSeasonHistory, getHistoryPublicView } from "../engine/career/postseasonHistory.js";
 import { createAmateurAcquisitionState, normalizeAmateurAcquisitionState, prepareAmateurYear, processInternationalSignings, advanceAmateurCalendar, getAmateurAcquisitionPublicView } from "../engine/career/amateurAcquisition.js";
+import { createRetirementHallState, normalizeRetirementHallState, recordMlbSeason, archiveRetiredPlayers, announceUserFinalSeason, retireUserPlayer, processHallOfFameYear, getRetirementHallPublicView } from "../engine/career/retirementHallOfFame.js";
 
 const sessions = new Map();
 const heavyReadModelCaches = new WeakMap();
-const CURRENT_GAME_VERSION = "full_career_draft_international_v57";
+const CURRENT_GAME_VERSION = "full_career_retirement_hof_v58";
 
 function heavyReadModelCache(session) {
   let cache=heavyReadModelCaches.get(session);
@@ -1114,9 +1115,34 @@ function offseasonReviewSnapshot(session) {
   };
 }
 
+function mlbCareerSeasonRows(session) {
+  const state=stateForLevel(session,"MLB"), league=session.fixture?.levelLeagues?.MLB; if(!state||!league) return [];
+  const batting=getAllPlayerSeasonBatting(state), pitching=getAllPlayerSeasonPitching(state), meta=new Map();
+  for(const [teamId,roster] of Object.entries(league.rosters ?? {})){
+    const pitchers=new Set((roster.pitchers ?? []).map(String));
+    for(const [id,player] of Object.entries(roster.players ?? {})) meta.set(String(id),{player,teamId:String(teamId),name:roster.names?.[id] ?? player.fullName ?? id,isPitcher:pitchers.has(String(id))});
+  }
+  const ids=new Set([...Object.keys(batting),...Object.keys(pitching)]); const rows=[];
+  for(const id of ids){ const m=meta.get(String(id)); if(!m) continue; const ps=session.playerStates?.[id] ?? session.pitcherStates?.[id] ?? null; rows.push({playerId:String(id),name:m.name,teamId:m.teamId,isPitcher:m.isPitcher,position:m.isPitcher?(m.player?.pitching?.role ?? "P"):(m.player?.positioning?.primaryPosition ?? "DH"),age:Number(ps?.health?.age ?? m.player?.physical?.age ?? 0),batting:batting[id] ?? {},pitching:pitching[id] ?? {}}); }
+  return rows;
+}
+function retirementAwardsByPlayer(session,year){
+  const archive=(session.historyState?.seasons ?? []).find(x=>x.seasonYear===year),out={}; if(!archive) return out;
+  const add=(id,type)=>{ if(!id) return; const k=String(id); out[k]=out[k]??[]; out[k].push(type); };
+  for(const lg of Object.values(archive.awards?.leagues ?? {})){ add(lg.mvp?.playerId,"MVP"); add(lg.cyYoung?.playerId,"CY_YOUNG"); for(const x of lg.silverSlugger ?? []) add(x.playerId,"SILVER_SLUGGER"); }
+  add(archive.awards?.worldSeriesMvp?.playerId,"WORLD_SERIES_MVP"); return out;
+}
+function ensureRetirementHallSeasonRecorded(session){
+  if(session.fixture?.worldMode!=="PRODUCTION_REAL") return null; const year=offseasonSeasonYear(session);
+  session.retirementHallState=normalizeRetirementHallState(session.retirementHallState ?? null,{seed:session.fixture.seed ?? "THE_CALL_UP",userPlayerId:session.fixture.userPlayerId,startYear:Number(String(session.fixture.startDate).slice(0,4))});
+  if(!session.retirementHallState.recordedSeasons.includes(year)){ const archive=(session.historyState?.seasons ?? []).find(x=>x.seasonYear===year); session.retirementHallState=recordMlbSeason(session.retirementHallState,{year,players:mlbCareerSeasonRows(session),awardsByPlayer:retirementAwardsByPlayer(session,year),championTeamId:archive?.championTeamId ?? null}); }
+  return session.retirementHallState;
+}
+
 function ensureOffseasonState(session) {
   if(!worldComplete(session)) throw new RangeError("정규시즌이 완료되어야 offseason을 시작할 수 있습니다.");
   completePostseasonAndHistoryInternal(session);
+  ensureRetirementHallSeasonRecorded(session);
   if(session.fixture?.worldMode!=="PRODUCTION_REAL") throw new RangeError("v55 offseason은 Production 커리어에서 지원합니다.");
   const year=offseasonSeasonYear(session);
   if(session.offseasonState && session.offseasonState.seasonYear===year) return session.offseasonState;
@@ -1270,6 +1296,8 @@ function rolloverCompletedProductionSeason(session) {
     year: currentYear + 1,
     userPlayerId: session.fixture.userPlayerId
   });
+  session.retirementHallState=archiveRetiredPlayers(session.retirementHallState,{year:currentYear+1,retiredRecords:ecology.retiredRecords ?? [],decisions:ecology.retirementDecisions ?? []});
+  session.retirementHallState=processHallOfFameYear(session.retirementHallState,{electionYear:currentYear+1});
   session.fixture = ecology.fixture;
   session.leagueEcologyState = ecology.ecologyState;
   session.amateurAcquisitionState = ecology.amateurAcquisitionState ?? session.amateurAcquisitionState;
@@ -2113,7 +2141,7 @@ function snapshot(session) {
   const worldLeagueCompleted = Object.values(session.levelStates ?? { AAA: session.state }).reduce((sum, row) => sum + row.completedGames, 0);
   const worldLeagueTotal = Object.values(session.levelStates ?? { AAA: session.state }).reduce((sum, row) => sum + row.schedule.length, 0);
   return freeze({
-    apiVersion: "internal_season_api_v24", seasonId: session.state.seasonId, seasonYear: Number(String(session.fixture.startDate ?? session.state.startDate).slice(0,4)), startDate: session.fixture.startDate ?? session.state.startDate, status: session.offseasonState?.status === "ACTIVE" ? "OFFSEASON" : session.postseasonState?.status === "ACTIVE" ? "POSTSEASON" : worldComplete(session) ? "COMPLETE" : "REGULAR_SEASON", currentDate: session.state.currentDate,
+    apiVersion: "internal_season_api_v24", seasonId: session.state.seasonId, seasonYear: Number(String(session.fixture.startDate ?? session.state.startDate).slice(0,4)), startDate: session.fixture.startDate ?? session.state.startDate, status: session.retirementHallState?.user?.retired ? "RETIRED" : session.offseasonState?.status === "ACTIVE" ? "OFFSEASON" : session.postseasonState?.status === "ACTIVE" ? "POSTSEASON" : worldComplete(session) ? "COMPLETE" : "REGULAR_SEASON", currentDate: session.state.currentDate,
     currentLevel: level, userTeam: state.teams[userTeamId], userPlayer: userPlayerView(session, leaders), record: teamRecord(session, level), userSeasonLine: userLine, userStatsByLevel: levelStats,
     userRole: (() => {
       const playingTime = getPositionPlayingTimeView(session.playerStates?.[session.fixture.userPlayerId] ?? null, userRoleState);
@@ -2136,6 +2164,7 @@ function snapshot(session) {
     postseason: getPostseasonPublicView(session.postseasonState),
     history: getHistoryPublicView(session.historyState),
     amateur: getAmateurAcquisitionPublicView(session.amateurAcquisitionState),
+    retirementHall: getRetirementHallPublicView(session.retirementHallState),
     lastProgress: session.lastProgress ?? null,
     activeGame, activeScheduleGameId: session.activeScheduleGameId, activeLevel: session.activeLevel ?? null
   });
@@ -2266,7 +2295,7 @@ function createSessionFromFixture(fixture, { seed, startDate, dataUniverse = nul
   const session = {
     fixture, state: levelStates.AAA, levelStates,
     dataUniverse: normalizeSaveUniverse(dataUniverse ?? createSyntheticUniverseDescriptor({ startDate, sourceVersion: CURRENT_GAME_VERSION }), { startDate, sourceVersion: CURRENT_GAME_VERSION }),
-    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates, contractMarketStates, tradeState, offseasonState: null, postseasonState: null, historyState: createHistoryState(), amateurAcquisitionState: null,
+    playerStates, pitcherStates, scoutingStates, contractStates, rosterControlStates, contractMarketStates, tradeState, offseasonState: null, postseasonState: null, historyState: createHistoryState(), amateurAcquisitionState: null, retirementHallState: null,
     roleStates, organizationState: createOrganizationReviewState({ startDate }),
     careerEventState: createCareerEventState({ userPlayerId: fixture.userPlayerId, startDate, initialLevel }),
     leagueEcologyState: fixture.worldMode === "PRODUCTION_REAL" ? createProductionEcologyState({ fixture }) : null,
@@ -2274,7 +2303,7 @@ function createSessionFromFixture(fixture, { seed, startDate, dataUniverse = nul
     lastProgress: null,
     activeGameId: null, activeScheduleGameId: null, activeLevel: null, finalizedActiveGameId: null, activeFixture: null
   };
-  if (fixture.worldMode === "PRODUCTION_REAL") session.amateurAcquisitionState=createAmateurAcquisitionState({seed:fixture.seed ?? "THE_CALL_UP",startYear:Number(String(fixture.startDate ?? startDate).slice(0,4))});
+  if (fixture.worldMode === "PRODUCTION_REAL") { session.amateurAcquisitionState=createAmateurAcquisitionState({seed:fixture.seed ?? "THE_CALL_UP",startYear:Number(String(fixture.startDate ?? startDate).slice(0,4))}); session.retirementHallState=createRetirementHallState({seed:fixture.seed ?? "THE_CALL_UP",userPlayerId:fixture.userPlayerId,startYear:Number(String(fixture.startDate ?? startDate).slice(0,4))}); }
   reconcileCurrentMlbServiceDate(session, startDate);
   sessions.set(seasonId, session);
   return snapshot(session);
@@ -2402,6 +2431,7 @@ const seasonApi = Object.freeze({
       ? normalizeAmateurAcquisitionState(restored.amateurAcquisitionState ?? null, { seed: restored.fixture.seed ?? "THE_CALL_UP", startYear: Number(String(restored.fixture.startDate ?? restored.state.currentDate).slice(0,4)) })
       : null;
     if (restored.fixture?.worldMode === "PRODUCTION_REAL") ensureAmateurStateForSession(restored, { processDate: restored.state.currentDate });
+    restored.retirementHallState = restored.fixture?.worldMode === "PRODUCTION_REAL" ? normalizeRetirementHallState(restored.retirementHallState ?? null,{seed:restored.fixture.seed ?? "THE_CALL_UP",userPlayerId:restored.fixture.userPlayerId,startYear:Number(String(restored.fixture.startDate ?? restored.state.currentDate).slice(0,4))}) : null;
     const previous = sessions.get(restored.state.seasonId);
     if (previous?.activeGameId) gameApi.closeGame(previous.activeGameId);
     const checkpoint = restored.activeGameCheckpoint;
@@ -2513,11 +2543,13 @@ const seasonApi = Object.freeze({
     applySeasonEndAgingIfNeeded(session);
     return snapshot(session);
   },
+  announceFinalSeason(seasonId) { const session=assertSession(seasonId); if(!session.retirementHallState) throw new RangeError("retirement/HOF state가 없습니다."); session.retirementHallState=announceUserFinalSeason(session.retirementHallState,{year:Number(String(session.fixture.startDate).slice(0,4))}); return snapshot(session); },
+  retireCareer(seasonId) { const session=assertSession(seasonId); if(!worldComplete(session)) throw new RangeError("정규시즌 종료 후 은퇴할 수 있습니다."); completePostseasonAndHistoryInternal(session); ensureRetirementHallSeasonRecorded(session); const year=offseasonSeasonYear(session); const date=session.postseasonState?.completedDate ?? session.state.currentDate; session.retirementHallState=retireUserPlayer(session.retirementHallState,{year,date,timeline:session.careerEventState?.events ?? [],history:session.historyState?.seasons ?? []}); return snapshot(session); },
   startPostseason(seasonId) { const session=assertSession(seasonId); ensurePostseasonState(session); return snapshot(session); },
   advancePostseasonRound(seasonId) { const session=assertSession(seasonId); if(session.postseasonState?.status==="COMPLETE") return snapshot(session); advancePostseasonRoundInternal(session); return snapshot(session); },
   startOffseason(seasonId) { const session=assertSession(seasonId); ensureOffseasonState(session); return snapshot(session); },
   advanceOffseasonPhase(seasonId) { const session=assertSession(seasonId); if(session.offseasonState?.status==="COMPLETE") return snapshot(session); advanceOffseasonPhaseInternal(session); return snapshot(session); },
-  advanceToNextSeason(seasonId) { const session = assertSession(seasonId); return completeOffseasonToOpeningDayInternal(session); },
+  advanceToNextSeason(seasonId) { const session = assertSession(seasonId); if(session.retirementHallState?.user?.retired) throw new RangeError("은퇴한 커리어는 다음 시즌으로 진행할 수 없습니다."); return completeOffseasonToOpeningDayInternal(session); },
   requestTrade,
   executeTradeProposal,
   closeActiveGame(seasonId) { const session=assertSession(seasonId); clearActiveGame(session); return snapshot(session); },
