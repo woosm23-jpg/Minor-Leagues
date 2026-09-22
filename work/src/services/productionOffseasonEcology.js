@@ -3,6 +3,7 @@ import { currentOvr } from "../engine/career/generatedCareerPathway.js";
 import { evaluateAiRetirements } from "../engine/career/retirementSystem.js";
 import { createPositionPlayerSeasonState, getSeasonDevelopedPlayer } from "../engine/season/playerSeasonState.js";
 import { createPitcherSeasonState, getSeasonDevelopedPitcher } from "../engine/season/pitcherSeasonState.js";
+import { consumeAmateurReserveForDeficits } from "../engine/career/amateurAcquisition.js";
 
 const PRODUCTION_ECOLOGY_VERSION = 1;
 const LEVELS = Object.freeze(["MLB", "AAA", "AA", "HIGH_A", "A"]);
@@ -257,7 +258,7 @@ function rebuildRoster(priorRoster, rows, { userPlayerId = null } = {}) {
   });
 }
 
-function advanceProductionOffseasonEcology({ fixture, dataUniverse, playerStates = {}, pitcherStates = {}, ecologyState = null, year, userPlayerId = fixture?.userPlayerId } = {}) {
+function advanceProductionOffseasonEcology({ fixture, dataUniverse, playerStates = {}, pitcherStates = {}, ecologyState = null, amateurAcquisitionState = null, year, userPlayerId = fixture?.userPlayerId } = {}) {
   if (fixture?.worldMode !== "PRODUCTION_REAL") throw new RangeError("production offseason ecology는 Production 월드 전용입니다.");
   if (!Number.isInteger(year)) throw new TypeError("production offseason ecology year가 필요합니다.");
   const state = normalizeProductionEcologyState(ecologyState, { fixture });
@@ -281,14 +282,15 @@ function advanceProductionOffseasonEcology({ fixture, dataUniverse, playerStates
     if (row.role === "P") pitcherNeeded += 1; else hitterNeeded += 1;
   }
 
-  const replacement = generateReplacementPool({
-    seed: `${fixture.seed}:live-ecology`,
+  const amateur = consumeAmateurReserveForDeficits(amateurAcquisitionState, {
+    deficits,
     year,
-    pitcherNeeded,
-    hitterNeeded,
-    previousClassStrength: state.classStrength
+    seed: `${fixture.seed}:live-ecology`
   });
-  const entrantAssignments = assignEntrantsToOrganizationDeficits(replacement.selected, deficits);
+  const entrantAssignments = amateur.assignments;
+  const replacement = {
+    classStrength: finite(amateur.state?.current?.draft?.descriptor?.classStrength, state.classStrength)
+  };
   const nextPlayerStates = Object.fromEntries(Object.entries(playerStates).filter(([id]) => !retiredIds.has(id)));
   const nextPitcherStates = Object.fromEntries(Object.entries(pitcherStates).filter(([id]) => !retiredIds.has(id)));
   const entrants = entrantAssignments.map(({ player, organizationId, role }) => {
@@ -373,6 +375,9 @@ function advanceProductionOffseasonEcology({ fixture, dataUniverse, playerStates
     retiredHitters: retired.filter((row) => row.role === "H").length,
     generatedPitchers: entrants.filter((row) => row.role === "P").length,
     generatedHitters: entrants.filter((row) => row.role === "H").length,
+    activatedFromAmateurReserve: amateur.summary.fromReserve,
+    undraftedFallback: amateur.summary.fallback,
+    amateurReserveRemaining: amateur.summary.reserveRemaining,
     activeGenerated: generatedIds.size,
     retiredIds: [...retiredIds].sort(),
     entrantIds: entrants.map((row) => row.id).sort()
@@ -392,6 +397,7 @@ function advanceProductionOffseasonEcology({ fixture, dataUniverse, playerStates
     playerStates: nextPlayerStates,
     pitcherStates: nextPitcherStates,
     ecologyState: nextEcologyState,
+    amateurAcquisitionState: amateur.state,
     summary: lastOffseason
   });
 }

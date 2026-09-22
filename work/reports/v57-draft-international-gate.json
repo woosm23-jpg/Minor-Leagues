@@ -1,0 +1,39 @@
+{
+  "schema": "THE_CALL_UP_V57_DRAFT_INTERNATIONAL_GATE",
+  "pass": true,
+  "rules": {
+    "draft": {
+      "id": "ruleset_2026_rule4_draft",
+      "rounds": 20,
+      "lotterySelections": 6,
+      "officialFormatVerified": "2026-09-22",
+      "supplementalPicks": "ABSTRACTED_V57"
+    },
+    "international": {
+      "id": "ruleset_2026_international_amateur",
+      "windowStart": "01-15",
+      "windowEnd": "12-15",
+      "officialFormatVerified": "2026-09-22"
+    }
+  },
+  "snapshotProtection": {
+    "season2026GeneratedClassSuppressed": true,
+    "reason": "REAL_SNAPSHOT_ALREADY_CONTAINS_CURRENT_COHORT"
+  },
+  "openingDay2027": {
+    "populationStable": true,
+    "retired": 83,
+    "activatedFromReserve": 36,
+    "undraftedFallback": 47,
+    "reserveRemaining": 45,
+    "nextClassPrepared": true,
+    "internationalProcessed": true
+  },
+  "draft2027": {
+    "picks": 600,
+    "signed": 552,
+    "reserveBounded": true,
+    "draftSlotRatingsInvariant": true
+  },
+  "next": "v58 Retirement / Hall of Fame"
+}

@@ -1,0 +1,64 @@
+{
+  "schema": "THE_CALL_UP_V57_DRAFT_INTERNATIONAL_CHECKPOINT",
+  "pass": true,
+  "rules": {
+    "draft": {
+      "id": "ruleset_2026_rule4_draft",
+      "rounds": 20,
+      "lotterySelections": 6,
+      "officialFormatVerified": "2026-09-22",
+      "supplementalPicks": "ABSTRACTED_V57"
+    },
+    "international": {
+      "id": "ruleset_2026_international_amateur",
+      "windowStart": "01-15",
+      "windowEnd": "12-15",
+      "officialFormatVerified": "2026-09-22"
+    }
+  },
+  "snapshotProtection": {
+    "season2026GeneratedClassSuppressed": true,
+    "reason": "REAL_SNAPSHOT_ALREADY_CONTAINS_CURRENT_COHORT"
+  },
+  "features": {
+    "draftClassPreparedAheadOfEvent": true,
+    "twentyRoundBaseDraft": true,
+    "sixPickLotteryShape": true,
+    "official2026OpeningOrder": true,
+    "teamSpecificScoutingNoise": true,
+    "draftSlotRatingsInvariant": true,
+    "signability": true,
+    "internationalSigningWindow": true,
+    "clubBonusPoolTiers2026": true,
+    "originNoAbilityModifier": true,
+    "boundedDevelopmentReserve": true,
+    "retirementVacancyBackfill": true,
+    "populationStable": true,
+    "saveRestore": true,
+    "mobileAmateurUi": true
+  },
+  "explicitAbstractions": {
+    "competitiveBalanceAndCompensationPicks": "ABSTRACTED_V57",
+    "futureLotteryRevenueSharingEligibility": "DEFERRED_NO_FINANCE_DATA",
+    "internationalPoolTrading": "DEFERRED_V57",
+    "rookieComplexLeagues": "DEVELOPMENT_RESERVE"
+  },
+  "performance": {
+    "getSeasonWarmAverageMs": 4.395,
+    "browserInteractionMs": {
+      "homeToLeague": 33.204,
+      "leagueToAmateur": 35.059
+    }
+  },
+  "regression": {
+    "v56PostseasonAwardsHistory": true,
+    "v55FullOffseason": true,
+    "v55_1Performance": true
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v57_PRODUCTION.html",
+    "bytes": 66860997,
+    "sha256": "687d0514ecf3cd3d6543689365b01c16c518fb70a75e4b901546f4e8126cff08"
+  },
+  "next": "v58 Retirement / Hall of Fame"
+}

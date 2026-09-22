@@ -30,3 +30,16 @@
 ## 다음 단계
 
 v57 Draft / International
+
+
+## v57 Draft / International
+
+- 2026 Rule 4 Draft ruleset: 20-round base draft, six-pick lottery shape, official 2026 opening order where available.
+- Future draft orders are deterministic from prior-season records/postseason finish using the 2026 CBA lottery shape until a versioned replacement ruleset is installed.
+- Draft classes are prepared before the event; the actual draft is processed as the career calendar crosses the draft date.
+- International amateur classes use the Jan. 15-Dec. 15 signing window and 2026 club bonus-pool tiers. Pool trading and supplemental/compensation draft picks remain explicit v57 abstractions.
+- Signed amateurs enter a bounded Development Reserve because Rookie/Complex levels are abstracted. Opening-Day ecology promotes reserve players into vacancies before using undrafted fallback talent, keeping the active five-level population stable.
+- Draft slot never changes ratings. Team AI uses scouted FV/current readiness/risk/age/position/signability with only modest need weight at the top of the draft.
+- Save/restore includes amateur classes, draft results, international signings and reserve state.
+
+Next: v58 Retirement / Hall of Fame.

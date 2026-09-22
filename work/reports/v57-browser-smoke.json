@@ -1,0 +1,22 @@
+{
+  "schema": "THE_CALL_UP_V57_BROWSER_SMOKE",
+  "pass": true,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "timingsMs": {
+    "homeToLeague": 33.204,
+    "leagueToAmateur": 35.059
+  },
+  "checks": {
+    "amateurTab": true,
+    "snapshotProtectionUi": true,
+    "version": true,
+    "pageErrors": 0,
+    "consoleErrors": 0,
+    "handlersUnder1000ms": true
+  },
+  "errors": [],
+  "consoleErrors": []
+}

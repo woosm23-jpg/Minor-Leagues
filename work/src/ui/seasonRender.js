@@ -659,6 +659,7 @@ function leagueSectionNav(section) {
     <button type="button" data-league-section="STANDINGS" class="${section === "STANDINGS" ? "active" : ""}"><strong>순위</strong><small>Standings</small></button>
     <button type="button" data-league-section="LEADERS" class="${section === "LEADERS" ? "active" : ""}"><strong>리더</strong><small>Leaders</small></button>
     <button type="button" data-league-section="PROSPECTS" class="${section === "PROSPECTS" ? "active" : ""}"><strong>유망주</strong><small>Top 100</small></button>
+    <button type="button" data-league-section="AMATEUR" class="${section === "AMATEUR" ? "active" : ""}"><strong>아마추어</strong><small>Draft / Intl</small></button>
   </div>`;
 }
 
@@ -914,10 +915,32 @@ function leagueProspects(snapshot) {
   </section>`;
 }
 
+function leagueAmateur(snapshot) {
+  const amateur=snapshot.amateur;
+  if(!amateur) return `<section class="card"><p class="season-empty">아마추어 시스템은 Production 커리어에서 표시됩니다.</p></section>`;
+  const draft=amateur.draft ?? {}, intl=amateur.international ?? {};
+  if(!draft.year) return `<section class="card leader-page-card scouting-card"><div class="section-head"><strong>아마추어 파이프라인</strong><span>Snapshot protected</span></div><p class="condition-note">${amateur.snapshotCoveredThroughYear ?? snapshot.seasonYear}년 실존 스냅샷에 포함된 신인/유망주를 중복 생성하지 않습니다. 다음 오프시즌부터 새 드래프트·국제 아마추어 클래스가 준비됩니다.</p></section>`;
+  const draftRows=(draft.status==="COMPLETE" ? draft.topPicks : draft.board) ?? [];
+  const intlRows=(intl.status==="ACTIVE_SIGNINGS_COMPLETE" ? intl.signings : intl.board) ?? [];
+  return `<section class="card leader-page-card scouting-card">
+    <div class="section-head"><strong>${draft.year} 드래프트</strong><span>${draft.status === "COMPLETE" ? `${draft.picks} picks` : dateLabel(draft.draftDate)}</span></div>
+    <p class="condition-note">20라운드 기본 드래프트 · 상위 6픽 로터리 구조. 보상/Competitive Balance 픽은 v57에서 추상화합니다. 드래프트 순번은 선수 능력치를 바꾸지 않습니다.</p>
+    <div class="leader-list">${draftRows.slice(0,12).map((row,index)=>`<div class="leader-row"><span class="leader-rank">${row.overallPick ?? row.rank ?? index+1}</span><span class="leader-name"><strong>${esc(row.name)}</strong><small>${esc(row.position ?? "-")} · ${row.age ?? "-"}세 · ${esc(row.background ?? "")}${row.organizationId ? ` · Org ${esc(row.organizationId)}` : ""}</small></span><b>FV ${row.futureValue ?? "-"}</b></div>`).join("")}</div>
+  </section>
+  <section class="card leader-page-card scouting-card">
+    <div class="section-head"><strong>${intl.year} 국제 아마추어</strong><span>${intl.signingCount ?? 0} signings</span></div>
+    <p class="condition-note">계약 기간 ${dateLabel(intl.windowStart)}–${dateLabel(intl.windowEnd)} · 구단별 2026 보너스풀 규칙 기반. 국적/출신은 능력치에 보너스나 페널티를 주지 않습니다.</p>
+    <div class="leader-list">${intlRows.slice(0,10).map((row,index)=>`<div class="leader-row"><span class="leader-rank">${index+1}</span><span class="leader-name"><strong>${esc(row.name)}</strong><small>${esc(row.position ?? "-")} · ${row.age ?? "-"}세 · ${esc(row.originCountry ?? row.background ?? "")}</small></span><b>FV ${row.futureValue ?? "-"}</b></div>`).join("")}</div>
+    <div class="section-head"><strong>Development Reserve</strong><span>${amateur.reserve?.count ?? 0}명</span></div>
+    <p class="condition-note">우리 게임은 Rookie/Complex 레벨을 추상화하므로, 계약된 신인 중 일부는 Development Reserve에 머물다가 은퇴/방출로 생긴 A–MLB 슬롯을 채웁니다. 이 방식으로 조직 인원 폭증을 막습니다.</p>
+  </section>`;
+}
+
 function leagueView(snapshot, uiState = {}) {
   const section = uiState.leagueSection ?? "STANDINGS";
   const body = section === "LEADERS" ? leagueLeaders(snapshot, uiState)
     : section === "PROSPECTS" ? leagueProspects(snapshot)
+    : section === "AMATEUR" ? leagueAmateur(snapshot)
     : `${standingsTable(snapshot)}
     <section class="card league-info-card"><div class="section-head"><strong>개발 테스트 리그</strong><span>Phase 2</span></div>
       <p>${esc(levelLabel(snapshot.currentLevel ?? "AAA"))} · 8팀 · 팀당 ${snapshot.progress.totalGames}경기. A / High-A(A+) / AA / AAA / MLB 모두 같은 GameEngine 결과에서 순위와 기록을 누적합니다.</p>

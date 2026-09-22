@@ -343,7 +343,7 @@ function startSeasonApp(root) {
         renderHome();
       },
       onLeagueSection(section) {
-        leagueSection = ["STANDINGS", "LEADERS", "PROSPECTS"].includes(section) ? section : "STANDINGS";
+        leagueSection = ["STANDINGS", "LEADERS", "PROSPECTS", "AMATEUR"].includes(section) ? section : "STANDINGS";
         playerDetail = null;
         renderHome();
       },
