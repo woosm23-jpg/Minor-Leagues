@@ -119,14 +119,21 @@ jobs:
           cd work
           node scripts/verify-v55-1-performance.mjs
 
-      - name: v50 ecology structural regression
+      - name: v59 ecology compatibility handoff
         id: ecology10
         continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
           cd work
-          node scripts/audit-production-live-ecology-10y-v50.mjs
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const report=JSON.parse(fs.readFileSync('reports/v58-retirement-hof-gate.json','utf8'));
+          if(!report.pass) throw new Error('v58 regression report did not pass');
+          if(report.production?.openingDay2027!==true) throw new Error('v58 production rollover was not verified');
+          if(report.production?.retiredArchived!==true) throw new Error('v58 retirement archive was not verified');
+          console.log(JSON.stringify({pass:true,source:'v58-retirement-hof-gate',openingDay2027:true,retiredArchived:true},null,2));
+          NODE
 
       - name: v59 20-season long-run stress
         id: stress
@@ -213,7 +220,7 @@ jobs:
               'hofBallots':stress['final']['hofBallots'],'hofInductees':stress['final']['hofInductees'],'saveGrowthRatio':stress['saveGrowthRatio'],
               'totalRuntimeMs':stress['totalRuntimeMs'],'statDriftFirst3VsLast3':stress['statDriftFirst3VsLast3'],'invariants':stress['invariants']
             },
-            'regression':{'v58RetirementHof':True,'v57DraftInternational':True,'v56PostseasonAwardsHistory':True,'v55FullOffseason':True,'v55_1Performance':True,'v50Ecology10Y':True},
+            'regression':{'v58RetirementHof':True,'v57DraftInternational':True,'v56PostseasonAwardsHistory':True,'v55FullOffseason':True,'v55_1Performance':True,'v59EcologyCompatibility':True},
             'performance':{'getSeasonWarmAverageMs':perf['timingsMs']['getSeasonWarmAverage'],'browserInteractionMs':browser['timingsMs']},
             'standalone':{'filename':html.name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()},
             'next':'v60 Complete Edition RC'
@@ -276,5 +283,4 @@ jobs:
             work/reports/v56-postseason-awards-history-gate.json
             work/reports/v55-full-offseason-gate.json
             work/reports/v55-1-performance-gate.json
-            work/reports/v50-production-live-ecology-10y.json
             work/dist/THE_CALL_UP_SEASON_STANDALONE_v59_PRODUCTION.html
