@@ -368,7 +368,10 @@ function createFutureProductionSchedules(fixture, { startDate = null } = {}) {
   const schedules = {};
   for (const level of PRODUCTION_LEVELS) {
     const league = fixture.levelLeagues[level];
-    schedules[level] = generateFutureProductionSchedule({ teamIds: league.teams.map((team) => team.id), startDate: startDate ?? `${Number(fixture.startDate.slice(0,4)) + 1}-03-25` });
+    const teamCount = league.teams.length;
+    const gamesPerTeam = Number((league.schedule.length * 2) / teamCount);
+    if (!Number.isInteger(gamesPerTeam) || gamesPerTeam < teamCount - 1) throw new RangeError(`${level} future schedule template 경기 수가 잘못되었습니다: ${gamesPerTeam}`);
+    schedules[level] = generateFutureProductionSchedule({ teamIds: league.teams.map((team) => team.id), startDate: startDate ?? `${Number(fixture.startDate.slice(0,4)) + 1}-03-25`, gamesPerTeam });
   }
   return freeze(schedules);
 }

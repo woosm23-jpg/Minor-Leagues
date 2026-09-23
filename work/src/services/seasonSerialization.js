@@ -11,7 +11,7 @@ import { CAREER_EVENT_TYPES } from "../engine/career/careerEvents.js";
 
 const SAVE_FORMAT = "THE_CALL_UP_SEASON_SAVE";
 const SAVE_SCHEMA_VERSION = 2;
-const GAME_VERSION = "full_career_retirement_hof_v58";
+const GAME_VERSION = "full_career_long_run_stress_v59";
 const VALIDATION_MODES = Object.freeze(["LIGHT", "FULL"]);
 const ROLE_VALUES = new Set(["STARTER", "PLATOON", "ROTATION", "BENCH", "UTILITY", "CALL_UP_DEPTH", "AAA_STARTER"]);
 

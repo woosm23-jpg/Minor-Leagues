@@ -1,0 +1,66 @@
+{
+  "schema": "THE_CALL_UP_V59_LONG_RUN_STRESS_CHECKPOINT",
+  "pass": true,
+  "baselineCommit": "fc412ce1673d7f61e9440db7ad8500d7cbf0f1f5",
+  "gameVersion": "full_career_long_run_stress_v59",
+  "stress": {
+    "completedSeasons": 20,
+    "startYear": 2026,
+    "lastCompletedYear": 2045,
+    "openingDayYear": 2046,
+    "simulatedWorldGames": 214200,
+    "initialPopulation": 4218,
+    "finalGeneratedShare": 0.9995,
+    "totalRetired": 5724,
+    "retirementArchive": 5724,
+    "historySeasons": 20,
+    "hofBallots": 5,
+    "hofInductees": 10,
+    "saveGrowthRatio": 1.224,
+    "totalRuntimeMs": 10756768.4,
+    "statDriftFirst3VsLast3": {
+      "AVG": 0.0224,
+      "OBP": 0.03932,
+      "SLG": 0.04835,
+      "KperPA": -0.04047,
+      "BBperPA": 0.02682,
+      "RA9": 1.33444
+    },
+    "invariants": {
+      "populationStable": true,
+      "levelPopulationStable": true,
+      "noDuplicateActiveIds": true,
+      "noRetiredActiveLeak": true,
+      "noDuplicateHofInductees": true,
+      "noAmateurReserveLeak": true,
+      "retirementReplacementBalanced": true,
+      "annualHistoryGrowth": true,
+      "repeatedSaveRestoreStable": true,
+      "futureScheduleStable": true,
+      "postseasonCycle": true,
+      "offseasonCycle": true,
+      "draftInternationalActive": true
+    }
+  },
+  "regression": {
+    "v58RetirementHof": true,
+    "v57DraftInternational": true,
+    "v56PostseasonAwardsHistory": true,
+    "v55FullOffseason": true,
+    "v55_1Performance": true,
+    "v59EcologyCompatibility": true
+  },
+  "performance": {
+    "getSeasonWarmAverageMs": 3.785,
+    "browserInteractionMs": {
+      "homeToMore": 40.611,
+      "moreToHistory": 25.051
+    }
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_SEASON_STANDALONE_v59_PRODUCTION.html",
+    "bytes": 66886699,
+    "sha256": "c072a67dbb6a00c203becda5d871bf3cdc7f5c60f6408d64b037cead7059b980"
+  },
+  "next": "v60 Complete Edition RC"
+}

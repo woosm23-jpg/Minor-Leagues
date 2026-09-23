@@ -270,7 +270,23 @@ function resetRosterControlForSeason(state, { startDate, currentLevel = "A" }) {
     next.assignmentStatus = "MLB_ACTIVE";
     return next;
   }
-  if (next.on40Man === true) return optionToMinors(next, { date: startDate });
+  if (next.on40Man === true) {
+    // An out-of-options player cannot simply be optioned again at Opening Day.
+    // During offseason roster cuts, a player projected to the minors is treated as
+    // having cleared outright waivers and is removed from the 40-man roster. This
+    // preserves the three-option-year rule while allowing long-running AI worlds
+    // to reconcile their projected minor-league rosters without an impossible
+    // fourth option year.
+    if (next.baseline === "KNOWN_ZERO" && next.option.remaining <= 0) {
+      next.on40Man = false;
+      next.assignmentStatus = "OUTRIGHTED";
+      next.option.assignmentStartDate = null;
+      next.option.minorDaysThisAssignment = 0;
+      if (next.priorOutrights !== null) next.priorOutrights += 1;
+      return next;
+    }
+    return optionToMinors(next, { date: startDate });
+  }
   next.assignmentStatus = "MINORS";
   return next;
 }

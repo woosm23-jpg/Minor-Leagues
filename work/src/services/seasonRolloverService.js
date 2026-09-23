@@ -43,10 +43,16 @@ function resetRoleStateForNewSeason(state, startDate) {
 }
 
 function resetSeasonStatesForNewYear({ playerStates = {}, pitcherStates = {}, roleStates = {}, startDate } = {}) {
-  return freeze({
-    playerStates: Object.fromEntries(Object.entries(playerStates).map(([id, state]) => [id, resetPositionStateForNewSeason(state)])),
-    pitcherStates: Object.fromEntries(Object.entries(pitcherStates).map(([id, state]) => [id, resetPitcherStateForNewSeason(state)])),
-    roleStates: Object.fromEntries(Object.entries(roleStates).map(([id, state]) => [id, resetRoleStateForNewSeason(state, startDate)]))
+  // Individual season-state values stay immutable, but the authoritative maps
+  // must remain mutable because completed games replace entries as fatigue,
+  // injuries, form, and role state advance during the new season.
+  const nextPlayerStates = Object.fromEntries(Object.entries(playerStates).map(([id, state]) => [id, resetPositionStateForNewSeason(state)]));
+  const nextPitcherStates = Object.fromEntries(Object.entries(pitcherStates).map(([id, state]) => [id, resetPitcherStateForNewSeason(state)]));
+  const nextRoleStates = Object.fromEntries(Object.entries(roleStates).map(([id, state]) => [id, resetRoleStateForNewSeason(state, startDate)]));
+  return Object.freeze({
+    playerStates: nextPlayerStates,
+    pitcherStates: nextPitcherStates,
+    roleStates: nextRoleStates
   });
 }
 

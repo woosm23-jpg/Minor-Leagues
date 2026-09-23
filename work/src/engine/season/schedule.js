@@ -184,17 +184,18 @@ function futureRoundRobinPairs(teamIds) {
 }
 
 /**
- * Future-year 30-team fallback generator. It is intentionally schedule-fact
- * generation, not a standings/result shortcut. Every pair meets for five games
- * and the first 17 circle-method rounds receive one extra game, yielding exactly
- * 162 games and 81 home games per club.
- *
- * The start-year still uses imported real pairings/dates; this generator is only
- * for years after the snapshot season when no official schedule exists yet.
+ * Future-year 30-team fallback generator.
+ * The caller supplies gamesPerTeam from the prior level schedule, so future
+ * MLB / AAA / AA / High-A / A seasons preserve their real 2026 season lengths.
+ * Pairings remain deterministic and home/away counts stay within one game of
+ * perfect balance when exact equality is not possible with the round pattern.
  */
-function generateFutureProductionSchedule({ teamIds, startDate = "2027-03-25" }) {
+function generateFutureProductionSchedule({ teamIds, startDate = "2027-03-25", gamesPerTeam = 162 }) {
   if (!Array.isArray(teamIds) || teamIds.length !== 30 || new Set(teamIds).size !== 30) {
     throw new RangeError("production future schedule은 중복 없는 30개 팀이 필요합니다.");
+  }
+  if (!Number.isInteger(gamesPerTeam) || gamesPerTeam < 29 || gamesPerTeam > 200) {
+    throw new RangeError(`production future schedule gamesPerTeam 오류: ${gamesPerTeam}`);
   }
   const ids = teamIds.map(String);
   const rounds = futureRoundRobinPairs(ids);
@@ -203,12 +204,9 @@ function generateFutureProductionSchedule({ teamIds, startDate = "2027-03-25" })
   const gameCounts = Object.fromEntries(ids.map((id) => [id, 0]));
   let dayOffset = 0;
   let roundNo = 0;
+  const fullCycles = Math.floor(gamesPerTeam / rounds.length);
+  const extraRounds = gamesPerTeam % rounds.length;
 
-  // A balanced 30-team round-robin gives every club 14 or 15 home dates over
-  // the 29 opponent rounds. Alternating that orientation across five complete
-  // cycles leaves clubs on 72 or 73 home games after 145 games. Reversing the
-  // orientation for the first 17 rounds then supplies exactly the missing 9 or
-  // 8 home dates respectively: 162 games, 81 home / 81 away for every club.
   const balancedAHome = (roundIndex, pairIndex) => (
     pairIndex === 0 ? roundIndex % 2 === 0 : pairIndex % 2 === 0
   );
@@ -243,25 +241,25 @@ function generateFutureProductionSchedule({ teamIds, startDate = "2027-03-25" })
       }));
     }
     dayOffset += 1;
-    // Keep the fallback calendar within a normal major-league season length
-    // without pretending to reproduce a future official schedule.
     if (roundNo % 14 === 0) dayOffset += 1;
   };
 
-  for (let cycle = 0; cycle < 5; cycle += 1) {
+  for (let cycle = 0; cycle < fullCycles; cycle += 1) {
     for (let r = 0; r < rounds.length; r += 1) {
       appendRound({ roundIndex: r, flipHome: cycle % 2 === 1, phase: `c${cycle + 1}` });
     }
   }
-  for (let r = 0; r < 17; r += 1) {
+  for (let r = 0; r < extraRounds; r += 1) {
     appendRound({ roundIndex: r, flipHome: true, phase: "extra" });
   }
 
+  const expectedTotal = (gamesPerTeam * ids.length) / 2;
   for (const id of ids) {
-    if (gameCounts[id] !== 162) throw new Error(`future schedule ${id} 경기 수 오류: ${gameCounts[id]}`);
-    if (homeCounts[id] !== 81) throw new Error(`future schedule ${id} 홈 경기 수 오류: ${homeCounts[id]}`);
+    if (gameCounts[id] !== gamesPerTeam) throw new Error(`future schedule ${id} 경기 수 오류: ${gameCounts[id]} != ${gamesPerTeam}`);
+    const targetHome = gamesPerTeam / 2;
+    if (Math.abs(homeCounts[id] - targetHome) > 1) throw new Error(`future schedule ${id} 홈/원정 균형 오류: home=${homeCounts[id]} target=${targetHome}`);
   }
-  if (schedule.length !== 2430) throw new Error(`future schedule 전체 경기 수 오류: ${schedule.length}`);
+  if (schedule.length !== expectedTotal) throw new Error(`future schedule 전체 경기 수 오류: ${schedule.length} != ${expectedTotal}`);
   return Object.freeze(schedule.sort((a, b) => a.date.localeCompare(b.date) || a.gameId.localeCompare(b.gameId)));
 }
 

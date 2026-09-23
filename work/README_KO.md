@@ -54,3 +54,13 @@ Next: v58 Retirement / Hall of Fame.
 - HOF evaluation uses career value, best-seven-season peak, longevity, milestones, awards, positional/career context and modest postseason contribution; OVR/hidden true ceiling are not voting inputs.
 
 Next: v59 Long-run Stress.
+
+
+## v59 Long-run Stress
+
+- Production 월드를 2026~2045 정규시즌 20년 동안 실제 멀티레벨 엔진으로 진행한다.
+- 시즌마다 postseason → offseason → next season 순환을 검증하고, 총 214,200개의 리그 경기 스케줄을 누적 처리한다.
+- 인구/중복 ID/은퇴 archive/HOF/draft·international reserve/future schedule/league stat drift/save payload 성장/성능을 검사한다.
+- 5시즌마다 save → restore → save → restore를 반복해 장기 세이브 논리 일관성을 검증한다.
+
+Next: v60 Complete Edition RC.

@@ -15,3 +15,5 @@ Current Phase E status:
 - Generated scouting / Top 100 eligibility integration: focused PASS
 
 Do not call v50 stable or RC yet. The next release-quality gate should run the multi-year live Production rollover path in CI/GitHub Actions rather than as a long blocking chat tool run.
+
+- v59: 20-season Production long-run stress validation harness added; Complete Edition RC is next after PASS.
