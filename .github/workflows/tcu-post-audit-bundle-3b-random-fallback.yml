@@ -1,0 +1,1129 @@
+name: THE CALL-UP Post-Audit Bundle 3B Random Fallback
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-post-audit-bundle-3b-random-fallback.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle-3b-random:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Confirm 3A and Production v3
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          parks = json.loads(
+              Path('reports/production-real-parks-v1.json').read_text(encoding='utf-8')
+          )
+          identity = json.loads(
+              Path('reports/final-runtime-identity-v1.json').read_text(encoding='utf-8')
+          )
+
+          assert parks['pass'] is True
+          assert parks['snapshotHash'] == 'fnv1a32:f7b34713'
+          assert identity['pass'] is True
+          assert identity['snapshot']['contentHash'] == 'fnv1a32:f7b34713'
+          print('BUNDLE_3A_AND_V3_OK')
+          PY
+
+      - name: Install Production pitch arsenal selector
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+
+          cat > src/services/productionPitchArsenal.js <<'JS'
+          const GENERATED_SOURCE_ID = "generated_random_fallback";
+
+          const GENERATED_PITCH_POOL = Object.freeze([
+            Object.freeze({ pitchType: "FF", minVelocity: 90, maxVelocity: 100 }),
+            Object.freeze({ pitchType: "SI", minVelocity: 89, maxVelocity: 99 }),
+            Object.freeze({ pitchType: "FC", minVelocity: 85, maxVelocity: 96 }),
+            Object.freeze({ pitchType: "SL", minVelocity: 78, maxVelocity: 92 }),
+            Object.freeze({ pitchType: "ST", minVelocity: 78, maxVelocity: 91 }),
+            Object.freeze({ pitchType: "CU", minVelocity: 70, maxVelocity: 86 }),
+            Object.freeze({ pitchType: "KC", minVelocity: 72, maxVelocity: 88 }),
+            Object.freeze({ pitchType: "CH", minVelocity: 76, maxVelocity: 92 }),
+            Object.freeze({ pitchType: "FS", minVelocity: 80, maxVelocity: 94 }),
+            Object.freeze({ pitchType: "SV", minVelocity: 78, maxVelocity: 91 })
+          ]);
+
+          function freeze(value) {
+            if (Array.isArray(value)) return Object.freeze(value.map(freeze));
+            if (value && typeof value === "object") {
+              return Object.freeze(
+                Object.fromEntries(
+                  Object.entries(value).map(([key, item]) => [key, freeze(item)])
+                )
+              );
+            }
+            return value;
+          }
+
+          function finite(value) {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : null;
+          }
+
+          function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+          }
+
+          function fnv1a32(text) {
+            let hash = 0x811c9dc5;
+            for (let i = 0; i < text.length; i += 1) {
+              hash ^= text.charCodeAt(i);
+              hash = Math.imul(hash, 0x01000193) >>> 0;
+            }
+            return hash >>> 0;
+          }
+
+          function fnv1aUnit(text) {
+            return fnv1a32(text) / 0x100000000;
+          }
+
+          function mulberry32(seed) {
+            let state = seed >>> 0;
+            return () => {
+              state = (state + 0x6d2b79f5) >>> 0;
+              let t = state;
+              t = Math.imul(t ^ (t >>> 15), t | 1);
+              t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+              return ((t ^ (t >>> 14)) >>> 0) / 0x100000000;
+            };
+          }
+
+          function normalizeUsage(row, totalPitches) {
+            const explicit = finite(row?.usage);
+            if (explicit != null && explicit >= 0) {
+              return explicit > 1.000001 ? explicit / 100 : explicit;
+            }
+            const pitches = finite(row?.samples?.pitches);
+            return pitches != null && pitches > 0 && totalPitches > 0
+              ? pitches / totalPitches
+              : 0;
+          }
+
+          function normalizePitchArsenalRows(rows, {
+            playerId,
+            level,
+            season = 2026
+          } = {}) {
+            const id = String(playerId ?? "");
+            const targetLevel = String(level ?? "");
+
+            const matching = (rows ?? []).filter(
+              (row) =>
+                String(row?.playerId) === id &&
+                String(row?.level) === targetLevel &&
+                Number(row?.season) <= Number(season)
+            );
+
+            if (!matching.length) return Object.freeze([]);
+
+            const latestSeason = Math.max(
+              ...matching.map((row) => Number(row.season))
+            );
+            const latest = matching
+              .filter((row) => Number(row.season) === latestSeason)
+              .sort(
+                (a, b) =>
+                  String(a.pitchType).localeCompare(String(b.pitchType))
+              );
+
+            const totalPitches = latest.reduce(
+              (sum, row) =>
+                sum + Math.max(0, finite(row?.samples?.pitches) ?? 0),
+              0
+            );
+
+            const staged = latest.map((row) => {
+              const mean = finite(row?.velocity?.mean);
+              const sd = finite(row?.velocity?.sd);
+              return {
+                pitchType: String(row.pitchType ?? "UNK").toUpperCase(),
+                season: latestSeason,
+                level: targetLevel,
+                usage: Math.max(0, normalizeUsage(row, totalPitches)),
+                velocityMph:
+                  mean == null ? null : clamp(mean, 55, 110),
+                velocitySdMph:
+                  sd == null ? null : clamp(sd, 0, 12),
+                movement: row?.movement ?? null,
+                whiff: row?.whiff ?? null,
+                location: row?.location ?? null,
+                samples: row?.samples ?? null,
+                sourceId: row?.sourceId ?? null,
+                generated: false
+              };
+            });
+
+            const positiveUsage = staged.reduce(
+              (sum, row) => sum + row.usage,
+              0
+            );
+
+            const normalized = staged.map((row) => ({
+              ...row,
+              usage:
+                positiveUsage > 0
+                  ? row.usage / positiveUsage
+                  : 1 / Math.max(1, staged.length)
+            }));
+
+            return freeze(normalized);
+          }
+
+          function buildProductionPitchArsenalIndex(rows, {
+            season = 2026
+          } = {}) {
+            const keys = new Map();
+
+            for (const row of rows ?? []) {
+              const key =
+                `${String(row?.level ?? "")}:${String(row?.playerId ?? "")}`;
+              if (!keys.has(key)) {
+                keys.set(key, {
+                  playerId: String(row?.playerId ?? ""),
+                  level: String(row?.level ?? "")
+                });
+              }
+            }
+
+            const index = new Map();
+            for (const [key, meta] of keys.entries()) {
+              const arsenal = normalizePitchArsenalRows(rows, {
+                ...meta,
+                season
+              });
+              if (arsenal.length) index.set(key, arsenal);
+            }
+            return index;
+          }
+
+          function createGeneratedRandomArsenal({
+            playerId,
+            seed = "",
+            level = "UNKNOWN",
+            season = 2026
+          } = {}) {
+            const id = String(playerId ?? "");
+            if (!id) throw new TypeError("generated arsenal에는 playerId가 필요합니다.");
+
+            const rng = mulberry32(
+              fnv1a32(`GENERATED_RANDOM_ARSENAL_V1:${seed}:${id}`)
+            );
+            const pool = [...GENERATED_PITCH_POOL];
+
+            for (let i = pool.length - 1; i > 0; i -= 1) {
+              const j = Math.floor(rng() * (i + 1));
+              [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+
+            const pitchCount = 3 + Math.floor(rng() * 3);
+            const selected = pool.slice(0, pitchCount);
+            const rawWeights = selected.map(() => 0.15 + rng());
+            const weightTotal = rawWeights.reduce((sum, value) => sum + value, 0);
+
+            return freeze(
+              selected.map((pitch, index) => {
+                const velocity =
+                  pitch.minVelocity +
+                  rng() * (pitch.maxVelocity - pitch.minVelocity);
+                return {
+                  pitchType: pitch.pitchType,
+                  season: Number(season),
+                  level: String(level),
+                  usage: rawWeights[index] / weightTotal,
+                  velocityMph: Number(velocity.toFixed(2)),
+                  velocitySdMph: Number((0.6 + rng() * 2.2).toFixed(2)),
+                  movement: null,
+                  whiff: null,
+                  location: null,
+                  samples: null,
+                  sourceId: GENERATED_SOURCE_ID,
+                  generated: true
+                };
+              })
+            );
+          }
+
+          function selectPitchFromArsenal({
+            arsenal,
+            seed = "",
+            state,
+            pitcherId,
+            batterId
+          } = {}) {
+            const eligible = (arsenal ?? []).filter(
+              (row) =>
+                Number.isFinite(Number(row?.velocityMph)) &&
+                Number(row.velocityMph) >= 55 &&
+                Number(row.velocityMph) <= 110
+            );
+            if (!eligible.length) return null;
+
+            const total = eligible.reduce(
+              (sum, row) => sum + Math.max(0, Number(row.usage ?? 0)),
+              0
+            );
+            const key = [
+              seed,
+              state?.gameId ?? "",
+              state?.plateAppearances ?? 0,
+              pitcherId ?? "",
+              batterId ?? ""
+            ].join(":");
+            let roll = fnv1aUnit(key);
+
+            for (let index = 0; index < eligible.length; index += 1) {
+              const row = eligible[index];
+              const probability =
+                total > 0
+                  ? Math.max(0, Number(row.usage ?? 0)) / total
+                  : 1 / eligible.length;
+
+              if (roll < probability || index === eligible.length - 1) {
+                return freeze({
+                  pitchType: row.pitchType,
+                  velocityMph: Number(row.velocityMph),
+                  usage: probability,
+                  season: row.season,
+                  level: row.level,
+                  sourceId: row.sourceId,
+                  generated: row.generated === true
+                });
+              }
+              roll -= probability;
+            }
+
+            return null;
+          }
+
+          function createProductionPitchSelectionResolver({
+            seed = ""
+          } = {}) {
+            return ({ state, pitcherId, batterId, pitcher }) =>
+              selectPitchFromArsenal({
+                arsenal: pitcher?.pitchArsenal ?? [],
+                seed,
+                state,
+                pitcherId,
+                batterId
+              });
+          }
+
+          export {
+            GENERATED_SOURCE_ID,
+            normalizePitchArsenalRows,
+            buildProductionPitchArsenalIndex,
+            createGeneratedRandomArsenal,
+            selectPitchFromArsenal,
+            createProductionPitchSelectionResolver
+          };
+          JS
+
+          node --check src/services/productionPitchArsenal.js
+
+      - name: Attach current-level arsenal to real pitchers
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/services/productionSeasonFactory.js')
+          s = p.read_text(encoding='utf-8')
+
+          import_line = (
+              'import { buildProductionPitchArsenalIndex, '
+              'createGeneratedRandomArsenal } '
+              'from "./productionPitchArsenal.js";\n'
+          )
+          if import_line not in s:
+              anchor = (
+                  'import { inferRealPlayerPotentialProfile } '
+                  'from "../data/realWorldPotential.js";\n'
+              )
+              assert anchor in s
+              s = s.replace(anchor, anchor + import_line, 1)
+
+          old_sig = (
+              'function enginePitcher(player, inference, { seed = "" } = {}) {'
+          )
+          new_sig = (
+              'function enginePitcher(player, inference, '
+              '{ seed = "", pitchArsenal = [] } = {}) {'
+          )
+          if new_sig not in s:
+              assert old_sig in s
+              s = s.replace(old_sig, new_sig, 1)
+
+          old_return = (
+              '  return freeze({ ...engine, ...productionFacts(player, hiddenDevelopmentPrior) });\n'
+              '}\n\nfunction positionFit'
+          )
+          new_return = (
+              '  return freeze({ ...engine, pitchArsenal, '
+              '...productionFacts(player, hiddenDevelopmentPrior) });\n'
+              '}\n\nfunction positionFit'
+          )
+          if 'return freeze({ ...engine, pitchArsenal,' not in s:
+              assert old_return in s
+              s = s.replace(old_return, new_return, 1)
+
+          old_roster_sig = (
+              'function createProductionRoster(team, snapshotPlayers, universe, '
+              'inferenceById, { userPlayer = null, userPlayerName = null, '
+              'seed = "" } = {}) {'
+          )
+          new_roster_sig = (
+              'function createProductionRoster(team, snapshotPlayers, universe, '
+              'inferenceById, { userPlayer = null, userPlayerName = null, '
+              'seed = "", pitchArsenalIndex = new Map() } = {}) {'
+          )
+          if new_roster_sig not in s:
+              assert old_roster_sig in s
+              s = s.replace(old_roster_sig, new_roster_sig, 1)
+
+          old_engine_pitcher = (
+              '    enginePlayers[String(player.id)] = '
+              'enginePitcher(player, inferenceById.get(String(player.id)), { seed });'
+          )
+          new_engine_pitcher = (
+              '    const realPitchArsenal = pitchArsenalIndex.get('
+              '`${String(team.level)}:${String(player.id)}`) ?? [];\n'
+              '    const pitchArsenal = realPitchArsenal.length '
+              '? realPitchArsenal : createGeneratedRandomArsenal({ '
+              'playerId: String(player.id), seed, level: String(team.level), '
+              'season: universe.sourceSnapshot?.season ?? 2026 });\n'
+              '    enginePlayers[String(player.id)] = '
+              'enginePitcher(player, inferenceById.get(String(player.id)), '
+              '{ seed, pitchArsenal });'
+          )
+          if 'const realPitchArsenal = pitchArsenalIndex.get(' not in s:
+              assert old_engine_pitcher in s
+              s = s.replace(old_engine_pitcher, new_engine_pitcher, 1)
+
+          old_level_sig = (
+              'function createLevelLeague({ universe, level, selectedOrgId, '
+              'startDate, inferenceById, userPlayer = null, userPlayerName = null, '
+              'userLevel = null, seed = "" }) {'
+          )
+          new_level_sig = (
+              'function createLevelLeague({ universe, level, selectedOrgId, '
+              'startDate, inferenceById, pitchArsenalIndex, userPlayer = null, '
+              'userPlayerName = null, userLevel = null, seed = "" }) {'
+          )
+          if new_level_sig not in s:
+              assert old_level_sig in s
+              s = s.replace(old_level_sig, new_level_sig, 1)
+
+          old_call = (
+              '    return [String(team.id), createProductionRoster(team, '
+              'universe.data.players, universe, inferenceById, '
+              '{ userPlayer: insertUser ? userPlayer : null, userPlayerName, seed })];'
+          )
+          new_call = (
+              '    return [String(team.id), createProductionRoster(team, '
+              'universe.data.players, universe, inferenceById, '
+              '{ userPlayer: insertUser ? userPlayer : null, userPlayerName, '
+              'seed, pitchArsenalIndex })];'
+          )
+          if 'seed, pitchArsenalIndex })];' not in s:
+              assert old_call in s
+              s = s.replace(old_call, new_call, 1)
+
+          inference_line = (
+              '  const inferenceById = new Map((universe.inference?.players ?? [])'
+              '.map((row) => [String(row.playerId), row]));\n'
+          )
+          arsenal_line = inference_line + (
+              '  const pitchArsenalIndex = buildProductionPitchArsenalIndex(\n'
+              '    universe.data.pitchArsenal ?? [],\n'
+              '    { season: universe.sourceSnapshot?.season ?? 2026 }\n'
+              '  );\n'
+          )
+          if 'const pitchArsenalIndex = buildProductionPitchArsenalIndex(' not in s:
+              assert inference_line in s
+              s = s.replace(inference_line, arsenal_line, 1)
+
+          old_level_call = (
+              '    levelLeagues[level] = createLevelLeague({ universe, level, '
+              'selectedOrgId, startDate, inferenceById, userPlayer, '
+              'userPlayerName: careerPlan.identity.name, userLevel, seed });'
+          )
+          new_level_call = (
+              '    levelLeagues[level] = createLevelLeague({ universe, level, '
+              'selectedOrgId, startDate, inferenceById, pitchArsenalIndex, '
+              'userPlayer, userPlayerName: careerPlan.identity.name, userLevel, seed });'
+          )
+          if 'inferenceById, pitchArsenalIndex, userPlayer' not in s:
+              assert old_level_call in s
+              s = s.replace(old_level_call, new_level_call, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          node --check src/services/productionSeasonFactory.js
+
+      - name: Carry selected pitch type and velocity through PA context
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/engine/player/playerContextResolver.js')
+          s = p.read_text(encoding='utf-8')
+
+          old = (
+              '    const selectedPitchVelocityMph = '
+              'resolvePitchVelocity({ ...args, pitcherProfile });\n\n'
+              '    return buildPAContext({'
+          )
+          new = (
+              '    const selectedPitch = '
+              'resolvePitchVelocity({ ...args, pitcherProfile });\n'
+              '    const selectedPitchVelocityMph = '
+              'selectedPitch && typeof selectedPitch === "object" '
+              '? selectedPitch.velocityMph ?? null : selectedPitch;\n'
+              '    const selectedPitchType = '
+              'selectedPitch && typeof selectedPitch === "object" '
+              '? selectedPitch.pitchType ?? null : null;\n\n'
+              '    return buildPAContext({'
+          )
+          if 'const selectedPitchType =' not in s:
+              assert old in s
+              s = s.replace(old, new, 1)
+
+          old_pitcher = (
+              '      pitcher: { ...pitcherProfile, '
+              'pitchVelocityMph: selectedPitchVelocityMph },'
+          )
+          new_pitcher = (
+              '      pitcher: { ...pitcherProfile, '
+              'pitchType: selectedPitchType, '
+              'pitchVelocityMph: selectedPitchVelocityMph },'
+          )
+          if 'pitchType: selectedPitchType' not in s:
+              assert old_pitcher in s
+              s = s.replace(old_pitcher, new_pitcher, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('src/engine/pa/context.js')
+          s = p.read_text(encoding='utf-8')
+
+          old_context = (
+              '      stuff: pitcher.stuff,\n'
+              '      pitchVelocityMph: resolveOptionalPitchVelocity('
+              'pitcher.pitchVelocityMph),'
+          )
+          new_context = (
+              '      stuff: pitcher.stuff,\n'
+              '      pitchType: pitcher.pitchType == null '
+              '? null : String(pitcher.pitchType),\n'
+              '      pitchVelocityMph: resolveOptionalPitchVelocity('
+              'pitcher.pitchVelocityMph),'
+          )
+          if 'pitchType: pitcher.pitchType == null' not in s:
+              assert old_context in s
+              s = s.replace(old_context, new_context, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('src/engine/pa/paEngine.js')
+          s = p.read_text(encoding='utf-8')
+          old_result = (
+              '    probabilities,\n'
+              '    pitchCount,'
+          )
+          new_result = (
+              '    probabilities,\n'
+              '    selectedPitchType: context.pitcher.pitchType ?? null,\n'
+              '    selectedPitchVelocityMph: '
+              'context.pitcher.pitchVelocityMph ?? null,\n'
+              '    pitchCount,'
+          )
+          if 'selectedPitchType:' not in s:
+              assert old_result in s
+              s = s.replace(old_result, new_result, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          node --check src/engine/player/playerContextResolver.js
+          node --check src/engine/pa/context.js
+          node --check src/engine/pa/paEngine.js
+
+      - name: Wire Production selection resolver into season and interactive games
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/services/seasonGameService.js')
+          s = p.read_text(encoding='utf-8')
+
+          import_line = (
+              'import { createProductionPitchSelectionResolver } '
+              'from "./productionPitchArsenal.js";\n'
+          )
+          if import_line not in s:
+              anchor = (
+                  'import { createLateGameBenchManager } '
+                  'from "../engine/game/benchUsageAI.js";\n'
+              )
+              assert anchor in s
+              s = s.replace(anchor, anchor + import_line, 1)
+
+          old = '''function createSeasonGameContextResolver(fixture) {
+            return createPlayerContextResolver({
+              players: fixture.players,
+              resolvePark: () => fixture.park ?? null,
+              resolveApproach: () => "BALANCED"
+            });
+          }'''
+          old = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in old.splitlines()
+          )
+          new = '''function createSeasonGameContextResolver(fixture) {
+            return createPlayerContextResolver({
+              players: fixture.players,
+              resolvePark: () => fixture.park ?? null,
+              resolvePitchVelocity: createProductionPitchSelectionResolver({
+                seed: fixture.seed ?? ""
+              }),
+              resolveApproach: () => "BALANCED"
+            });
+          }'''
+          new = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in new.splitlines()
+          )
+
+          if 'createProductionPitchSelectionResolver({' not in s.split(
+              'function simulateSeasonFixtureGame', 1
+          )[0]:
+              assert old in s
+              s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('src/api/gameApi.js')
+          s = p.read_text(encoding='utf-8')
+
+          import_line = (
+              'import { createProductionPitchSelectionResolver } '
+              'from "../services/productionPitchArsenal.js";\n'
+          )
+          if import_line not in s:
+              anchor = (
+                  'import { createQuickABDemoFixture } '
+                  'from "../services/demoGameFactory.js";\n'
+              )
+              assert anchor in s
+              s = s.replace(anchor, anchor + import_line, 1)
+
+          old = (
+              '    resolvePark: () => fixture.park ?? null,\n'
+              '    resolveApproach:'
+          )
+          new = (
+              '    resolvePark: () => fixture.park ?? null,\n'
+              '    resolvePitchVelocity: '
+              'createProductionPitchSelectionResolver({ seed }),\n'
+              '    resolveApproach:'
+          )
+          if 'createProductionPitchSelectionResolver({ seed })' not in s:
+              assert old in s
+              s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          node --check src/services/seasonGameService.js
+          node --check src/api/gameApi.js
+
+      - name: Install Production arsenal runtime verifier
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+
+          cat > scripts/verify-production-pitch-arsenal.mjs <<'JS'
+          import fs from "node:fs";
+          import path from "node:path";
+          import zlib from "node:zlib";
+          import assert from "node:assert/strict";
+          import { fileURLToPath } from "node:url";
+          import { seasonApi } from "../src/api/seasonApi.js";
+          import { gameApi } from "../src/api/gameApi.js";
+          import {
+            createSeasonGameFixture
+          } from "../src/services/demoSeasonFactory.js";
+          import {
+            createSeasonGameContextResolver,
+            simulateSeasonFixtureGame
+          } from "../src/services/seasonGameService.js";
+          import {
+            GENERATED_SOURCE_ID,
+            createGeneratedRandomArsenal,
+            selectPitchFromArsenal
+          } from "../src/services/productionPitchArsenal.js";
+          import {
+            getCurrentBatterId,
+            getCurrentPitcherId
+          } from "../src/engine/game/gameState.js";
+
+          const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+          const WORK_ROOT = path.resolve(SCRIPT_DIR, "..");
+          const SNAPSHOT_REL =
+            "data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz";
+
+          function readSnapshot() {
+            return JSON.parse(
+              zlib.gunzipSync(
+                fs.readFileSync(path.resolve(WORK_ROOT, SNAPSHOT_REL))
+              ).toString("utf8")
+            );
+          }
+
+          function careerInput(organizationId) {
+            return {
+              name: "Pitch Arsenal QA",
+              nationality: "대한민국",
+              hometown: "구미",
+              age: 18,
+              heightCm: 180,
+              weightKg: 78,
+              bodyType: "ATHLETIC",
+              bats: "R",
+              throws: "R",
+              primaryPosition: "SS",
+              archetype: "BALANCED",
+              visibleTraits: ["QUICK_BAT", "SOFT_HANDS"],
+              organizationMode: "FAVORITE",
+              favoriteOrganizationId: String(organizationId)
+            };
+          }
+
+          function outputPath() {
+            const hit = process.argv
+              .slice(2)
+              .find((arg) => arg.startsWith("--output="));
+            return path.resolve(
+              WORK_ROOT,
+              hit
+                ? hit.slice("--output=".length)
+                : "reports/production-pitch-arsenal-v1.json"
+            );
+          }
+
+          function allRosterPitchers(fixture, level) {
+            const league = fixture.levelLeagues[level];
+            const out = [];
+            for (const roster of Object.values(league.rosters)) {
+              for (const id of roster.pitchers ?? []) {
+                const player = roster.players[id];
+                if (player) out.push(player);
+              }
+            }
+            return out;
+          }
+
+          function findGameWithArsenalPitcher(fixture) {
+            const league = fixture.levelLeagues.MLB;
+            for (const game of league.schedule.slice(0, 500)) {
+              const gf = createSeasonGameFixture({
+                seasonFixture: fixture,
+                scheduleGame: game,
+                level: "MLB"
+              });
+              const pitcherId =
+                getCurrentPitcherId(gf.initialState);
+              const pitcher = gf.players[pitcherId];
+              if (
+                Array.isArray(pitcher?.pitchArsenal) &&
+                pitcher.pitchArsenal.some(
+                  (row) => Number.isFinite(Number(row.velocityMph))
+                )
+              ) {
+                return gf;
+              }
+            }
+            return null;
+          }
+
+          function buildReport() {
+            const snapshot = readSnapshot();
+            const catalog = seasonApi.getCareerCreationCatalog({
+              masterSnapshot: snapshot
+            });
+            const created = seasonApi.createCareerSeason({
+              seed: "post-audit-pitch-arsenal-v1",
+              input: careerInput(catalog.organizations[0].id),
+              masterSnapshot: snapshot
+            });
+            const payload = seasonApi.serializeSeason(created.seasonId);
+
+            const mlbPitchers = allRosterPitchers(payload.fixture, "MLB");
+            const aaaPitchers = allRosterPitchers(payload.fixture, "AAA");
+
+            const mlbWithArsenal = mlbPitchers.filter(
+              (p) => p.pitchArsenal?.length
+            );
+            const aaaWithArsenal = aaaPitchers.filter(
+              (p) => p.pitchArsenal?.length
+            );
+
+            assert.equal(mlbWithArsenal.length, mlbPitchers.length);
+            assert.equal(aaaWithArsenal.length, aaaPitchers.length);
+
+            const isGenerated = (player) =>
+              player.pitchArsenal?.some(
+                (row) => row.sourceId === GENERATED_SOURCE_ID
+              );
+            const mlbGenerated = mlbPitchers.filter(isGenerated);
+            const aaaGenerated = aaaPitchers.filter(isGenerated);
+            const mlbReal = mlbPitchers.filter(
+              (p) => p.pitchArsenal?.length && !isGenerated(p)
+            );
+            const aaaReal = aaaPitchers.filter(
+              (p) => p.pitchArsenal?.length && !isGenerated(p)
+            );
+
+            assert.ok(mlbReal.length >= 200);
+            assert.ok(aaaReal.length >= 100);
+
+            const generatedA = createGeneratedRandomArsenal({
+              playerId: "NO_REAL_DATA_TEST",
+              seed: "generated-fallback-test",
+              level: "AA",
+              season: 2026
+            });
+            const generatedB = createGeneratedRandomArsenal({
+              playerId: "NO_REAL_DATA_TEST",
+              seed: "generated-fallback-test",
+              level: "AA",
+              season: 2026
+            });
+            assert.deepEqual(generatedA, generatedB);
+            assert.ok(generatedA.length >= 3 && generatedA.length <= 5);
+            assert.ok(
+              Math.abs(
+                generatedA.reduce((sum, row) => sum + row.usage, 0) - 1
+              ) < 1e-9
+            );
+            assert.ok(
+              generatedA.every(
+                (row) =>
+                  row.sourceId === GENERATED_SOURCE_ID &&
+                  row.generated === true &&
+                  Number.isFinite(row.velocityMph)
+              )
+            );
+
+            const probe = mlbReal.find(
+              (p) =>
+                p.pitchArsenal.filter(
+                  (row) => Number.isFinite(Number(row.velocityMph))
+                ).length >= 2
+            );
+            assert.ok(probe, "No multi-pitch real MLB arsenal found");
+
+            const usageSum = probe.pitchArsenal.reduce(
+              (sum, row) => sum + Number(row.usage ?? 0),
+              0
+            );
+            assert.ok(Math.abs(usageSum - 1) < 1e-9);
+
+            const selections = new Map();
+            for (let pa = 0; pa < 1000; pa += 1) {
+              const pick = selectPitchFromArsenal({
+                arsenal: probe.pitchArsenal,
+                seed: "arsenal-usage-qa",
+                state: {
+                  gameId: "ARSENAL_USAGE_QA",
+                  plateAppearances: pa
+                },
+                pitcherId: probe.id,
+                batterId: `B${pa % 9}`
+              });
+              assert.ok(pick);
+              assert.ok(
+                probe.pitchArsenal.some(
+                  (row) =>
+                    row.pitchType === pick.pitchType &&
+                    Number(row.velocityMph) ===
+                      Number(pick.velocityMph)
+                )
+              );
+              selections.set(
+                pick.pitchType,
+                (selections.get(pick.pitchType) ?? 0) + 1
+              );
+            }
+
+            const repeatedA = selectPitchFromArsenal({
+              arsenal: probe.pitchArsenal,
+              seed: "determinism",
+              state: { gameId: "G1", plateAppearances: 17 },
+              pitcherId: probe.id,
+              batterId: "B1"
+            });
+            const repeatedB = selectPitchFromArsenal({
+              arsenal: probe.pitchArsenal,
+              seed: "determinism",
+              state: { gameId: "G1", plateAppearances: 17 },
+              pitcherId: probe.id,
+              batterId: "B1"
+            });
+            assert.deepEqual(repeatedA, repeatedB);
+
+            const gameFixture = findGameWithArsenalPitcher(
+              payload.fixture
+            );
+            assert.ok(gameFixture);
+
+            const pitcherId =
+              getCurrentPitcherId(gameFixture.initialState);
+            const pitcher = gameFixture.players[pitcherId];
+            const resolver =
+              createSeasonGameContextResolver(gameFixture);
+            const context = resolver({
+              state: gameFixture.initialState,
+              batterId:
+                getCurrentBatterId(gameFixture.initialState),
+              pitcherId
+            });
+
+            assert.ok(context.pitcher.pitchType);
+            assert.ok(
+              Number.isFinite(context.pitcher.pitchVelocityMph)
+            );
+            assert.ok(
+              pitcher.pitchArsenal.some(
+                (row) =>
+                  row.pitchType === context.pitcher.pitchType &&
+                  Number(row.velocityMph) ===
+                    Number(context.pitcher.pitchVelocityMph)
+              )
+            );
+
+            const fast = simulateSeasonFixtureGame(gameFixture, {
+              seed: "arsenal-fast",
+              mode: "FAST"
+            });
+            const detailed = simulateSeasonFixtureGame(gameFixture, {
+              seed: "arsenal-detailed",
+              mode: "DETAILED"
+            });
+            assert.equal(fast.state.status, "FINAL");
+            assert.equal(detailed.state.status, "FINAL");
+
+            const probeFixture = Object.freeze({
+              ...gameFixture,
+              userPlayerId:
+                gameFixture.initialState.lineups.away[0],
+              userTeam: "away"
+            });
+
+            const view = gameApi.createGameFromFixture({
+              fixture: probeFixture,
+              seed: "arsenal-interactive"
+            });
+            const played = gameApi.playUserPA(
+              view.gameId,
+              "BALANCED"
+            );
+            const selectedType =
+              played.lastUserPA?.paResult?.selectedPitchType ??
+              null;
+            const selectedVelocity =
+              played.lastUserPA?.paResult
+                ?.selectedPitchVelocityMph ?? null;
+            gameApi.closeGame(view.gameId);
+
+            assert.ok(selectedType);
+            assert.ok(Number.isFinite(selectedVelocity));
+
+            return {
+              schema: "THE_CALL_UP_PRODUCTION_PITCH_ARSENAL_V1",
+              pass: true,
+              snapshotHash: snapshot.metadata.contentHash,
+              sourceCoverage: {
+                rows: snapshot.pitchArsenal.length,
+                players: new Set(
+                  snapshot.pitchArsenal.map(
+                    (row) => String(row.playerId)
+                  )
+                ).size
+              },
+              runtimeCoverage: {
+                mlbPitchers: mlbPitchers.length,
+                aaaPitchers: aaaPitchers.length,
+                mlbPitchersWithArsenal: mlbWithArsenal.length,
+                aaaPitchersWithArsenal: aaaWithArsenal.length,
+                mlbRealArsenal: mlbReal.length,
+                aaaRealArsenal: aaaReal.length,
+                mlbGeneratedRandomArsenal: mlbGenerated.length,
+                aaaGeneratedRandomArsenal: aaaGenerated.length
+              },
+              generatedFallbackSample: generatedA.map((row) => ({
+                pitchType: row.pitchType,
+                usage: row.usage,
+                velocityMph: row.velocityMph,
+                sourceId: row.sourceId
+              })),
+              probePitcher: {
+                id: probe.id,
+                pitchCount: probe.pitchArsenal.length,
+                arsenal: probe.pitchArsenal.map((row) => ({
+                  pitchType: row.pitchType,
+                  usage: row.usage,
+                  velocityMph: row.velocityMph
+                })),
+                selectionCounts1000: Object.fromEntries(
+                  [...selections.entries()].sort()
+                )
+              },
+              liveContext: {
+                pitcherId,
+                pitchType: context.pitcher.pitchType,
+                velocityMph:
+                  context.pitcher.pitchVelocityMph
+              },
+              interactive: {
+                selectedPitchType: selectedType,
+                selectedPitchVelocityMph: selectedVelocity
+              },
+              deterministicSelection: true,
+              fastGamePass: true,
+              detailedGamePass: true
+            };
+          }
+
+          function main() {
+            const report = buildReport();
+            const out = outputPath();
+            fs.mkdirSync(path.dirname(out), { recursive: true });
+            fs.writeFileSync(
+              out,
+              JSON.stringify(report, null, 2) + "\n"
+            );
+            process.stdout.write(
+              JSON.stringify(report, null, 2) + "\n"
+            );
+          }
+
+          if (
+            path.resolve(process.argv[1] ?? "") ===
+            fileURLToPath(import.meta.url)
+          ) {
+            try {
+              main();
+            } catch (error) {
+              console.error(error);
+              process.exitCode = 1;
+            }
+          }
+
+          export { buildReport };
+          JS
+
+          node --check scripts/verify-production-pitch-arsenal.mjs
+
+      - name: Verify Production arsenal selection and velocity
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/verify-production-pitch-arsenal.mjs \
+            --output=reports/production-pitch-arsenal-v1.json
+
+      - name: Re-run Production park verification
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/verify-production-real-parks.mjs \
+            --output=/tmp/production-real-parks-after-arsenal.json
+
+      - name: Re-run v3 FULL save validation
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/verify-production-runtime-v3.mjs \
+            --output=/tmp/production-runtime-v3-after-arsenal.json
+
+      - name: Neutral engine regressions
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase0-final.js \
+            --output /tmp/phase0-after-arsenal.json
+
+          node scripts/verify-fast-sim-v38.js \
+            --verify \
+            --output /tmp/fast-detailed-after-arsenal.json
+
+      - name: Commit Bundle 3B Random Fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+
+          git add \
+            work/src/services/productionPitchArsenal.js \
+            work/src/services/productionSeasonFactory.js \
+            work/src/engine/player/playerContextResolver.js \
+            work/src/engine/pa/context.js \
+            work/src/engine/pa/paEngine.js \
+            work/src/services/seasonGameService.js \
+            work/src/api/gameApi.js \
+            work/scripts/verify-production-pitch-arsenal.mjs \
+            work/reports/production-pitch-arsenal-v1.json
+
+          if git diff --cached --quiet; then
+            echo "Bundle 3B random fallback already installed; nothing to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "post-audit: wire real or random pitch arsenal into PA runtime"
+          git push origin HEAD:main
