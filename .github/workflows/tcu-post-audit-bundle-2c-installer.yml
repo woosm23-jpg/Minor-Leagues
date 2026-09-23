@@ -1,0 +1,312 @@
+name: THE CALL-UP Post-Audit Bundle 2C Installer
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-post-audit-bundle-2c-installer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle-2c:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Confirm Bundle 2B
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          runtime = json.loads(Path('reports/production-runtime-v3-wiring.json').read_text(encoding='utf-8'))
+          build = json.loads(Path('reports/complete-edition-v3-build-wiring.json').read_text(encoding='utf-8'))
+          assert runtime['pass'] is True
+          assert runtime['snapshot']['id'] == 'mlb-milb-2026-2026-09-20-v3-production'
+          assert runtime['snapshot']['contentHash'] == 'fnv1a32:f7b34713'
+          assert build['pass'] is True
+          assert build['snapshotHash'] == 'fnv1a32:f7b34713'
+          print('BUNDLE_2B_OK')
+          PY
+
+      - name: Temporarily point Phase E inputs at exact v3 fixture
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+
+          cp data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz /tmp/original-v2.json.gz
+          cp data/the_call_up_phase_c/statcast-phase-c-2026.json.gz /tmp/original-phase-c.json.gz
+          cp data/the_call_up_phase_d/public-scouting-2026.json.gz /tmp/original-phase-d.json.gz
+
+          cp data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz \
+             data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+
+          python3 - <<'PY'
+          import gzip, json
+          from pathlib import Path
+
+          new_hash = 'fnv1a32:f7b34713'
+          for rel in [
+              'data/the_call_up_phase_c/statcast-phase-c-2026.json.gz',
+              'data/the_call_up_phase_d/public-scouting-2026.json.gz'
+          ]:
+              p = Path(rel)
+              obj = json.loads(gzip.decompress(p.read_bytes()).decode('utf-8'))
+              obj['baseSnapshotHash'] = new_hash
+              p.write_bytes(gzip.compress(json.dumps(obj, separators=(',', ':')).encode('utf-8'), compresslevel=9, mtime=0))
+
+          print('PHASE_E_TEMP_INPUTS_NOW_V3')
+          PY
+
+      - name: Phase E preflight on exact v3
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/audit-phase-e-preflight.mjs \
+            --verify \
+            --output=reports/post-audit-v3-phase-e-preflight.json
+
+      - name: Phase E distribution backtest on exact v3
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/audit-phase-e-distribution-backtest.mjs \
+            --verify \
+            --output=reports/post-audit-v3-phase-e-distribution-backtest.json
+
+      - name: Phase E long-term cohort on exact v3
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/audit-phase-e-long-term-cohort.mjs \
+            --output=reports/post-audit-v3-phase-e-long-term-cohort.json
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('reports/post-audit-v3-phase-e-long-term-cohort.json').read_text(encoding='utf-8'))
+          assert r['passFull'] is True
+          assert r['baseSnapshotHash'] == 'fnv1a32:f7b34713'
+          print('PHASE_E_LONG_TERM_V3_PASS')
+          PY
+
+      - name: Restore original Phase E source files
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          cp /tmp/original-v2.json.gz data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+          cp /tmp/original-phase-c.json.gz data/the_call_up_phase_c/statcast-phase-c-2026.json.gz
+          cp /tmp/original-phase-d.json.gz data/the_call_up_phase_d/public-scouting-2026.json.gz
+          git diff --exit-code -- \
+            data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz \
+            data/the_call_up_phase_c/statcast-phase-c-2026.json.gz \
+            data/the_call_up_phase_d/public-scouting-2026.json.gz
+
+      - name: Fresh engine regressions
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase0-final.js --output /tmp/post-audit-v3-phase0.json
+          node scripts/verify-fast-sim-v38.js \
+            --verify \
+            --output /tmp/post-audit-v3-fast-detailed.json
+
+      - name: Promote final runtime identity to v3
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('scripts/report-final-runtime-identity.mjs')
+          s = p.read_text(encoding='utf-8')
+          replacements = {
+              'data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz':
+                  'data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz',
+              'mlb-milb-2026-2026-09-20-v2-production':
+                  'mlb-milb-2026-2026-09-20-v3-production',
+              'fnv1a32:21eb3434':
+                  'fnv1a32:f7b34713'
+          }
+          for old, new in replacements.items():
+              assert old in s, f'missing identity token: {old}'
+              s = s.replace(old, new)
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          node --check scripts/report-final-runtime-identity.mjs
+          node scripts/report-final-runtime-identity.mjs \
+            --verify \
+            --output=reports/final-runtime-identity-v1.json
+
+      - name: Build final Complete Edition from v3
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/build-complete-edition-production.mjs
+
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          html = Path('dist/THE_CALL_UP_COMPLETE_EDITION.html')
+          prior = json.loads(Path('reports/complete-edition-v3-build-wiring.json').read_text(encoding='utf-8'))
+          digest = hashlib.sha256(html.read_bytes()).hexdigest()
+          assert digest == prior['sha256'], (digest, prior['sha256'])
+          assert html.stat().st_size == prior['bytes']
+          text = html.read_text(encoding='utf-8')
+          assert 'mlb-milb-2026-2026-09-20-v3-production' in text
+          assert 'fnv1a32:f7b34713' in text
+          assert 'complete_edition_v1_0' in text
+          print('FINAL_V3_BUILD_PASS', html.stat().st_size, digest)
+          PY
+
+      - name: Setup Python for mobile browser smoke
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Chromium smoke dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Mobile browser smoke on final v3 HTML
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          python scripts/browser-complete-edition-final.py
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('reports/complete-edition-final-browser.json').read_text(encoding='utf-8'))
+          assert r['pass'] is True
+          sizes = {(x['viewport']['width'], x['viewport']['height']) for x in r['results']}
+          assert (390, 844) in sizes
+          assert (412, 915) in sizes
+          print('FINAL_V3_MOBILE_PASS')
+          PY
+
+      - name: Create v3 release checkpoint
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          html = Path('dist/THE_CALL_UP_COMPLETE_EDITION.html')
+          identity = json.loads(Path('reports/final-runtime-identity-v1.json').read_text(encoding='utf-8'))
+          preflight = json.loads(Path('reports/post-audit-v3-phase-e-preflight.json').read_text(encoding='utf-8'))
+          dist = json.loads(Path('reports/post-audit-v3-phase-e-distribution-backtest.json').read_text(encoding='utf-8'))
+          longterm = json.loads(Path('reports/post-audit-v3-phase-e-long-term-cohort.json').read_text(encoding='utf-8'))
+          mobile = json.loads(Path('reports/complete-edition-final-browser.json').read_text(encoding='utf-8'))
+
+          assert identity['pass'] is True
+          assert identity['snapshot']['contentHash'] == 'fnv1a32:f7b34713'
+          assert preflight['pass'] is True
+          assert dist['pass'] is True
+          assert longterm['passFull'] is True
+          assert mobile['pass'] is True
+
+          digest = hashlib.sha256(html.read_bytes()).hexdigest()
+          checkpoint = {
+              'schema': 'THE_CALL_UP_POST_AUDIT_PRODUCTION_V3_RELEASE_CHECKPOINT',
+              'pass': True,
+              'gameVersion': 'complete_edition_v1_0',
+              'productionSnapshot': {
+                  'id': 'mlb-milb-2026-2026-09-20-v3-production',
+                  'contentHash': 'fnv1a32:f7b34713',
+                  'source': 'work/data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz'
+              },
+              'phaseE': {
+                  'preflight': True,
+                  'distributionBacktest': True,
+                  'longTermCohort': True
+              },
+              'regression': {
+                  'phase0Calibration': True,
+                  'fastDetailedParity': True,
+                  'fullSaveValidation': True,
+                  'mobile390x844': True,
+                  'mobile412x915': True
+              },
+              'standalone': {
+                  'filename': 'THE_CALL_UP_COMPLETE_EDITION.html',
+                  'bytes': html.stat().st_size,
+                  'sha256': digest
+              }
+          }
+
+          Path('reports/post-audit-production-v3-release-checkpoint.json').write_text(
+              json.dumps(checkpoint, indent=2) + '\n', encoding='utf-8'
+          )
+
+          release_path = Path('reports/complete-edition-release-checkpoint.json')
+          release = json.loads(release_path.read_text(encoding='utf-8'))
+          release['productionSnapshot'] = checkpoint['productionSnapshot']
+          release['evidence']['postAuditProductionV3'] = True
+          release['mobile'] = mobile
+          release['standalone'] = checkpoint['standalone']
+          release['status'] = 'COMPLETE_EDITION_RELEASED_PRODUCTION_V3'
+          release_path.write_text(json.dumps(release, indent=2) + '\n', encoding='utf-8')
+
+          print(json.dumps(checkpoint, indent=2))
+          PY
+
+      - name: Commit Bundle 2C
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+
+          git add \
+            work/scripts/report-final-runtime-identity.mjs \
+            work/reports/post-audit-v3-phase-e-preflight.json \
+            work/reports/post-audit-v3-phase-e-distribution-backtest.json \
+            work/reports/post-audit-v3-phase-e-long-term-cohort.json \
+            work/reports/final-runtime-identity-v1.json \
+            work/reports/complete-edition-final-browser.json \
+            work/reports/post-audit-production-v3-release-checkpoint.json \
+            work/reports/complete-edition-release-checkpoint.json \
+            work/dist/THE_CALL_UP_COMPLETE_EDITION.html
+
+          if git diff --cached --quiet; then
+            echo "Bundle 2C already installed; nothing to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "post-audit: promote production snapshot v3 to Complete Edition"
+          git push origin HEAD:main
