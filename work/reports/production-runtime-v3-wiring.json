@@ -1,0 +1,32 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_RUNTIME_V3_WIRING",
+  "pass": true,
+  "seed": "post-audit-production-v3-runtime",
+  "runtime": {
+    "gameVersion": "complete_edition_v1_0",
+    "saveSchemaVersion": 2,
+    "worldMode": "PRODUCTION_REAL"
+  },
+  "snapshot": {
+    "source": "work/data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz",
+    "id": "mlb-milb-2026-2026-09-20-v3-production",
+    "contentHash": "fnv1a32:f7b34713",
+    "schemaVersion": 2
+  },
+  "coverage": {
+    "organizations": 30,
+    "teams": 150,
+    "players": 5429,
+    "parks": 30,
+    "scheduleGames": 10710,
+    "trackingRows": 14988,
+    "trackingPlayers": 2149,
+    "pitchArsenalRows": 12023,
+    "pitchArsenalPlayers": 1288,
+    "publicScoutingPlayers": 1127
+  },
+  "saveValidation": {
+    "full": true,
+    "sourceSnapshotPreserved": true
+  }
+}

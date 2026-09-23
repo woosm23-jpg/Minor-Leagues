@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import zlib from "node:zlib";
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const entry = "src/main.js";
@@ -63,9 +64,17 @@ const css = fs.readFileSync(path.resolve(root, "styles/app.css"), "utf8");
 const moduleBlocks = [...modules.values()].sort((a,b)=>a.id.localeCompare(b.id))
   .map((mod)=>`__modules[${JSON.stringify(mod.id)}] = function(module, exports, __require) {\n${transform(mod)}\n};`).join("\n");
 
+function readMasterSnapshot(snapshotPath) {
+  const bytes = fs.readFileSync(snapshotPath);
+  const text = snapshotPath.endsWith(".gz")
+    ? zlib.gunzipSync(bytes).toString("utf8")
+    : bytes.toString("utf8");
+  return JSON.parse(text);
+}
+
 let snapshotBootstrap = "";
 if (masterSnapshotPath) {
-  const parsed = JSON.parse(fs.readFileSync(masterSnapshotPath, "utf8"));
+  const parsed = readMasterSnapshot(masterSnapshotPath);
   snapshotBootstrap = `globalThis.__THE_CALL_UP_MASTER_SNAPSHOT__ = ${JSON.stringify(parsed)};\n`;
 }
 
