@@ -9,7 +9,7 @@ import { validateSeasonSavePayload } from "../src/services/seasonSerialization.j
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORK_ROOT = path.resolve(SCRIPT_DIR, "..");
 const SNAPSHOT_RELATIVE_TO_WORK =
-  "data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz";
+  "data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz";
 const SNAPSHOT_SOURCE = `work/${SNAPSHOT_RELATIVE_TO_WORK}`;
 const IDENTITY_SEED = "post-audit-final-runtime-identity-v1";
 
@@ -98,9 +98,9 @@ function verifyCurrentReleaseIdentity(report) {
   assert.equal(report.snapshot.schemaVersion, 2);
   assert.equal(
     report.snapshot.snapshotId,
-    "mlb-milb-2026-2026-09-20-v2-production"
+    "mlb-milb-2026-2026-09-20-v3-production"
   );
-  assert.equal(report.snapshot.contentHash, "fnv1a32:21eb3434");
+  assert.equal(report.snapshot.contentHash, "fnv1a32:f7b34713");
   assert.equal(report.snapshot.snapshotDate, "2026-09-20");
   assert.equal(report.snapshot.origin, "MASTER_SNAPSHOT");
   assert.equal(report.snapshot.source, SNAPSHOT_SOURCE);

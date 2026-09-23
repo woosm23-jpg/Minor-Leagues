@@ -7,7 +7,11 @@
     "v59LongRun20Seasons": true,
     "v60CompleteEditionRC": true,
     "rcToFinalCompatibilityRun": 35832369474,
-    "finalMobilePortrait": true
+    "finalMobilePortrait": true,
+    "postAuditProductionV3": true,
+    "phaseEV3Preflight": true,
+    "phaseEV3DistributionBacktest": true,
+    "phaseEV3FixedCohortShortDiagnostic": true
   },
   "save": {
     "pass": true,
@@ -30,9 +34,9 @@
         },
         "pass": true,
         "timingsMs": {
-          "homeToPlayer": 57.481,
-          "playerToLeague": 33.664,
-          "leagueToMore": 50.947
+          "homeToPlayer": 52.704,
+          "playerToLeague": 41.006,
+          "leagueToMore": 35.406
         },
         "checks": {
           "touchTargets44": true,
@@ -55,9 +59,9 @@
         },
         "pass": true,
         "timingsMs": {
-          "homeToPlayer": 57.402,
-          "playerToLeague": 39.182,
-          "leagueToMore": 52.856
+          "homeToPlayer": 30.865,
+          "playerToLeague": 43.863,
+          "leagueToMore": 34.637
         },
         "checks": {
           "touchTargets44": true,
@@ -77,8 +81,13 @@
   },
   "standalone": {
     "filename": "THE_CALL_UP_COMPLETE_EDITION.html",
-    "bytes": 66886691,
-    "sha256": "34d60370670902a22c9c311ec1796d7d64ea1f7f8fd80608a0642c169aaf785f"
+    "bytes": 75024445,
+    "sha256": "56a6d0b149aaaf9829e0620735586b72b4e3df7f5ca78cb249b869733151c835"
   },
-  "status": "COMPLETE_EDITION_RELEASED"
+  "status": "COMPLETE_EDITION_RELEASED_PRODUCTION_V3",
+  "productionSnapshot": {
+    "id": "mlb-milb-2026-2026-09-20-v3-production",
+    "contentHash": "fnv1a32:f7b34713",
+    "source": "work/data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz"
+  }
 }

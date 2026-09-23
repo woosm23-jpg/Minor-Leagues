@@ -1,0 +1,30 @@
+{
+  "schema": "THE_CALL_UP_POST_AUDIT_PRODUCTION_V3_RELEASE_CHECKPOINT",
+  "pass": true,
+  "gameVersion": "complete_edition_v1_0",
+  "productionSnapshot": {
+    "id": "mlb-milb-2026-2026-09-20-v3-production",
+    "contentHash": "fnv1a32:f7b34713",
+    "source": "work/data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz"
+  },
+  "phaseE": {
+    "preflight": true,
+    "distributionBacktest": true,
+    "fixedCohortShortDiagnostic": true,
+    "fixedCohortFullNotUsedAsWorldGate": true
+  },
+  "regression": {
+    "phase0Calibration": true,
+    "fastDetailedParity": true,
+    "v3FullSaveValidation": true,
+    "existingFullWorldV59TwentySeasons": true,
+    "existingFullWorldV59Games": 214200,
+    "mobile390x844": true,
+    "mobile412x915": true
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_COMPLETE_EDITION.html",
+    "bytes": 75024445,
+    "sha256": "56a6d0b149aaaf9829e0620735586b72b4e3df7f5ca78cb249b869733151c835"
+  }
+}

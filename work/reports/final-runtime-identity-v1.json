@@ -8,10 +8,10 @@
     "worldMode": "PRODUCTION_REAL"
   },
   "snapshot": {
-    "source": "work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz",
+    "source": "work/data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz",
     "schemaVersion": 2,
-    "snapshotId": "mlb-milb-2026-2026-09-20-v2-production",
-    "contentHash": "fnv1a32:21eb3434",
+    "snapshotId": "mlb-milb-2026-2026-09-20-v3-production",
+    "contentHash": "fnv1a32:f7b34713",
     "snapshotDate": "2026-09-20",
     "origin": "MASTER_SNAPSHOT"
   },

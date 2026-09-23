@@ -9,9 +9,9 @@
       },
       "pass": true,
       "timingsMs": {
-        "homeToPlayer": 57.481,
-        "playerToLeague": 33.664,
-        "leagueToMore": 50.947
+        "homeToPlayer": 52.704,
+        "playerToLeague": 41.006,
+        "leagueToMore": 35.406
       },
       "checks": {
         "touchTargets44": true,
@@ -34,9 +34,9 @@
       },
       "pass": true,
       "timingsMs": {
-        "homeToPlayer": 57.402,
-        "playerToLeague": 39.182,
-        "leagueToMore": 52.856
+        "homeToPlayer": 30.865,
+        "playerToLeague": 43.863,
+        "leagueToMore": 34.637
       },
       "checks": {
         "touchTargets44": true,

@@ -1,0 +1,76 @@
+{
+  "schema": "THE_CALL_UP_PHASE_E_DISTRIBUTION_BACKTEST_V2",
+  "repsPerPlayer": 240,
+  "bipRepsPerPlayer": 800,
+  "hitters": {
+    "n": 700,
+    "kPearson": 0.761,
+    "kSpearman": 0.76,
+    "bbPearson": 0.451,
+    "bbSpearman": 0.392,
+    "hrBipPearson": 0.614,
+    "hrBipSpearman": 0.61
+  },
+  "pitchers": {
+    "n": 804,
+    "kPearson": 0.496,
+    "kSpearman": 0.441,
+    "bbPearson": 0.7,
+    "bbSpearman": 0.722,
+    "hrBipPearson": 0.174,
+    "hrBipSpearman": 0.144
+  },
+  "byLevel": {
+    "hitters": {
+      "MLB": {
+        "n": 399,
+        "kPearson": 0.868,
+        "kSpearman": 0.871,
+        "bbPearson": 0.693,
+        "bbSpearman": 0.648,
+        "hrBipPearson": 0.753,
+        "hrBipSpearman": 0.786
+      },
+      "AAA": {
+        "n": 301,
+        "kPearson": 0.796,
+        "kSpearman": 0.817,
+        "bbPearson": 0.673,
+        "bbSpearman": 0.638,
+        "hrBipPearson": 0.674,
+        "hrBipSpearman": 0.673
+      }
+    },
+    "pitchers": {
+      "MLB": {
+        "n": 437,
+        "kPearson": 0.616,
+        "kSpearman": 0.585,
+        "bbPearson": 0.735,
+        "bbSpearman": 0.73,
+        "hrBipPearson": 0.249,
+        "hrBipSpearman": 0.237
+      },
+      "AAA": {
+        "n": 367,
+        "kPearson": 0.637,
+        "kSpearman": 0.645,
+        "bbPearson": 0.548,
+        "bbSpearman": 0.552,
+        "hrBipPearson": 0.136,
+        "hrBipSpearman": 0.11
+      }
+    }
+  },
+  "gates": {
+    "hitterSample": true,
+    "pitcherSample": true,
+    "hitterK": true,
+    "hitterBB": true,
+    "hitterHRBIP": true,
+    "pitcherK": true,
+    "pitcherBB": true,
+    "pitcherHRBIP": true
+  },
+  "pass": true
+}

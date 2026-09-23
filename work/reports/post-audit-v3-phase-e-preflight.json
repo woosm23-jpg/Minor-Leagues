@@ -1,0 +1,149 @@
+{
+  "schema": "THE_CALL_UP_PHASE_E_PREFLIGHT_V1",
+  "baseSnapshotHash": "fnv1a32:f7b34713",
+  "phaseCSha256": null,
+  "publicScoutingRecords": 1127,
+  "players": 5429,
+  "overall": {
+    "n": 5429,
+    "mean": 37.53,
+    "p10": 28.22,
+    "median": 35.2,
+    "p90": 49.52,
+    "min": 24.5,
+    "max": 66.25
+  },
+  "strata": {
+    "MLB:HITTER": {
+      "n": 500,
+      "mean": 50.732,
+      "p10": 46.43,
+      "median": 50.18,
+      "p90": 55.95,
+      "min": 42.74,
+      "max": 64.06
+    },
+    "MLB:PITCHER": {
+      "n": 570,
+      "mean": 49.594,
+      "p10": 45.93,
+      "median": 48.97,
+      "p90": 54.29,
+      "min": 42.68,
+      "max": 66.25
+    },
+    "AAA:HITTER": {
+      "n": 465,
+      "mean": 43.081,
+      "p10": 39.44,
+      "median": 43.25,
+      "p90": 46.56,
+      "min": 33.62,
+      "max": 49.8
+    },
+    "AAA:PITCHER": {
+      "n": 635,
+      "mean": 42.285,
+      "p10": 38.99,
+      "median": 42.34,
+      "p90": 45.64,
+      "min": 33.22,
+      "max": 49.22
+    },
+    "AA:PITCHER": {
+      "n": 579,
+      "mean": 35.056,
+      "p10": 32.03,
+      "median": 34.97,
+      "p90": 38.18,
+      "min": 29.68,
+      "max": 42.35
+    },
+    "AA:HITTER": {
+      "n": 442,
+      "mean": 35.778,
+      "p10": 33.2,
+      "median": 35.53,
+      "p90": 38.54,
+      "min": 30.15,
+      "max": 42.61
+    },
+    "HIGH_A:HITTER": {
+      "n": 446,
+      "mean": 31.875,
+      "p10": 29.84,
+      "median": 31.75,
+      "p90": 34.2,
+      "min": 27.61,
+      "max": 37.08
+    },
+    "HIGH_A:PITCHER": {
+      "n": 609,
+      "mean": 31.254,
+      "p10": 28.73,
+      "median": 31.15,
+      "p90": 33.89,
+      "min": 26.77,
+      "max": 37.6
+    },
+    "A:PITCHER": {
+      "n": 701,
+      "mean": 28.287,
+      "p10": 26.25,
+      "median": 28.19,
+      "p90": 30.49,
+      "min": 24.5,
+      "max": 34.78
+    },
+    "A:HITTER": {
+      "n": 482,
+      "mean": 29.13,
+      "p10": 27.25,
+      "median": 29.16,
+      "p90": 30.81,
+      "min": 25,
+      "max": 44.08
+    }
+  },
+  "fallbackCluster": {
+    "rounded50": 123,
+    "rounded55": 41,
+    "exactFallbackCore": 17,
+    "coreRatingCount": 50089
+  },
+  "edgeCaseCounts": {
+    "healthyMlbVeteranLargeSample": 181,
+    "mlbIlStarNo2026": 18,
+    "mlbTiny2026PriorFull": 4,
+    "aaaMlbShuttle": 1460,
+    "rehabMlbPlayer": 46,
+    "aaToAaaPromotion": 1418,
+    "sameLevelTrade": 773,
+    "publicScoutingProspect": 122,
+    "noScoutingLowMinors": 2578,
+    "largePlatoonSplit": 0,
+    "utilityPlayer": 1360,
+    "catcher": 505,
+    "roleTransitionCandidate": 2670,
+    "twoWay": 80,
+    "longInjuryVeteran": 69,
+    "recordlessRookie": 0,
+    "tinyStatcast": 353
+  },
+  "finiteErrors": [],
+  "gates": {
+    "playerCount": true,
+    "finiteRatings": true,
+    "allLevelsRepresented": true,
+    "bothTypesRepresented": true,
+    "noOvrFallbackCluster": true,
+    "noCoreFallbackCluster": true,
+    "multiYearEdgeCoverage": true,
+    "shuttleCoverage": true,
+    "transactionCoverage": true,
+    "lowMinorsCoverage": true,
+    "catcherCoverage": true,
+    "tinyTrackingCoverage": true
+  },
+  "pass": true
+}
