@@ -5,10 +5,10 @@
 ## 현재 체크포인트
 
 - 성능 기준선: **v55.1 Performance**
-- 현재 개발: **v56 Postseason / Awards / History**
+- 현재 개발: **Complete Edition 1.0 RELEASE PASS**
 - Save schema: v2
 - ruleset: `ruleset_2026`
-- Complete Edition: 아직 아님
+- Complete Edition: **출시 검증 완료**
 
 ## v56 Postseason / Awards / History
 
@@ -71,3 +71,11 @@ Next: v60 Complete Edition RC.
 - v59의 20시즌 장기 안정성 검증을 기반으로 v60 Complete Edition RC 통합 검증을 완료했습니다.
 - Production lifecycle, FULL 저장/복원, 중간시즌 결정론, 모바일 세로 UI, 단일 HTML 검증이 PASS했습니다.
 - RC 결과물: `dist/THE_CALL_UP_COMPLETE_EDITION_RC_v60.html`
+
+
+## Complete Edition 1.0
+
+- 최종 게임 버전: `complete_edition_v1_0`
+- 2026 Production MLB/MiLB 월드와 전체 커리어 시스템을 단일 HTML로 통합했습니다.
+- v59 20시즌 장기 안정성, v60 RC 통합/저장, RC→정식판 호환, 모바일 세로 UI, 최종 HTML 무결성 검사를 통과했습니다.
+- 실행 파일: `dist/THE_CALL_UP_COMPLETE_EDITION.html`

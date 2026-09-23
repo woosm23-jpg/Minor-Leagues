@@ -1,0 +1,84 @@
+{
+  "schema": "THE_CALL_UP_COMPLETE_EDITION_RELEASE_GATE",
+  "pass": true,
+  "gameVersion": "complete_edition_v1_0",
+  "release": "Complete Edition 1.0",
+  "evidence": {
+    "v59LongRun20Seasons": true,
+    "v60CompleteEditionRC": true,
+    "rcToFinalCompatibilityRun": 35832369474,
+    "finalMobilePortrait": true
+  },
+  "save": {
+    "pass": true,
+    "evidenceRun": 35832369474,
+    "fromGameVersion": "complete_edition_rc_v60",
+    "toGameVersion": "complete_edition_v1_0",
+    "priorForwardCompatibilityStep": "success",
+    "v60FullValidationEveryStage": true,
+    "v60RepeatedRestoreStable": true,
+    "v60MidseasonDeterministicContinuation": true
+  },
+  "mobile": {
+    "schema": "THE_CALL_UP_COMPLETE_EDITION_FINAL_BROWSER",
+    "pass": true,
+    "results": [
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "pass": true,
+        "timingsMs": {
+          "homeToPlayer": 57.481,
+          "playerToLeague": 33.664,
+          "leagueToMore": 50.947
+        },
+        "checks": {
+          "touchTargets44": true,
+          "hofUi": true,
+          "retirementUi": true,
+          "noHorizontalOverflow": true,
+          "pageErrors": 0,
+          "consoleErrors": 0,
+          "handlersUnder1000ms": true,
+          "version": true,
+          "title": true
+        },
+        "errors": [],
+        "consoleErrors": []
+      },
+      {
+        "viewport": {
+          "width": 412,
+          "height": 915
+        },
+        "pass": true,
+        "timingsMs": {
+          "homeToPlayer": 57.402,
+          "playerToLeague": 39.182,
+          "leagueToMore": 52.856
+        },
+        "checks": {
+          "touchTargets44": true,
+          "hofUi": true,
+          "retirementUi": true,
+          "noHorizontalOverflow": true,
+          "pageErrors": 0,
+          "consoleErrors": 0,
+          "handlersUnder1000ms": true,
+          "version": true,
+          "title": true
+        },
+        "errors": [],
+        "consoleErrors": []
+      }
+    ]
+  },
+  "standalone": {
+    "filename": "THE_CALL_UP_COMPLETE_EDITION.html",
+    "bytes": 66886691,
+    "sha256": "34d60370670902a22c9c311ec1796d7d64ea1f7f8fd80608a0642c169aaf785f"
+  },
+  "status": "COMPLETE_EDITION_RELEASED"
+}
