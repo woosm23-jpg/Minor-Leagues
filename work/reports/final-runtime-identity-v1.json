@@ -1,0 +1,24 @@
+{
+  "schema": "THE_CALL_UP_FINAL_RUNTIME_IDENTITY_V1",
+  "pass": true,
+  "seed": "post-audit-final-runtime-identity-v1",
+  "runtime": {
+    "gameVersion": "complete_edition_v1_0",
+    "saveSchemaVersion": 2,
+    "worldMode": "PRODUCTION_REAL"
+  },
+  "snapshot": {
+    "source": "work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz",
+    "schemaVersion": 2,
+    "snapshotId": "mlb-milb-2026-2026-09-20-v2-production",
+    "contentHash": "fnv1a32:21eb3434",
+    "snapshotDate": "2026-09-20",
+    "origin": "MASTER_SNAPSHOT"
+  },
+  "counts": {
+    "players": 5429,
+    "teams": 150,
+    "parks": 30,
+    "scheduleGames": 10710
+  }
+}
