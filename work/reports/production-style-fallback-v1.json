@@ -1,0 +1,48 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_STYLE_FALLBACK_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "realDataPreserved": true,
+    "randomizeMissingHitterStyle": true,
+    "randomizeMissingPitcherStyle": true,
+    "minorLeagueParksRemainNeutral": true,
+    "contractsServiceAndInjuryTruthNotRandomized": true
+  },
+  "runtime": {
+    "mlbHitters": 420,
+    "mlbPitchers": 420,
+    "hitterDistinct": {
+      "launchTendency": 41,
+      "sprayPull": 45,
+      "sprayCenter": 37,
+      "sprayOppo": 45
+    },
+    "pitcherDistinct": {
+      "holdRunner": 41,
+      "fielding": 37,
+      "reaction": 37,
+      "armStrength": 37,
+      "armAccuracy": 37
+    }
+  },
+  "deterministicSamples": {
+    "hitter": {
+      "source": "GENERATED_RANDOM_FALLBACK",
+      "version": 1,
+      "launchTendency": 60,
+      "sprayPull": 62,
+      "sprayCenter": 57,
+      "sprayOppo": 57
+    },
+    "pitcher": {
+      "source": "GENERATED_RANDOM_FALLBACK",
+      "version": 1,
+      "holdRunner": 56,
+      "fielding": 65,
+      "reaction": 50,
+      "armStrength": 58,
+      "armAccuracy": 44
+    }
+  }
+}

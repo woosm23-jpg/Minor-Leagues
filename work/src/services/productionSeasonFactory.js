@@ -3,6 +3,8 @@ import { importSnapshotSchedule, generateFutureProductionSchedule } from "../eng
 import { validateMasterSnapshot } from "../data/masterSnapshot.js";
 import { isPlayerGameAvailable, playerAssignedLevel, playerAssignedTeamId, playerAvailability, playerOrganizationId, playerRosterStatus } from "../data/rosterAvailability.js";
 import { inferRealPlayerPotentialProfile } from "../data/realWorldPotential.js";
+import { buildProductionPitchArsenalIndex, createGeneratedRandomArsenal, normalizeInferredPitchArsenal } from "./productionPitchArsenal.js";
+import { createGeneratedHitterStyle, createGeneratedPitcherStyle } from "./productionStyleFallback.js";
 
 const PRODUCTION_WORLD_VERSION = 1;
 const PRODUCTION_LEVELS = Object.freeze(["MLB", "AAA", "AA", "HIGH_A", "A"]);
@@ -68,12 +70,13 @@ function productionFacts(player, hiddenDevelopmentPrior = null) {
 function engineHitter(player, inference, { seed = "" } = {}) {
   const r = inference?.ratings ?? {};
   const primaryPosition = normalizePosition(player.position);
+  const style = createGeneratedHitterStyle({ seed, playerId: String(player.id) });
   const engine = createPhase1Hitter({
     id: String(player.id), bats: player.bats ?? "R", throws: player.throws ?? "R", ovr: clampRating(inference?.overall),
     contactR: clampRating(r.contactR), contactL: clampRating(r.contactL), rawPower: clampRating(r.rawPower),
     vision: clampRating(r.vision), discipline: clampRating(r.discipline),
     powerUtilizationR: clampRating(r.powerUtilizationR), powerUtilizationL: clampRating(r.powerUtilizationL),
-    launchTendency: 50, sprayPull: 50, sprayCenter: 50, sprayOppo: 50,
+    launchTendency: style.launchTendency, sprayPull: style.sprayPull, sprayCenter: style.sprayCenter, sprayOppo: style.sprayOppo,
     speed: clampRating(r.speed), stealing: clampRating(r.stealing), baserunning: clampRating(r.baserunning),
     fielding: clampRating(r.fielding), reaction: clampRating(r.reaction), armStrength: clampRating(r.armStrength), armAccuracy: clampRating(r.armAccuracy),
     primaryPosition, secondaryPositions: secondaryPositions(primaryPosition), adaptability: 55
@@ -82,17 +85,18 @@ function engineHitter(player, inference, { seed = "" } = {}) {
   return freeze({ ...engine, ...productionFacts(player, hiddenDevelopmentPrior) });
 }
 
-function enginePitcher(player, inference, { seed = "" } = {}) {
+function enginePitcher(player, inference, { seed = "", pitchArsenal = [] } = {}) {
   const r = inference?.ratings ?? {};
+  const style = createGeneratedPitcherStyle({ seed, playerId: String(player.id) });
   const engine = createPhase1Pitcher({
     id: String(player.id), throws: player.throws ?? "R", ovr: clampRating(inference?.overall),
     control: clampRating(r.control), command: clampRating(r.command), movement: clampRating(r.movement),
     pitchability: clampRating(r.pitchability), stuff: clampRating(r.stuff),
     pitchVelocityMph: r.pitchVelocityMph == null ? null : Number(r.pitchVelocityMph),
-    stamina: clampRating(r.stamina), role: inference?.role ?? "RP", fielding: 50, reaction: 50, armStrength: 55, armAccuracy: 50
+    stamina: clampRating(r.stamina), role: inference?.role ?? "RP", holdRunner: style.holdRunner, fielding: style.fielding, reaction: style.reaction, armStrength: style.armStrength, armAccuracy: style.armAccuracy
   });
   const hiddenDevelopmentPrior = inferRealPlayerPotentialProfile({ player: engine, sourcePlayer: player, inference, seed });
-  return freeze({ ...engine, ...productionFacts(player, hiddenDevelopmentPrior) });
+  return freeze({ ...engine, pitchArsenal, ...productionFacts(player, hiddenDevelopmentPrior) });
 }
 
 function positionFit(player, slot) {
@@ -130,7 +134,7 @@ function benchCoverage(player) {
   return ["DH","1B","LF","RF"];
 }
 
-function createProductionRoster(team, snapshotPlayers, universe, inferenceById, { userPlayer = null, userPlayerName = null, seed = "" } = {}) {
+function createProductionRoster(team, snapshotPlayers, universe, inferenceById, { userPlayer = null, userPlayerName = null, seed = "", pitchArsenalIndex = new Map() } = {}) {
   const playersForTeam = snapshotPlayers.filter((player) => String(playerAssignedTeamId(player)) === String(team.id) && isPlayerGameAvailable(player));
   const pitchers = playersForTeam.filter((player) => inferenceById.get(String(player.id))?.type === "PITCHER");
   const hitters = playersForTeam.filter((player) => inferenceById.get(String(player.id))?.type !== "PITCHER");
@@ -153,7 +157,24 @@ function createProductionRoster(team, snapshotPlayers, universe, inferenceById, 
     names[String(player.id)] = player.fullName;
   }
   for (const player of pitchers) {
-    enginePlayers[String(player.id)] = enginePitcher(player, inferenceById.get(String(player.id)), { seed });
+    const inference = inferenceById.get(String(player.id));
+    const realPitchArsenal = normalizeInferredPitchArsenal(inference, {
+      level: String(team.level),
+      season: universe.sourceSnapshot?.season ?? 2026
+    });
+    const pitchArsenal = realPitchArsenal.length
+      ? realPitchArsenal
+      : createGeneratedRandomArsenal({
+          playerId: String(player.id),
+          seed,
+          level: String(team.level),
+          season: universe.sourceSnapshot?.season ?? 2026
+        });
+    enginePlayers[String(player.id)] = enginePitcher(
+      player,
+      inference,
+      { seed, pitchArsenal }
+    );
     names[String(player.id)] = player.fullName;
   }
   if (userPlayer) {
@@ -237,13 +258,13 @@ function validateProductionRuntimeUniverse(universe) {
   return true;
 }
 
-function createLevelLeague({ universe, level, selectedOrgId, startDate, inferenceById, userPlayer = null, userPlayerName = null, userLevel = null, seed = "" }) {
+function createLevelLeague({ universe, level, selectedOrgId, startDate, inferenceById, pitchArsenalIndex, userPlayer = null, userPlayerName = null, userLevel = null, seed = "" }) {
   const sourceTeams = teamRowsForLevel(universe, level);
   const teams = sourceTeams.map((team) => freeze({ id: String(team.id), name: team.name, shortName: team.abbreviation || team.name }));
   const userTeamId = affiliateTeamId(universe, selectedOrgId, level);
   const rosters = Object.fromEntries(sourceTeams.map((team) => {
     const insertUser = userPlayer && level === userLevel && String(team.id) === String(userTeamId);
-    return [String(team.id), createProductionRoster(team, universe.data.players, universe, inferenceById, { userPlayer: insertUser ? userPlayer : null, userPlayerName, seed })];
+    return [String(team.id), createProductionRoster(team, universe.data.players, universe, inferenceById, { userPlayer: insertUser ? userPlayer : null, userPlayerName, seed, pitchArsenalIndex })];
   }));
   const schedule = importSnapshotSchedule({ games: universe.data.schedule, teamIds: teams.map((team) => team.id), level, resetResults: true });
   return freeze({
@@ -269,6 +290,10 @@ function createProductionCareerSeasonFixture({ seed, careerPlan, universe } = {}
   const allDates = universe.data.schedule.filter((g) => g.gameType !== "S").map((g) => String(g.date)).sort();
   const startDate = allDates[0] ?? universe.snapshotDate;
   const inferenceById = new Map((universe.inference?.players ?? []).map((row) => [String(row.playerId), row]));
+  const pitchArsenalIndex = buildProductionPitchArsenalIndex(
+    universe.data.pitchArsenal ?? [],
+    { season: universe.sourceSnapshot?.season ?? 2026 }
+  );
   const levelLeagues = {};
   for (const level of PRODUCTION_LEVELS) {
     levelLeagues[level] = createLevelLeague({ universe, level, selectedOrgId, startDate, inferenceById, userPlayer, userPlayerName: careerPlan.identity.name, userLevel, seed });

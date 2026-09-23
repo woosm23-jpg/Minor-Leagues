@@ -33,6 +33,8 @@ function simulatePA(context, rng) {
     finalOutcome,
     terminal: true,
     probabilities,
+    selectedPitchType: context.pitcher.pitchType ?? null,
+    selectedPitchVelocityMph: context.pitcher.pitchVelocityMph ?? null,
     pitchCount,
     contactQuality,
     exitVelocity,

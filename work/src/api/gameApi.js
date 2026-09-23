@@ -9,6 +9,7 @@ import { createPitcherUsageManager } from "../engine/game/pitcherUsageAI.js";
 import { createLateGameBenchManager } from "../engine/game/benchUsageAI.js";
 import { PA_APPROACHES } from "../engine/pa/outcomeModel.js";
 import { createQuickABDemoFixture } from "../services/demoGameFactory.js";
+import { createProductionPitchSelectionResolver } from "../services/productionPitchArsenal.js";
 
 const sessions = new Map();
 const MAX_AUTO_PA = 500;
@@ -523,6 +524,7 @@ function makeSession({ seed, fixture = createQuickABDemoFixture({ seed }) }) {
   session.contextResolver = createPlayerContextResolver({
     players: fixture.players,
     resolvePark: () => fixture.park ?? null,
+    resolvePitchVelocity: createProductionPitchSelectionResolver({ seed }),
     resolveApproach: ({ batterId }) => fixture.userPlayerId && batterId === fixture.userPlayerId ? session.currentApproach : "BALANCED"
   });
   session.pitcherManager = createPitcherUsageManager({ players: fixture.players, pitchingPlans: fixture.pitchingPlans });

@@ -149,6 +149,7 @@ function buildPAContext({ hitter, pitcher, park = null, defense = null, approach
       pitchability: pitcher.pitchability,
       // Stuff is already derived upstream from arsenal/role in the full model.
       stuff: pitcher.stuff,
+      pitchType: pitcher.pitchType == null ? null : String(pitcher.pitchType),
       pitchVelocityMph: resolveOptionalPitchVelocity(pitcher.pitchVelocityMph),
       fatigue: resolveOptionalFatigue(pitcher.fatigue)
     })

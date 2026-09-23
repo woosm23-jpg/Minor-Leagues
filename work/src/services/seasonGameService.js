@@ -5,6 +5,7 @@ import { simulatePA } from "../engine/pa/paEngine.js";
 import { createPlayerContextResolver } from "../engine/player/playerContextResolver.js";
 import { createPitcherUsageManager } from "../engine/game/pitcherUsageAI.js";
 import { createLateGameBenchManager } from "../engine/game/benchUsageAI.js";
+import { createProductionPitchSelectionResolver } from "./productionPitchArsenal.js";
 
 const SEASON_SIM_MODES = Object.freeze(["AUTO", "DETAILED", "FAST"]);
 
@@ -19,6 +20,9 @@ function createSeasonGameContextResolver(fixture) {
   return createPlayerContextResolver({
     players: fixture.players,
     resolvePark: () => fixture.park ?? null,
+    resolvePitchVelocity: createProductionPitchSelectionResolver({
+      seed: fixture.seed ?? ""
+    }),
     resolveApproach: () => "BALANCED"
   });
 }

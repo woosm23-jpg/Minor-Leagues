@@ -249,14 +249,16 @@ function createPlayerContextResolver({
 
     const rawPitcherProfile = getPitcherPAProfile(pitcher, getPitcherStuff, gameUsage, { startedGame });
     const pitcherProfile = Object.freeze({ ...rawPitcherProfile, throws: resolvePitcherThrowHand(rawPitcherProfile.throws, batter.bats) });
-    const selectedPitchVelocityMph = resolvePitchVelocity({ ...args, pitcherProfile });
+    const selectedPitch = resolvePitchVelocity({ ...args, pitcherProfile });
+    const selectedPitchVelocityMph = selectedPitch && typeof selectedPitch === "object" ? selectedPitch.velocityMph ?? null : selectedPitch;
+    const selectedPitchType = selectedPitch && typeof selectedPitch === "object" ? selectedPitch.pitchType ?? null : null;
 
     return buildPAContext({
       hitter: getHitterPAProfile(batter),
       // Quick AB has no selected pitch yet. Do not misuse a pitcher's average
       // velocity as the incoming velocity of every BIP. Full/pitch-by-pitch AB
       // can inject the actual selected pitch velocity through resolvePitchVelocity.
-      pitcher: { ...pitcherProfile, pitchVelocityMph: selectedPitchVelocityMph },
+      pitcher: { ...pitcherProfile, pitchType: selectedPitchType, pitchVelocityMph: selectedPitchVelocityMph },
       park: resolvePark(args),
       defense,
       approach: resolveApproach(args)

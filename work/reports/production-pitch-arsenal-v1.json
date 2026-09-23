@@ -1,0 +1,239 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_PITCH_ARSENAL_V2_DIRECT_INFERENCE",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "sourceCoverage": {
+    "rows": 12023,
+    "players": 1288
+  },
+  "runtimeCoverage": {
+    "mlbPitchers": 420,
+    "aaaPitchers": 467,
+    "realInferenceArsenal": 885,
+    "generatedRandomArsenal": 2
+  },
+  "realProbe": {
+    "playerId": "579328",
+    "arsenal": [
+      {
+        "pitchType": "FF",
+        "season": 2026,
+        "level": "MLB",
+        "usage": 0.3394,
+        "velocityMph": 95.25,
+        "velocitySdMph": null,
+        "movement": {
+          "horizontal": 8.21,
+          "vertical": 14.45
+        },
+        "whiff": 0.2341,
+        "location": null,
+        "samples": 2877,
+        "sourceId": "real_world_inference_pitch_arsenal",
+        "generated": false
+      },
+      {
+        "pitchType": "SL",
+        "season": 2026,
+        "level": "MLB",
+        "usage": 0.2393,
+        "velocityMph": 87.4,
+        "velocitySdMph": null,
+        "movement": {
+          "horizontal": 2.76,
+          "vertical": 32.57
+        },
+        "whiff": 0.2659,
+        "location": null,
+        "samples": 2079,
+        "sourceId": "real_world_inference_pitch_arsenal",
+        "generated": false
+      },
+      {
+        "pitchType": "FS",
+        "season": 2026,
+        "level": "MLB",
+        "usage": 0.1452,
+        "velocityMph": 86.7,
+        "velocitySdMph": null,
+        "movement": {
+          "horizontal": 9.1,
+          "vertical": 27.9
+        },
+        "whiff": 0.32,
+        "location": null,
+        "samples": 177,
+        "sourceId": "real_world_inference_pitch_arsenal",
+        "generated": false
+      },
+      {
+        "pitchType": "CU",
+        "season": 2026,
+        "level": "MLB",
+        "usage": 0.1134,
+        "velocityMph": 80.73,
+        "velocitySdMph": null,
+        "movement": {
+          "horizontal": 6.21,
+          "vertical": 47.91
+        },
+        "whiff": 0.2547,
+        "location": null,
+        "samples": 1102,
+        "sourceId": "real_world_inference_pitch_arsenal",
+        "generated": false
+      },
+      {
+        "pitchType": "CH",
+        "season": 2025,
+        "level": "MLB",
+        "usage": 0.0986,
+        "velocityMph": 86.04,
+        "velocitySdMph": null,
+        "movement": {
+          "horizontal": 13.27,
+          "vertical": 29.6
+        },
+        "whiff": 0.2901,
+        "location": null,
+        "samples": 701,
+        "sourceId": "real_world_inference_pitch_arsenal",
+        "generated": false
+      },
+      {
+        "pitchType": "FC",
+        "season": 2026,
+        "level": "MLB",
+        "usage": 0.0533,
+        "velocityMph": 90.2,
+        "velocitySdMph": null,
+        "movement": {
+          "horizontal": 1.8,
+          "vertical": 24.3
+        },
+        "whiff": 0.31,
+        "location": null,
+        "samples": 65,
+        "sourceId": "real_world_inference_pitch_arsenal",
+        "generated": false
+      },
+      {
+        "pitchType": "SI",
+        "season": 2025,
+        "level": "MLB",
+        "usage": 0.0092,
+        "velocityMph": 92.9,
+        "velocitySdMph": null,
+        "movement": {
+          "horizontal": 14.9,
+          "vertical": 22.6
+        },
+        "whiff": 0.143,
+        "location": null,
+        "samples": 34,
+        "sourceId": "real_world_inference_pitch_arsenal",
+        "generated": false
+      },
+      {
+        "pitchType": "ST",
+        "season": 2025,
+        "level": "MLB",
+        "usage": 0.0016,
+        "velocityMph": 80.8,
+        "velocitySdMph": null,
+        "movement": {
+          "horizontal": 13.9,
+          "vertical": 39.7
+        },
+        "whiff": 0.667,
+        "location": null,
+        "samples": 6,
+        "sourceId": "real_world_inference_pitch_arsenal",
+        "generated": false
+      }
+    ]
+  },
+  "generatedProbe": [
+    {
+      "pitchType": "CU",
+      "season": 2026,
+      "level": "AA",
+      "usage": 0.2338597322310265,
+      "velocityMph": 70.86,
+      "velocitySdMph": 2.1,
+      "movement": null,
+      "whiff": null,
+      "location": null,
+      "samples": null,
+      "sourceId": "generated_random_fallback",
+      "generated": true
+    },
+    {
+      "pitchType": "SV",
+      "season": 2026,
+      "level": "AA",
+      "usage": 0.17041886537402143,
+      "velocityMph": 86.06,
+      "velocitySdMph": 2.77,
+      "movement": null,
+      "whiff": null,
+      "location": null,
+      "samples": null,
+      "sourceId": "generated_random_fallback",
+      "generated": true
+    },
+    {
+      "pitchType": "CH",
+      "season": 2026,
+      "level": "AA",
+      "usage": 0.2422623057435689,
+      "velocityMph": 79.16,
+      "velocitySdMph": 1.05,
+      "movement": null,
+      "whiff": null,
+      "location": null,
+      "samples": null,
+      "sourceId": "generated_random_fallback",
+      "generated": true
+    },
+    {
+      "pitchType": "FC",
+      "season": 2026,
+      "level": "AA",
+      "usage": 0.11557694847560696,
+      "velocityMph": 92.59,
+      "velocitySdMph": 0.84,
+      "movement": null,
+      "whiff": null,
+      "location": null,
+      "samples": null,
+      "sourceId": "generated_random_fallback",
+      "generated": true
+    },
+    {
+      "pitchType": "FF",
+      "season": 2026,
+      "level": "AA",
+      "usage": 0.23788214817577627,
+      "velocityMph": 96.67,
+      "velocitySdMph": 1.7,
+      "movement": null,
+      "whiff": null,
+      "location": null,
+      "samples": null,
+      "sourceId": "generated_random_fallback",
+      "generated": true
+    }
+  ],
+  "liveContext": {
+    "pitcherId": "694738",
+    "pitchType": "CU",
+    "velocityMph": 76.8
+  },
+  "interactive": {
+    "pitchType": "SI",
+    "velocityMph": 93.31
+  },
+  "fastPass": true,
+  "detailedPass": true
+}
