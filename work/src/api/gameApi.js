@@ -522,6 +522,7 @@ function makeSession({ seed, fixture = createQuickABDemoFixture({ seed }) }) {
 
   session.contextResolver = createPlayerContextResolver({
     players: fixture.players,
+    resolvePark: () => fixture.park ?? null,
     resolveApproach: ({ batterId }) => fixture.userPlayerId && batterId === fixture.userPlayerId ? session.currentApproach : "BALANCED"
   });
   session.pitcherManager = createPitcherUsageManager({ players: fixture.players, pitchingPlans: fixture.pitchingPlans });

@@ -290,6 +290,7 @@ function createProductionCareerSeasonFixture({ seed, careerPlan, universe } = {}
     scheduleSource: "MASTER_SNAPSHOT", futureScheduleGenerator: "ROUND_ROBIN_162_BALANCED_V47",
     userPlayerId: userPlayer.id, userTeamId: aaa.userTeamId,
     teams: aaa.teams, rosters: aaa.rosters, schedule: aaa.schedule, levelLeagues,
+    parks: universe.data.parks ?? [],
     organization: { id: `ORG_${selectedOrgId}`, organizationId: selectedOrgId, name: careerPlan.organization.teamName, levels: organizationLevels, levelOrder: PRODUCTION_LEVELS, userLevel },
     careerProfile
   });

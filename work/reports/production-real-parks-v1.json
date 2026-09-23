@@ -1,0 +1,39 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_REAL_PARKS_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "parkSourceRows": 30,
+  "firstPark": {
+    "id": "MLB_VENUE_2395",
+    "name": "Oracle Park",
+    "venueId": "2395",
+    "carryFactor": 1,
+    "wallDistancesFt": [
+      330,
+      379,
+      400,
+      379,
+      330
+    ]
+  },
+  "secondPark": {
+    "id": "MLB_VENUE_31",
+    "name": "PNC Park",
+    "venueId": "31",
+    "carryFactor": 1,
+    "wallDistancesFt": [
+      325,
+      389,
+      399,
+      375,
+      320
+    ]
+  },
+  "runtime": {
+    "detailedGame": true,
+    "fastGame": true,
+    "interactivePA": true,
+    "interactiveParkId": "MLB_VENUE_2395",
+    "nonMlbNeutralFallback": true
+  }
+}

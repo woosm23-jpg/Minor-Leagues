@@ -15,13 +15,18 @@ function resolveMode(fixture, requested) {
   return fixture.userPlayerId ? "DETAILED" : "FAST";
 }
 
+function createSeasonGameContextResolver(fixture) {
+  return createPlayerContextResolver({
+    players: fixture.players,
+    resolvePark: () => fixture.park ?? null,
+    resolveApproach: () => "BALANCED"
+  });
+}
+
 function simulateSeasonFixtureGame(fixture, { seed = fixture.seed, mode = "AUTO" } = {}) {
   const simulationMode = resolveMode(fixture, mode);
   const rng = new SeededRng(seed);
-  const resolver = createPlayerContextResolver({
-    players: fixture.players,
-    resolveApproach: () => "BALANCED"
-  });
+  const resolver = createSeasonGameContextResolver(fixture);
   const pitcherManager = createPitcherUsageManager({ players: fixture.players, pitchingPlans: fixture.pitchingPlans });
   const benchManager = createLateGameBenchManager({ players: fixture.players, benchPlans: fixture.benchPlans ?? {} });
   const keepUserLog = simulationMode === "DETAILED" && Boolean(fixture.userPlayerId);
@@ -49,4 +54,4 @@ function simulateSeasonFixtureGame(fixture, { seed = fixture.seed, mode = "AUTO"
   });
 }
 
-export { SEASON_SIM_MODES, simulateSeasonFixtureGame };
+export { SEASON_SIM_MODES, createSeasonGameContextResolver, simulateSeasonFixtureGame };

@@ -5,6 +5,7 @@ import { getSeasonEffectivePlayer } from "../engine/season/playerSeasonState.js"
 import { buildDailyLineup } from "../engine/season/lineupRestAI.js";
 import { getSeasonEffectivePitcher, orderAvailableBullpen, selectSeasonStarter } from "../engine/season/pitcherSeasonState.js";
 import { healthAvailability } from "../engine/season/injuryState.js";
+import { resolveProductionGamePark } from "./productionParkResolver.js";
 
 const POSITION_ORDER = Object.freeze(["SS", "CF", "1B", "DH", "RF", "3B", "2B", "C", "LF"]);
 const DEFENSE_POSITIONS = Object.freeze(["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"]);
@@ -342,11 +343,17 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
 
   const userInAway = scheduleGame.awayTeamId === league.userTeamId && awayDaily.lineup.includes(seasonFixture.userPlayerId);
   const userInHome = scheduleGame.homeTeamId === league.userTeamId && homeDaily.lineup.includes(seasonFixture.userPlayerId);
+  const park = resolveProductionGamePark({
+    parks: seasonFixture.parks ?? [],
+    scheduleGame,
+    homeTeamId: scheduleGame.homeTeamId,
+    level
+  });
   return Object.freeze({
     seed: `${seasonFixture.seed}:${level}:${scheduleGame.gameId}`, gameId: scheduleGame.gameId, date: scheduleGame.date, level,
     userPlayerId: (userInAway || userInHome) ? seasonFixture.userPlayerId : null,
     userTeam: userInAway ? "away" : userInHome ? "home" : null,
-    teams: Object.freeze({ away: awayRoster.team, home: homeRoster.team }), players, names,
+    teams: Object.freeze({ away: awayRoster.team, home: homeRoster.team }), players, names, park,
     dailyLineups: Object.freeze({ away: awayDaily, home: homeDaily }),
     benchPlans: Object.freeze({
       away: Object.freeze((awayRoster.bench ?? []).filter((row) => healthAvailability(playerStates?.[row.playerId]?.health) !== "INJURED").map((row) => Object.freeze({ playerId: row.playerId, coverage: Object.freeze([...(row.coverage ?? [])]) }))),
