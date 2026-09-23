@@ -4,7 +4,7 @@ import { validateMasterSnapshot } from "../data/masterSnapshot.js";
 import { isPlayerGameAvailable, playerAssignedLevel, playerAssignedTeamId, playerAvailability, playerOrganizationId, playerRosterStatus } from "../data/rosterAvailability.js";
 import { inferRealPlayerPotentialProfile } from "../data/realWorldPotential.js";
 import { buildProductionPitchArsenalIndex, createGeneratedRandomArsenal, normalizeInferredPitchArsenal } from "./productionPitchArsenal.js";
-import { createGeneratedHitterStyle, createGeneratedPitcherStyle } from "./productionStyleFallback.js";
+import { createGeneratedDurability, createGeneratedHitterStyle, createGeneratedPitcherStyle } from "./productionStyleFallback.js";
 
 const PRODUCTION_WORLD_VERSION = 1;
 const PRODUCTION_LEVELS = Object.freeze(["MLB", "AAA", "AA", "HIGH_A", "A"]);
@@ -196,13 +196,24 @@ function resolveProductionPositionProfile(player, inference) {
   });
 }
 
-function productionFacts(player, hiddenDevelopmentPrior = null) {
+function productionFacts(
+  player,
+  hiddenDevelopmentPrior = null,
+  {
+    durability = null,
+    pitcherRoleEvidence = null
+  } = {}
+) {
   return freeze({
     physical: {
       age: player.age == null ? null : Number(player.age),
       birthDate: player.birthDate ?? null,
       height: player.height ?? null,
-      weight: player.weight == null ? null : Number(player.weight)
+      weight: player.weight == null ? null : Number(player.weight),
+      durability:
+        durability?.rating == null
+          ? null
+          : Number(durability.rating)
     },
     realWorld: {
       sourceTeamId: playerAssignedTeamId(player),
@@ -215,6 +226,14 @@ function productionFacts(player, hiddenDevelopmentPrior = null) {
       injuryListType: player.injuryListType ?? null,
       mlbDebutDate: player.mlbDebutDate ?? null,
       sourceId: player.sourceId ?? null,
+      durabilitySource:
+        durability?.source ?? null,
+      pitcherRoleSource:
+        pitcherRoleEvidence
+          ? "REAL_GAMES_STARTS_INNINGS_EVIDENCE"
+          : null,
+      pitcherRoleEvidence:
+        pitcherRoleEvidence ?? null,
       hiddenDevelopmentPrior
     }
   });
@@ -241,7 +260,19 @@ function engineHitter(player, inference, { seed = "" } = {}) {
     primaryPosition, secondaryPositions: positionProfile.secondaryPositions, adaptability: 55
   });
   const hiddenDevelopmentPrior = inferRealPlayerPotentialProfile({ player: engine, sourcePlayer: player, inference, seed });
-  return freeze({ ...engine, ...productionFacts(player, hiddenDevelopmentPrior) });
+  const durability = createGeneratedDurability({
+    seed,
+    playerId: String(player.id),
+    kind: "HITTER"
+  });
+  return freeze({
+    ...engine,
+    ...productionFacts(
+      player,
+      hiddenDevelopmentPrior,
+      { durability }
+    )
+  });
 }
 
 function enginePitcher(player, inference, { seed = "", pitchArsenal = [] } = {}) {
@@ -255,7 +286,24 @@ function enginePitcher(player, inference, { seed = "", pitchArsenal = [] } = {})
     stamina: clampRating(r.stamina), role: inference?.role ?? "RP", holdRunner: style.holdRunner, fielding: style.fielding, reaction: style.reaction, armStrength: style.armStrength, armAccuracy: style.armAccuracy
   });
   const hiddenDevelopmentPrior = inferRealPlayerPotentialProfile({ player: engine, sourcePlayer: player, inference, seed });
-  return freeze({ ...engine, pitchArsenal, ...productionFacts(player, hiddenDevelopmentPrior) });
+  const durability = createGeneratedDurability({
+    seed,
+    playerId: String(player.id),
+    kind: "PITCHER"
+  });
+  return freeze({
+    ...engine,
+    pitchArsenal,
+    ...productionFacts(
+      player,
+      hiddenDevelopmentPrior,
+      {
+        durability,
+        pitcherRoleEvidence:
+          inference?.roleEvidence ?? null
+      }
+    )
+  });
 }
 
 function positionFit(
@@ -566,8 +614,25 @@ function createProductionRoster(team, snapshotPlayers, universe, inferenceById, 
     }));
 
   const rankedPitchers = [...pitchers].sort((a, b) => Number(inferenceById.get(String(b.id))?.overall ?? 50) - Number(inferenceById.get(String(a.id))?.overall ?? 50) || String(a.id).localeCompare(String(b.id)));
-  const preferredStarters = rankedPitchers.filter((p) => inferenceById.get(String(p.id))?.role === "SP");
-  const starters = [...preferredStarters, ...rankedPitchers.filter((p) => !preferredStarters.includes(p))].slice(0, 5).map((p) => String(p.id));
+  const preferredStarters = rankedPitchers.filter(
+    (p) =>
+      inferenceById.get(String(p.id))?.role === "SP"
+  );
+  const swingStarters = rankedPitchers.filter(
+    (p) =>
+      inferenceById.get(String(p.id))?.role === "SWING"
+  );
+  const reliefFallback = rankedPitchers.filter(
+    (p) =>
+      inferenceById.get(String(p.id))?.role === "RP"
+  );
+  const starters = [
+    ...preferredStarters,
+    ...swingStarters,
+    ...reliefFallback
+  ]
+    .slice(0, 5)
+    .map((p) => String(p.id));
   const starterSet = new Set(starters);
   const bullpen = rankedPitchers.filter((p) => !starterSet.has(String(p.id))).map((p) => String(p.id));
   if (bullpen.length < 3) throw new RangeError(`${team.name} production bullpen이 부족합니다: ${bullpen.length} < 3`);

@@ -1,0 +1,37 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_DURABILITY_ROLE_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "durability": "DETERMINISTIC_RANDOM_FALLBACK_WHEN_REAL_DATA_ABSENT",
+    "durabilityRange": [
+      48,
+      78
+    ],
+    "initialRealWorldInjuries": "NOT_RANDOMIZED",
+    "pitcherRole": "REAL_GAMES_STARTS_INNINGS_EVIDENCE",
+    "starterPreference": [
+      "SP",
+      "SWING",
+      "RP"
+    ]
+  },
+  "runtime": {
+    "hitters": 1933,
+    "pitchers": 2284,
+    "healthMatches": 4217,
+    "distinctDurabilityValues": 31,
+    "roles": {
+      "SP": 888,
+      "SWING": 393,
+      "RP": 1003
+    },
+    "roleEvidenceCount": 2284,
+    "starterRoleViolations": 0
+  },
+  "deterministicSample": {
+    "source": "GENERATED_RANDOM_FALLBACK",
+    "version": 1,
+    "rating": 74
+  }
+}

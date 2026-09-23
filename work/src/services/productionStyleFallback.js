@@ -63,6 +63,33 @@ function createGeneratedHitterStyle({
   });
 }
 
+function createGeneratedDurability({
+  seed = "",
+  playerId,
+  kind = "POSITION"
+} = {}) {
+  const id = String(playerId ?? "");
+  if (!id) {
+    throw new TypeError(
+      "generated durability에는 playerId가 필요합니다."
+    );
+  }
+
+  const normalizedKind =
+    kind === "PITCHER" ? "PITCHER" : "HITTER";
+  const rng = rngFor(
+    seed,
+    id,
+    `DURABILITY_${normalizedKind}`
+  );
+
+  return freeze({
+    source: "GENERATED_RANDOM_FALLBACK",
+    version: 1,
+    rating: randomInt(rng, 48, 78)
+  });
+}
+
 function createGeneratedPitcherStyle({
   seed = "",
   playerId
@@ -86,6 +113,7 @@ function createGeneratedPitcherStyle({
 }
 
 export {
+  createGeneratedDurability,
   createGeneratedHitterStyle,
   createGeneratedPitcherStyle
 };
