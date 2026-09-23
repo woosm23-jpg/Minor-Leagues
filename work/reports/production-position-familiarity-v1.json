@@ -1,0 +1,77 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_POSITION_FAMILIARITY_V2",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "realEvidenceFirst": true,
+    "deterministicAdjacentInference": true,
+    "randomPositions": false,
+    "legacyHeuristicOnlyWithoutEvidence": true
+  },
+  "sourceCoverage": {
+    "hitterProfiles": 2335,
+    "realEvidenceProfiles": 2321,
+    "inferredCoverageProfiles": 1659
+  },
+  "runtimeCoverage": {
+    "checkedPlayers": 1933,
+    "checkedDefensiveSlots": 1200,
+    "exactStarterSlots": 1194,
+    "inferredStarterSlots": 6,
+    "checkedBenchRows": 584
+  },
+  "sample": {
+    "playerId": "543685",
+    "sourcePosition": "3B",
+    "rawEvidence": [
+      {
+        "position": "3B",
+        "games": 50,
+        "innings": 423,
+        "seasons": [
+          2024
+        ]
+      },
+      {
+        "position": "DH",
+        "games": 6,
+        "innings": 0,
+        "seasons": [
+          2024
+        ]
+      }
+    ],
+    "resolved": {
+      "source": "REAL_POSITION_EVIDENCE_WITH_ADJACENT_INFERENCE",
+      "primaryPosition": "3B",
+      "actualPositions": [
+        "3B",
+        "DH"
+      ],
+      "inferredPositions": [
+        "1B",
+        "2B",
+        "SS"
+      ],
+      "familiarity": {
+        "3B": 1,
+        "DH": 0.711,
+        "1B": 0.49,
+        "2B": 0.46,
+        "SS": 0.4
+      },
+      "secondaryPositions": {
+        "DH": 0.711,
+        "1B": 0.49,
+        "2B": 0.46,
+        "SS": 0.4
+      },
+      "coverage": [
+        "3B",
+        "1B",
+        "2B",
+        "SS"
+      ]
+    }
+  }
+}

@@ -33,7 +33,7 @@ function normalizePosition(value) {
   return "DH";
 }
 
-function secondaryPositions(primary) {
+function legacySecondaryPositions(primary) {
   const map = {
     C: {}, "1B": { DH: 1, LF: 0.55 }, "2B": { SS: 0.78, "3B": 0.70 },
     "3B": { "1B": 0.78, "2B": 0.62 }, SS: { "2B": 0.90, "3B": 0.80 },
@@ -41,6 +41,159 @@ function secondaryPositions(primary) {
     DH: { "1B": 0.50 }
   };
   return map[primary] ?? {};
+}
+
+const ADJACENT_POSITION_FAMILIARITY = Object.freeze({
+  C: Object.freeze({}),
+  "1B": Object.freeze({ "3B": 0.42, LF: 0.38, RF: 0.38 }),
+  "2B": Object.freeze({ SS: 0.58, "3B": 0.48 }),
+  "3B": Object.freeze({ "1B": 0.68, "2B": 0.46, SS: 0.40 }),
+  SS: Object.freeze({ "2B": 0.72, "3B": 0.62 }),
+  LF: Object.freeze({ RF: 0.72, CF: 0.48 }),
+  CF: Object.freeze({ LF: 0.84, RF: 0.84 }),
+  RF: Object.freeze({ LF: 0.72, CF: 0.48 }),
+  DH: Object.freeze({})
+});
+
+function positionEvidenceWeight(row) {
+  const innings = Number(row?.innings);
+  if (Number.isFinite(innings) && innings > 0) return innings;
+
+  const games = Number(row?.games);
+  if (Number.isFinite(games) && games > 0) return games * 9;
+
+  return 0;
+}
+
+function resolveProductionPositionProfile(player, inference) {
+  const primary = normalizePosition(player?.position);
+  const rows = Array.isArray(inference?.positionFamiliarity)
+    ? inference.positionFamiliarity
+    : [];
+
+  const evidence = new Map();
+
+  for (const row of rows) {
+    const position = normalizePosition(row?.position);
+
+    if (
+      !DEFENSE_POSITIONS.includes(position) &&
+      position !== "DH"
+    ) {
+      continue;
+    }
+
+    const weight = positionEvidenceWeight(row);
+    if (!(weight > 0)) continue;
+
+    evidence.set(
+      position,
+      (evidence.get(position) ?? 0) + weight
+    );
+  }
+
+  if (!evidence.size) {
+    const secondary = legacySecondaryPositions(primary);
+
+    return freeze({
+      source: "LEGACY_HEURISTIC",
+      primaryPosition: primary,
+      actualPositions: [primary],
+      inferredPositions: [],
+      familiarity: {
+        [primary]: 1,
+        ...secondary
+      },
+      secondaryPositions: secondary,
+      coverage: [
+        primary,
+        ...Object.keys(secondary)
+      ].filter(
+        (position, index, all) =>
+          DEFENSE_POSITIONS.includes(position) &&
+          all.indexOf(position) === index
+      )
+    });
+  }
+
+  const maxWeight = Math.max(...evidence.values());
+  const familiarity = {};
+  const actualPositions = new Set([
+    primary,
+    ...evidence.keys()
+  ]);
+
+  for (const [position, weight] of evidence.entries()) {
+    if (position === primary) {
+      familiarity[position] = 1;
+      continue;
+    }
+
+    familiarity[position] = Number(
+      Math.max(
+        0.55,
+        Math.min(
+          0.98,
+          0.55 + 0.45 * Math.sqrt(weight / maxWeight)
+        )
+      ).toFixed(3)
+    );
+  }
+
+  familiarity[primary] = 1;
+
+  const inferredPositions = new Set();
+
+  for (const sourcePosition of actualPositions) {
+    const sourceFamiliarity = Number(
+      familiarity[sourcePosition] ??
+      (sourcePosition === primary ? 1 : 0.7)
+    );
+    const adjacent =
+      ADJACENT_POSITION_FAMILIARITY[sourcePosition] ?? {};
+
+    for (const [target, factor] of Object.entries(adjacent)) {
+      if (actualPositions.has(target)) continue;
+
+      const derived = Number(
+        Math.max(
+          0.35,
+          Math.min(
+            0.49,
+            sourceFamiliarity * Number(factor)
+          )
+        ).toFixed(3)
+      );
+
+      if (
+        derived >
+        Number(familiarity[target] ?? 0)
+      ) {
+        familiarity[target] = derived;
+      }
+      inferredPositions.add(target);
+    }
+  }
+
+  const secondaryPositions = Object.fromEntries(
+    Object.entries(familiarity)
+      .filter(([position]) => position !== primary)
+  );
+
+  return freeze({
+    source:
+      inferredPositions.size > 0
+        ? "REAL_POSITION_EVIDENCE_WITH_ADJACENT_INFERENCE"
+        : "REAL_POSITION_EVIDENCE",
+    primaryPosition: primary,
+    actualPositions: [...actualPositions],
+    inferredPositions: [...inferredPositions],
+    familiarity,
+    secondaryPositions,
+    coverage: Object.keys(familiarity).filter(
+      (position) => DEFENSE_POSITIONS.includes(position)
+    )
+  });
 }
 
 function productionFacts(player, hiddenDevelopmentPrior = null) {
@@ -69,7 +222,13 @@ function productionFacts(player, hiddenDevelopmentPrior = null) {
 
 function engineHitter(player, inference, { seed = "" } = {}) {
   const r = inference?.ratings ?? {};
-  const primaryPosition = normalizePosition(player.position);
+  const positionProfile =
+    resolveProductionPositionProfile(
+      player,
+      inference
+    );
+  const primaryPosition =
+    positionProfile.primaryPosition;
   const style = createGeneratedHitterStyle({ seed, playerId: String(player.id) });
   const engine = createPhase1Hitter({
     id: String(player.id), bats: player.bats ?? "R", throws: player.throws ?? "R", ovr: clampRating(inference?.overall),
@@ -79,7 +238,7 @@ function engineHitter(player, inference, { seed = "" } = {}) {
     launchTendency: style.launchTendency, sprayPull: style.sprayPull, sprayCenter: style.sprayCenter, sprayOppo: style.sprayOppo,
     speed: clampRating(r.speed), stealing: clampRating(r.stealing), baserunning: clampRating(r.baserunning),
     fielding: clampRating(r.fielding), reaction: clampRating(r.reaction), armStrength: clampRating(r.armStrength), armAccuracy: clampRating(r.armAccuracy),
-    primaryPosition, secondaryPositions: secondaryPositions(primaryPosition), adaptability: 55
+    primaryPosition, secondaryPositions: positionProfile.secondaryPositions, adaptability: 55
   });
   const hiddenDevelopmentPrior = inferRealPlayerPotentialProfile({ player: engine, sourcePlayer: player, inference, seed });
   return freeze({ ...engine, ...productionFacts(player, hiddenDevelopmentPrior) });
@@ -99,39 +258,242 @@ function enginePitcher(player, inference, { seed = "", pitchArsenal = [] } = {})
   return freeze({ ...engine, pitchArsenal, ...productionFacts(player, hiddenDevelopmentPrior) });
 }
 
-function positionFit(player, slot) {
-  const p = normalizePosition(player.position);
+function positionFit(
+  player,
+  slot,
+  inference
+) {
   if (slot === "DH") return 1;
-  if (p === slot) return 5;
-  if ((slot === "LF" || slot === "CF" || slot === "RF") && ["LF","CF","RF"].includes(p)) return 3;
-  if (["2B","3B","SS"].includes(slot) && ["2B","3B","SS"].includes(p)) return 2;
-  if (slot === "1B" && ["1B","3B"].includes(p)) return 2;
-  return 0;
+
+  const profile =
+    resolveProductionPositionProfile(
+      player,
+      inference
+    );
+
+  const familiarity =
+    Number(
+      profile.familiarity?.[slot] ?? 0
+    );
+
+  if (!(familiarity > 0)) return 0;
+
+  const exact =
+    (profile.actualPositions ?? [])
+      .includes(slot);
+
+  return exact
+    ? 5 + familiarity
+    : 2 + familiarity;
 }
 
-function pickLineup(hitters, inferenceById) {
-  const remaining = [...hitters];
-  const slots = [];
-  for (const position of LINEUP_POSITIONS) {
-    remaining.sort((a, b) => {
-      const af = positionFit(a, position), bf = positionFit(b, position);
-      if (bf !== af) return bf - af;
-      return Number(inferenceById.get(String(b.id))?.overall ?? 50) - Number(inferenceById.get(String(a.id))?.overall ?? 50) || String(a.id).localeCompare(String(b.id));
-    });
-    const selected = remaining.shift();
-    if (!selected) throw new RangeError(`production roster의 야수 수가 부족합니다: ${position}`);
-    slots.push({ position, player: selected });
+function pickLineup(
+  hitters,
+  inferenceById
+) {
+  const defensivePositions =
+    LINEUP_POSITIONS.filter(
+      (position) =>
+        position !== "DH"
+    );
+
+  const overall = (player) =>
+    Number(
+      inferenceById.get(
+        String(player.id)
+      )?.overall ?? 50
+    );
+
+  const candidatesByPosition =
+    Object.fromEntries(
+      defensivePositions.map(
+        (position) => [
+          position,
+          hitters
+            .map((player) => ({
+              player,
+              fit: positionFit(
+                player,
+                position,
+                inferenceById.get(
+                  String(player.id)
+                )
+              ),
+              overall: overall(player)
+            }))
+            .filter(
+              (row) => row.fit > 0
+            )
+            .sort(
+              (a, b) =>
+                b.fit - a.fit ||
+                b.overall - a.overall ||
+                String(a.player.id)
+                  .localeCompare(
+                    String(b.player.id)
+                  )
+            )
+        ]
+      )
+    );
+
+  for (
+    const position of
+    defensivePositions
+  ) {
+    if (
+      !candidatesByPosition[position]
+        .length
+    ) {
+      throw new RangeError(
+        `production roster에 ${position} 수비 가능 선수가 없습니다.`
+      );
+    }
   }
-  return { slots, remaining };
+
+  const orderedPositions =
+    [...defensivePositions].sort(
+      (a, b) =>
+        candidatesByPosition[a].length -
+          candidatesByPosition[b].length ||
+        defensivePositions.indexOf(a) -
+          defensivePositions.indexOf(b)
+    );
+
+  const playerToPosition = new Map();
+  const positionToPlayer = new Map();
+
+  function augment(
+    position,
+    seenPlayers
+  ) {
+    for (
+      const row of
+      candidatesByPosition[position]
+    ) {
+      const playerId =
+        String(row.player.id);
+
+      if (
+        seenPlayers.has(playerId)
+      ) {
+        continue;
+      }
+      seenPlayers.add(playerId);
+
+      const occupiedPosition =
+        playerToPosition.get(playerId);
+
+      if (
+        occupiedPosition == null ||
+        augment(
+          occupiedPosition,
+          seenPlayers
+        )
+      ) {
+        playerToPosition.set(
+          playerId,
+          position
+        );
+        positionToPlayer.set(
+          position,
+          row.player
+        );
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  for (
+    const position of
+    orderedPositions
+  ) {
+    if (
+      !augment(
+        position,
+        new Set()
+      )
+    ) {
+      throw new RangeError(
+        `production roster에서 ${position} 포함 수비 8자리를 구성할 수 없습니다.`
+      );
+    }
+  }
+
+  const usedIds =
+    new Set(
+      [...positionToPlayer.values()]
+        .map(
+          (player) =>
+            String(player.id)
+        )
+    );
+
+  const dhPlayer =
+    hitters
+      .filter(
+        (player) =>
+          !usedIds.has(
+            String(player.id)
+          )
+      )
+      .sort(
+        (a, b) =>
+          overall(b) -
+            overall(a) ||
+          String(a.id)
+            .localeCompare(
+              String(b.id)
+            )
+      )[0];
+
+  if (!dhPlayer) {
+    throw new RangeError(
+      "production roster에 DH를 배치할 추가 야수가 없습니다."
+    );
+  }
+
+  usedIds.add(
+    String(dhPlayer.id)
+  );
+
+  const slots =
+    LINEUP_POSITIONS.map(
+      (position) => ({
+        position,
+        player:
+          position === "DH"
+            ? dhPlayer
+            : positionToPlayer.get(
+                position
+              )
+      })
+    );
+
+  const remaining =
+    hitters.filter(
+      (player) =>
+        !usedIds.has(
+          String(player.id)
+        )
+    );
+
+  return {
+    slots,
+    remaining
+  };
 }
 
-function benchCoverage(player) {
-  const p = normalizePosition(player.position);
-  if (p === "C") return ["C"];
-  if (["2B","3B","SS"].includes(p)) return [p, ...["2B","3B","SS"].filter((x) => x !== p)];
-  if (["LF","CF","RF"].includes(p)) return [p, ...["LF","CF","RF"].filter((x) => x !== p)];
-  if (p === "1B") return ["1B","DH","LF","RF"];
-  return ["DH","1B","LF","RF"];
+function benchCoverage(
+  player,
+  inference
+) {
+  return resolveProductionPositionProfile(
+    player,
+    inference
+  ).coverage;
 }
 
 function createProductionRoster(team, snapshotPlayers, universe, inferenceById, { userPlayer = null, userPlayerName = null, seed = "", pitchArsenalIndex = new Map() } = {}) {
@@ -185,7 +547,23 @@ function createProductionRoster(team, snapshotPlayers, universe, inferenceById, 
   const lineupSlots = slots.map(({ position, player }) => ({ position, starterId: String(player.id) }));
   const lineup = lineupSlots.map((slot) => slot.starterId);
   const defense = Object.fromEntries(DEFENSE_POSITIONS.map((position) => [position, lineupSlots.find((slot) => slot.position === position).starterId]));
-  const bench = remaining.slice(0, Math.max(4, remaining.length)).map((player) => ({ playerId: String(player.id), coverage: benchCoverage(player) }));
+  const bench = remaining
+    .slice(
+      0,
+      Math.max(
+        4,
+        remaining.length
+      )
+    )
+    .map((player) => ({
+      playerId: String(player.id),
+      coverage: benchCoverage(
+        player,
+        inferenceById.get(
+          String(player.id)
+        )
+      )
+    }));
 
   const rankedPitchers = [...pitchers].sort((a, b) => Number(inferenceById.get(String(b.id))?.overall ?? 50) - Number(inferenceById.get(String(a.id))?.overall ?? 50) || String(a.id).localeCompare(String(b.id)));
   const preferredStarters = rankedPitchers.filter((p) => inferenceById.get(String(p.id))?.role === "SP");
@@ -406,4 +784,4 @@ function createFutureProductionSchedules(fixture, { startDate = null } = {}) {
 // used only as immutable engine-shape constructors; source facts and ratings come
 // exclusively from the copied snapshot + v46 inference, never from dev fixture constants.
 
-export { PRODUCTION_WORLD_VERSION, PRODUCTION_LEVELS, getProductionOrganizationOptions, getProductionOrganizationTeamIds, rehomeProductionUserOrganization, resolveProductionStartingLevel, validateProductionRuntimeUniverse, createProductionCareerSeasonFixture, ensureProductionSeasonFixture, createFutureProductionSchedules, createNextProductionSeasonFixture };
+export { PRODUCTION_WORLD_VERSION, PRODUCTION_LEVELS, resolveProductionPositionProfile, getProductionOrganizationOptions, getProductionOrganizationTeamIds, rehomeProductionUserOrganization, resolveProductionStartingLevel, validateProductionRuntimeUniverse, createProductionCareerSeasonFixture, ensureProductionSeasonFixture, createFutureProductionSchedules, createNextProductionSeasonFixture };

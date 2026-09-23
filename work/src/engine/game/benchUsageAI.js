@@ -64,21 +64,101 @@ function offenseScore(player, pitcherThrows = "R") {
   return contact * 0.42 + power * 0.23 + vision * 0.15 + discipline * 0.20 + switchBonus;
 }
 
-function defenseScore(player, position) {
-  const fielding = player?.fielding ?? {};
-  const running = player?.running ?? {};
-  const skill = Number(fielding.fielding ?? 50);
-  const reaction = Number(fielding.reaction ?? 50);
-  const armStrength = Number(fielding.armStrength ?? 50);
-  const armAccuracy = Number(fielding.armAccuracy ?? 50);
-  const speed = Number(running.speed ?? 50);
-  if (position === "C") return skill * 0.30 + reaction * 0.20 + armStrength * 0.30 + armAccuracy * 0.20;
-  if (position === "SS" || position === "3B") return skill * 0.30 + reaction * 0.30 + armStrength * 0.20 + armAccuracy * 0.20;
-  if (position === "2B") return skill * 0.35 + reaction * 0.35 + armAccuracy * 0.20 + speed * 0.10;
-  if (position === "CF") return skill * 0.25 + reaction * 0.30 + speed * 0.30 + armAccuracy * 0.15;
-  if (position === "LF" || position === "RF") return skill * 0.30 + reaction * 0.25 + speed * 0.20 + armStrength * 0.15 + armAccuracy * 0.10;
-  if (position === "1B") return skill * 0.45 + reaction * 0.25 + armAccuracy * 0.20 + armStrength * 0.10;
-  return skill * 0.5 + reaction * 0.5;
+function defenseScore(
+  player,
+  position
+) {
+  const fielding =
+    player?.fielding ?? {};
+  const running =
+    player?.running ?? {};
+
+  const skill =
+    Number(fielding.fielding ?? 50);
+  const reaction =
+    Number(fielding.reaction ?? 50);
+  const armStrength =
+    Number(fielding.armStrength ?? 50);
+  const armAccuracy =
+    Number(fielding.armAccuracy ?? 50);
+  const speed =
+    Number(running.speed ?? 50);
+
+  let raw;
+  if (position === "C") {
+    raw =
+      skill * 0.30 +
+      reaction * 0.20 +
+      armStrength * 0.30 +
+      armAccuracy * 0.20;
+  } else if (
+    position === "SS" ||
+    position === "3B"
+  ) {
+    raw =
+      skill * 0.30 +
+      reaction * 0.30 +
+      armStrength * 0.20 +
+      armAccuracy * 0.20;
+  } else if (
+    position === "2B"
+  ) {
+    raw =
+      skill * 0.35 +
+      reaction * 0.35 +
+      armAccuracy * 0.20 +
+      speed * 0.10;
+  } else if (
+    position === "CF"
+  ) {
+    raw =
+      skill * 0.25 +
+      reaction * 0.30 +
+      speed * 0.30 +
+      armAccuracy * 0.15;
+  } else if (
+    position === "LF" ||
+    position === "RF"
+  ) {
+    raw =
+      skill * 0.30 +
+      reaction * 0.25 +
+      speed * 0.20 +
+      armStrength * 0.15 +
+      armAccuracy * 0.10;
+  } else if (
+    position === "1B"
+  ) {
+    raw =
+      skill * 0.45 +
+      reaction * 0.25 +
+      armAccuracy * 0.20 +
+      armStrength * 0.10;
+  } else {
+    raw =
+      skill * 0.5 +
+      reaction * 0.5;
+  }
+
+  const familiarity =
+    position === "DH"
+      ? 1
+      : Number(
+          player?.positioning
+            ?.familiarity?.[
+              position
+            ] ?? 0.35
+        );
+
+  return raw * (
+    0.72 +
+    0.28 *
+      clamp(
+        familiarity,
+        0.35,
+        1
+      )
+  );
 }
 
 function runningScore(player) {
