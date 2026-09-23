@@ -1,0 +1,580 @@
+name: THE CALL-UP Post-Audit Bundle 3A Fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-post-audit-bundle-3a-fix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle-3a-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Confirm Production v3 baseline
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          identity = json.loads(Path('reports/final-runtime-identity-v1.json').read_text(encoding='utf-8'))
+          release = json.loads(Path('reports/post-audit-production-v3-release-checkpoint.json').read_text(encoding='utf-8'))
+          assert identity['pass'] is True
+          assert identity['snapshot']['contentHash'] == 'fnv1a32:f7b34713'
+          assert release['pass'] is True
+          assert release['productionSnapshot']['contentHash'] == 'fnv1a32:f7b34713'
+          print('PRODUCTION_V3_BASELINE_OK')
+          PY
+
+      - name: Install production park resolver
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          cat > src/services/productionParkResolver.js <<'JS'
+          import { createNeutralPark } from "../engine/pa/parkGeometry.js";
+
+          const WALL_KEYS = Object.freeze([
+            ["lfLine", -45],
+            ["lfGap", -22.5],
+            ["cf", 0],
+            ["rfGap", 22.5],
+            ["rfLine", 45]
+          ]);
+
+          function freeze(value) {
+            if (Array.isArray(value)) return Object.freeze(value.map(freeze));
+            if (value && typeof value === "object") {
+              return Object.freeze(Object.fromEntries(Object.entries(value).map(([key, item]) => [key, freeze(item)])));
+            }
+            return value;
+          }
+
+          function finite(value) {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : null;
+          }
+
+          function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+          }
+
+          function sourceWallHeight(sourcePark, key, fallback) {
+            const aliases = {
+              lfLine: ["lfLine", "leftLine", "LF", "leftField"],
+              lfGap: ["lfGap", "leftCenter", "LCF"],
+              cf: ["cf", "center", "CF"],
+              rfGap: ["rfGap", "rightCenter", "RCF"],
+              rfLine: ["rfLine", "rightLine", "RF", "rightField"]
+            };
+            for (const alias of aliases[key] ?? [key]) {
+              const n = finite(sourcePark?.wallHeights?.[alias]);
+              if (n != null) return clamp(n, 0, 60);
+            }
+            return fallback;
+          }
+
+          function sourceCarryFactor(sourcePark) {
+            const empirical = sourcePark?.empiricalFactors ?? null;
+            const factor = finite(empirical?.homeRuns) ?? finite(empirical?.overall);
+            if (factor != null && factor > 0) {
+              const normalized = factor > 2 ? factor / 100 : factor;
+              return clamp(normalized, 0.85, 1.15);
+            }
+            return 1;
+          }
+
+          function buildEngineParkFromSnapshotPark(sourcePark) {
+            if (!sourcePark || typeof sourcePark !== "object") return null;
+            const neutral = createNeutralPark();
+            const geometry = sourcePark.geometry ?? {};
+            const wallProfile = [];
+
+            for (let index = 0; index < WALL_KEYS.length; index += 1) {
+              const [key, angleDegrees] = WALL_KEYS[index];
+              const distanceFt = finite(geometry[key]);
+              if (distanceFt == null || distanceFt < 250 || distanceFt > 500) return null;
+              wallProfile.push({
+                angleDegrees,
+                distanceFt,
+                heightFt: sourceWallHeight(sourcePark, key, neutral.wallProfile[index].heightFt)
+              });
+            }
+
+            return freeze({
+              id: `MLB_VENUE_${String(sourcePark.venueId)}`,
+              sourceVenueId: String(sourcePark.venueId),
+              sourceTeamId: sourcePark.teamId == null ? null : String(sourcePark.teamId),
+              name: sourcePark.name ?? `Venue ${sourcePark.venueId}`,
+              carryFactor: sourceCarryFactor(sourcePark),
+              wallProfile,
+              source: "PRODUCTION_SNAPSHOT"
+            });
+          }
+
+          function resolveProductionGamePark({
+            parks,
+            scheduleGame,
+            homeTeamId = scheduleGame?.homeTeamId ?? null,
+            level = null
+          } = {}) {
+            if (level != null && level !== "MLB") return null;
+            if (!Array.isArray(parks) || parks.length === 0) return null;
+
+            const venueId = scheduleGame?.venueId == null ? null : String(scheduleGame.venueId);
+            const teamId = homeTeamId == null ? null : String(homeTeamId);
+
+            const sourcePark =
+              (venueId ? parks.find((park) => String(park?.venueId) === venueId) : null) ??
+              (teamId ? parks.find((park) => String(park?.teamId) === teamId) : null) ??
+              null;
+
+            return buildEngineParkFromSnapshotPark(sourcePark);
+          }
+
+          export { buildEngineParkFromSnapshotPark, resolveProductionGamePark };
+          JS
+          node --check src/services/productionParkResolver.js
+
+      - name: Wire snapshot parks into Production fixtures
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/services/productionSeasonFactory.js')
+          s = p.read_text(encoding='utf-8')
+          target = (
+              '    teams: aaa.teams, rosters: aaa.rosters, schedule: aaa.schedule, levelLeagues,\n'
+              '    organization:'
+          )
+          replacement = (
+              '    teams: aaa.teams, rosters: aaa.rosters, schedule: aaa.schedule, levelLeagues,\n'
+              '    parks: universe.data.parks ?? [],\n'
+              '    organization:'
+          )
+          if 'parks: universe.data.parks ?? []' not in s:
+              assert target in s, 'production fixture insertion point changed'
+              s = s.replace(target, replacement, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('src/services/demoSeasonFactory.js')
+          s = p.read_text(encoding='utf-8')
+
+          import_line = 'import { resolveProductionGamePark } from "./productionParkResolver.js";\n'
+          if import_line not in s:
+              anchor = 'import { healthAvailability } from "../engine/season/injuryState.js";\n'
+              assert anchor in s, 'demoSeasonFactory import anchor changed'
+              s = s.replace(anchor, anchor + import_line, 1)
+
+          user_lines = (
+              '  const userInAway = scheduleGame.awayTeamId === league.userTeamId && awayDaily.lineup.includes(seasonFixture.userPlayerId);\n'
+              '  const userInHome = scheduleGame.homeTeamId === league.userTeamId && homeDaily.lineup.includes(seasonFixture.userPlayerId);\n'
+          )
+          park_lines = user_lines + (
+              '  const park = resolveProductionGamePark({\n'
+              '    parks: seasonFixture.parks ?? [],\n'
+              '    scheduleGame,\n'
+              '    homeTeamId: scheduleGame.homeTeamId,\n'
+              '    level\n'
+              '  });\n'
+          )
+          if 'const park = resolveProductionGamePark({' not in s:
+              assert user_lines in s, 'game fixture user marker changed'
+              s = s.replace(user_lines, park_lines, 1)
+
+          teams_line = (
+              '    teams: Object.freeze({ away: awayRoster.team, home: homeRoster.team }), players, names,\n'
+          )
+          teams_with_park = (
+              '    teams: Object.freeze({ away: awayRoster.team, home: homeRoster.team }), players, names, park,\n'
+          )
+          if 'players, names, park,' not in s:
+              assert teams_line in s, 'game fixture return marker changed'
+              s = s.replace(teams_line, teams_with_park, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          node --check src/services/productionSeasonFactory.js
+          node --check src/services/demoSeasonFactory.js
+
+      - name: Wire real park into Detailed Fast and interactive PA contexts
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/services/seasonGameService.js')
+          s = p.read_text(encoding='utf-8')
+          old = '''function simulateSeasonFixtureGame(fixture, { seed = fixture.seed, mode = "AUTO" } = {}) {
+            const simulationMode = resolveMode(fixture, mode);
+            const rng = new SeededRng(seed);
+            const resolver = createPlayerContextResolver({
+              players: fixture.players,
+              resolveApproach: () => "BALANCED"
+            });'''
+          old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines())
+          new = '''function createSeasonGameContextResolver(fixture) {
+            return createPlayerContextResolver({
+              players: fixture.players,
+              resolvePark: () => fixture.park ?? null,
+              resolveApproach: () => "BALANCED"
+            });
+          }
+
+          function simulateSeasonFixtureGame(fixture, { seed = fixture.seed, mode = "AUTO" } = {}) {
+            const simulationMode = resolveMode(fixture, mode);
+            const rng = new SeededRng(seed);
+            const resolver = createSeasonGameContextResolver(fixture);'''
+          new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines())
+
+          if 'function createSeasonGameContextResolver(fixture)' not in s:
+              assert old in s, 'season game resolver block changed'
+              s = s.replace(old, new, 1)
+
+          old_export = 'export { SEASON_SIM_MODES, simulateSeasonFixtureGame };'
+          new_export = 'export { SEASON_SIM_MODES, createSeasonGameContextResolver, simulateSeasonFixtureGame };'
+          if new_export not in s:
+              assert old_export in s
+              s = s.replace(old_export, new_export, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('src/api/gameApi.js')
+          s = p.read_text(encoding='utf-8')
+          old = '''  session.contextResolver = createPlayerContextResolver({
+            players: fixture.players,
+            resolveApproach: ({ batterId }) => fixture.userPlayerId && batterId === fixture.userPlayerId ? session.currentApproach : "BALANCED"
+          });'''
+          old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines())
+          new = '''  session.contextResolver = createPlayerContextResolver({
+            players: fixture.players,
+            resolvePark: () => fixture.park ?? null,
+            resolveApproach: ({ batterId }) => fixture.userPlayerId && batterId === fixture.userPlayerId ? session.currentApproach : "BALANCED"
+          });'''
+          new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines())
+          if 'resolvePark: () => fixture.park ?? null' not in s:
+              assert old in s, 'interactive game resolver block changed'
+              s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          node --check src/services/seasonGameService.js
+          node --check src/api/gameApi.js
+
+      - name: Install real park runtime verifier
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          cat > scripts/verify-production-real-parks.mjs <<'JS'
+          import fs from "node:fs";
+          import path from "node:path";
+          import zlib from "node:zlib";
+          import assert from "node:assert/strict";
+          import { fileURLToPath } from "node:url";
+          import { seasonApi } from "../src/api/seasonApi.js";
+          import { gameApi } from "../src/api/gameApi.js";
+          import { createSeasonGameFixture } from "../src/services/demoSeasonFactory.js";
+          import {
+            createSeasonGameContextResolver,
+            simulateSeasonFixtureGame
+          } from "../src/services/seasonGameService.js";
+          import {
+            getCurrentBatterId,
+            getCurrentPitcherId
+          } from "../src/engine/game/gameState.js";
+
+          const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+          const WORK_ROOT = path.resolve(SCRIPT_DIR, "..");
+          const SNAPSHOT_REL =
+            "data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz";
+
+          function loadSnapshot() {
+            return JSON.parse(
+              zlib.gunzipSync(fs.readFileSync(path.resolve(WORK_ROOT, SNAPSHOT_REL))).toString("utf8")
+            );
+          }
+
+          function careerInput(organizationId) {
+            return {
+              name: "Real Park QA",
+              nationality: "대한민국",
+              hometown: "구미",
+              age: 18,
+              heightCm: 180,
+              weightKg: 78,
+              bodyType: "ATHLETIC",
+              bats: "R",
+              throws: "R",
+              primaryPosition: "SS",
+              archetype: "BALANCED",
+              visibleTraits: ["QUICK_BAT", "SOFT_HANDS"],
+              organizationMode: "FAVORITE",
+              favoriteOrganizationId: String(organizationId)
+            };
+          }
+
+          function wallDistances(park) {
+            return park.wallProfile.map((row) => Number(row.distanceFt));
+          }
+
+          function sourceForGame(sourceParks, game) {
+            return (
+              sourceParks.find(
+                (park) =>
+                  game.venueId != null &&
+                  String(park.venueId) === String(game.venueId)
+              ) ??
+              sourceParks.find(
+                (park) => String(park.teamId) === String(game.homeTeamId)
+              ) ??
+              null
+            );
+          }
+
+          function outputPath() {
+            const hit = process.argv.slice(2).find((arg) => arg.startsWith("--output="));
+            return path.resolve(
+              WORK_ROOT,
+              hit ? hit.slice("--output=".length) : "reports/production-real-parks-v1.json"
+            );
+          }
+
+          function buildReport() {
+            const snapshot = loadSnapshot();
+            const catalog = seasonApi.getCareerCreationCatalog({ masterSnapshot: snapshot });
+            const created = seasonApi.createCareerSeason({
+              seed: "post-audit-real-parks-v1",
+              input: careerInput(catalog.organizations[0].id),
+              masterSnapshot: snapshot
+            });
+            const payload = seasonApi.serializeSeason(created.seasonId);
+
+            assert.equal(payload.fixture.worldMode, "PRODUCTION_REAL");
+            assert.equal(payload.fixture.parks.length, 30);
+
+            const mlb = payload.fixture.levelLeagues.MLB;
+            const sourceParks = payload.fixture.parks;
+            const games = mlb.schedule.filter((game) => sourceForGame(sourceParks, game));
+            assert.ok(games.length > 0);
+
+            const firstGame = games[0];
+            const firstSource = sourceForGame(sourceParks, firstGame);
+            const firstFixture = createSeasonGameFixture({
+              seasonFixture: payload.fixture,
+              scheduleGame: firstGame,
+              level: "MLB"
+            });
+
+            assert.ok(firstSource);
+            assert.ok(firstFixture.park);
+            assert.equal(firstFixture.park.source, "PRODUCTION_SNAPSHOT");
+            assert.notEqual(firstFixture.park.id, "NEUTRAL");
+            assert.equal(firstFixture.park.wallProfile.length, 5);
+            assert.deepEqual(wallDistances(firstFixture.park), [
+              Number(firstSource.geometry.lfLine),
+              Number(firstSource.geometry.lfGap),
+              Number(firstSource.geometry.cf),
+              Number(firstSource.geometry.rfGap),
+              Number(firstSource.geometry.rfLine)
+            ]);
+
+            const resolver = createSeasonGameContextResolver(firstFixture);
+            const context = resolver({
+              state: firstFixture.initialState,
+              batterId: getCurrentBatterId(firstFixture.initialState),
+              pitcherId: getCurrentPitcherId(firstFixture.initialState)
+            });
+            assert.equal(context.park.id, firstFixture.park.id);
+
+            assert.equal(
+              simulateSeasonFixtureGame(firstFixture, { seed: "real-park-fast", mode: "FAST" }).state.status,
+              "FINAL"
+            );
+            assert.equal(
+              simulateSeasonFixtureGame(firstFixture, { seed: "real-park-detailed", mode: "DETAILED" }).state.status,
+              "FINAL"
+            );
+
+            const probeFixture = Object.freeze({
+              ...firstFixture,
+              userPlayerId: firstFixture.initialState.lineups.away[0],
+              userTeam: "away"
+            });
+
+            let interactiveParkId = null;
+            for (let attempt = 0; attempt < 40 && interactiveParkId == null; attempt += 1) {
+              const view = gameApi.createGameFromFixture({
+                fixture: probeFixture,
+                seed: `real-park-interactive-${attempt}`
+              });
+              const played = gameApi.playUserPA(view.gameId, "BALANCED");
+              const wall = played.lastUserPA?.paResult?.battedBallResult?.wallClearance ?? null;
+              if (wall) interactiveParkId = wall.parkId;
+              gameApi.closeGame(view.gameId);
+            }
+            assert.equal(interactiveParkId, firstFixture.park.id);
+
+            const firstDistances = JSON.stringify(wallDistances(firstFixture.park));
+            const secondGame = games.find((game) => {
+              if (String(game.homeTeamId) === String(firstGame.homeTeamId)) return false;
+              const source = sourceForGame(sourceParks, game);
+              if (!source) return false;
+              return JSON.stringify([
+                Number(source.geometry.lfLine),
+                Number(source.geometry.lfGap),
+                Number(source.geometry.cf),
+                Number(source.geometry.rfGap),
+                Number(source.geometry.rfLine)
+              ]) !== firstDistances;
+            });
+            assert.ok(secondGame);
+
+            const secondFixture = createSeasonGameFixture({
+              seasonFixture: payload.fixture,
+              scheduleGame: secondGame,
+              level: "MLB"
+            });
+            assert.ok(secondFixture.park);
+            assert.notDeepEqual(
+              wallDistances(secondFixture.park),
+              wallDistances(firstFixture.park)
+            );
+
+            const aaaFixture = createSeasonGameFixture({
+              seasonFixture: payload.fixture,
+              scheduleGame: payload.fixture.levelLeagues.AAA.schedule[0],
+              level: "AAA"
+            });
+            assert.equal(aaaFixture.park, null);
+
+            return {
+              schema: "THE_CALL_UP_PRODUCTION_REAL_PARKS_V1",
+              pass: true,
+              snapshotHash: snapshot.metadata.contentHash,
+              parkSourceRows: sourceParks.length,
+              firstPark: {
+                id: firstFixture.park.id,
+                name: firstFixture.park.name,
+                venueId: firstFixture.park.sourceVenueId,
+                carryFactor: firstFixture.park.carryFactor,
+                wallDistancesFt: wallDistances(firstFixture.park)
+              },
+              secondPark: {
+                id: secondFixture.park.id,
+                name: secondFixture.park.name,
+                venueId: secondFixture.park.sourceVenueId,
+                carryFactor: secondFixture.park.carryFactor,
+                wallDistancesFt: wallDistances(secondFixture.park)
+              },
+              runtime: {
+                detailedGame: true,
+                fastGame: true,
+                interactivePA: true,
+                interactiveParkId,
+                nonMlbNeutralFallback: true
+              }
+            };
+          }
+
+          function main() {
+            const report = buildReport();
+            const out = outputPath();
+            fs.mkdirSync(path.dirname(out), { recursive: true });
+            fs.writeFileSync(out, JSON.stringify(report, null, 2) + "\n");
+            process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+          }
+
+          if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
+            try {
+              main();
+            } catch (error) {
+              console.error(error);
+              process.exitCode = 1;
+            }
+          }
+
+          export { buildReport };
+          JS
+          node --check scripts/verify-production-real-parks.mjs
+
+      - name: Verify Production real park runtime
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/verify-production-real-parks.mjs \
+            --output=reports/production-real-parks-v1.json
+
+      - name: Re-run v3 FULL save validation
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/verify-production-runtime-v3.mjs \
+            --output=/tmp/production-runtime-v3-after-real-parks.json
+
+      - name: Neutral engine regressions
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase0-final.js \
+            --output /tmp/phase0-after-real-parks.json
+          node scripts/verify-fast-sim-v38.js \
+            --verify \
+            --output /tmp/fast-detailed-after-real-parks.json
+
+      - name: Final runtime identity remains v3
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/report-final-runtime-identity.mjs \
+            --verify \
+            --output=/tmp/final-runtime-identity-after-real-parks.json
+
+      - name: Commit Bundle 3A fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git add \
+            work/src/services/productionParkResolver.js \
+            work/src/services/productionSeasonFactory.js \
+            work/src/services/demoSeasonFactory.js \
+            work/src/services/seasonGameService.js \
+            work/src/api/gameApi.js \
+            work/scripts/verify-production-real-parks.mjs \
+            work/reports/production-real-parks-v1.json
+
+          if git diff --cached --quiet; then
+            echo "Bundle 3A fix already installed; nothing to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "post-audit: wire real MLB parks into PA runtime"
+          git push origin HEAD:main
