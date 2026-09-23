@@ -1,0 +1,72 @@
+{
+  "schema": "THE_CALL_UP_POST_AUDIT_BASELINE_V1",
+  "pass": true,
+  "purpose": "Immutable comparison baseline for post-audit implementation and same-seed A/B regression checks.",
+  "baselineSeed": "post-audit-final-runtime-identity-v1",
+  "fingerprintSha256": "d28e56110c911d2c973fb15e61f401907848d29f56aa027f495001cade9e4abb",
+  "core": {
+    "gameVersion": "complete_edition_v1_0",
+    "saveSchemaVersion": 2,
+    "worldMode": "PRODUCTION_REAL",
+    "snapshot": {
+      "source": "work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz",
+      "schemaVersion": 2,
+      "snapshotId": "mlb-milb-2026-2026-09-20-v2-production",
+      "contentHash": "fnv1a32:21eb3434",
+      "snapshotDate": "2026-09-20"
+    },
+    "production": {
+      "historySeasons": [
+        2024,
+        2025,
+        2026
+      ],
+      "teams": 150,
+      "players": 5429,
+      "activePlayers": 4217,
+      "statsRows": 80606,
+      "hitterSplitRows": 18292,
+      "scheduleGames": 10710,
+      "parks": 30,
+      "on40Man": 1366,
+      "mlbActive": 840
+    },
+    "regression": {
+      "phase0Calibration": {
+        "pass": true,
+        "sampleSize": 1000000,
+        "checks": 8
+      },
+      "fastDetailedParity": {
+        "pass": true,
+        "profiles": 3,
+        "gamesPerEngine": 240
+      },
+      "longRunV59": {
+        "pass": true,
+        "completedSeasons": 20,
+        "simulatedWorldGames": 214200,
+        "invariants": 13
+      },
+      "saveLifecycleV60": {
+        "pass": true,
+        "fullValidationEveryStage": true,
+        "repeatedRestoreStable": true,
+        "midseasonDeterministicContinuation": true
+      },
+      "finalMobile": {
+        "pass": true,
+        "viewports": [
+          "390x844",
+          "412x915"
+        ]
+      }
+    },
+    "release": {
+      "release": "Complete Edition 1.0",
+      "standaloneFilename": "THE_CALL_UP_COMPLETE_EDITION.html",
+      "standaloneBytes": 66886691,
+      "standaloneSha256": "34d60370670902a22c9c311ec1796d7d64ea1f7f8fd80608a0642c169aaf785f"
+    }
+  }
+}
