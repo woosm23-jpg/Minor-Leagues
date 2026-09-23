@@ -64,3 +64,10 @@ Next: v59 Long-run Stress.
 - 5시즌마다 save → restore → save → restore를 반복해 장기 세이브 논리 일관성을 검증한다.
 
 Next: v60 Complete Edition RC.
+
+
+## v60 Complete Edition RC
+
+- v59의 20시즌 장기 안정성 검증을 기반으로 v60 Complete Edition RC 통합 검증을 완료했습니다.
+- Production lifecycle, FULL 저장/복원, 중간시즌 결정론, 모바일 세로 UI, 단일 HTML 검증이 PASS했습니다.
+- RC 결과물: `dist/THE_CALL_UP_COMPLETE_EDITION_RC_v60.html`

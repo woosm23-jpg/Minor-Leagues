@@ -1,0 +1,64 @@
+{
+  "schema": "THE_CALL_UP_V60_COMPLETE_EDITION_RC_BROWSER",
+  "pass": true,
+  "results": [
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pass": true,
+      "timingsMs": {
+        "homeToPlayer": 30.383,
+        "playerToLeague": 42.22,
+        "leagueToMore": 35.221,
+        "moreToHistory": 40.225
+      },
+      "checks": {
+        "home": true,
+        "touchTargets44": true,
+        "playerTab": true,
+        "leagueTab": true,
+        "hofUi": true,
+        "retirementUi": true,
+        "noHorizontalOverflow": true,
+        "pageErrors": 0,
+        "consoleErrors": 0,
+        "handlersUnder1000ms": true,
+        "version": true,
+        "title": true
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "viewport": {
+        "width": 412,
+        "height": 915
+      },
+      "pass": true,
+      "timingsMs": {
+        "homeToPlayer": 44.688,
+        "playerToLeague": 27.775,
+        "leagueToMore": 34.126,
+        "moreToHistory": 24.477
+      },
+      "checks": {
+        "home": true,
+        "touchTargets44": true,
+        "playerTab": true,
+        "leagueTab": true,
+        "hofUi": true,
+        "retirementUi": true,
+        "noHorizontalOverflow": true,
+        "pageErrors": 0,
+        "consoleErrors": 0,
+        "handlersUnder1000ms": true,
+        "version": true,
+        "title": true
+      },
+      "errors": [],
+      "consoleErrors": []
+    }
+  ]
+}

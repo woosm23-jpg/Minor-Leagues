@@ -34,7 +34,7 @@ import { createRetirementHallState, normalizeRetirementHallState, recordMlbSeaso
 
 const sessions = new Map();
 const heavyReadModelCaches = new WeakMap();
-const CURRENT_GAME_VERSION = "full_career_long_run_stress_v59";
+const CURRENT_GAME_VERSION = "complete_edition_rc_v60";
 
 function heavyReadModelCache(session) {
   let cache=heavyReadModelCaches.get(session);
