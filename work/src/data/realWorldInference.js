@@ -5,7 +5,7 @@ import { aggregateStatRows, inningsToOuts } from "./statEvidence.js";
 import { publicScoutingGrade } from "./publicScoutingPatch.js";
 
 const REAL_WORLD_INFERENCE_SCHEMA_VERSION = 2;
-const REAL_WORLD_INFERENCE_MODEL_ID = "real_rating_current_ability_v2_c7";
+const REAL_WORLD_INFERENCE_MODEL_ID = "real_rating_current_ability_v2_c8_two_way_v2";
 const MLB_REFERENCE_ENVIRONMENT_2025 = Object.freeze({
   season: 2025, runsPerTeamGame: 4.45, plateAppearancesPerTeamGame: 37.64,
   battingAverage: 0.245, onBasePercentage: 0.315, sluggingPercentage: 0.404,
@@ -733,28 +733,18 @@ function buildIndexes(data) {
 function twoWayEvidence(player, data) {
   const hittingGroups =
     groupPlayerSeasonLevel(
-      statRows(
-        data,
-        player.id,
-        "hitting"
-      ),
+      statRows(data, player.id, "hitting"),
       isTotalRow
     ).filter(
-      (row) =>
-        Number(row.season) >= 2024
+      (row) => Number(row.season) >= 2024
     );
 
   const pitchingGroups =
     groupPlayerSeasonLevel(
-      statRows(
-        data,
-        player.id,
-        "pitching"
-      ),
+      statRows(data, player.id, "pitching"),
       isTotalRow
     ).filter(
-      (row) =>
-        Number(row.season) >= 2024
+      (row) => Number(row.season) >= 2024
     );
 
   let hittingPa = 0;
@@ -764,35 +754,27 @@ function twoWayEvidence(player, data) {
   let pitchingStarts = 0;
 
   for (const group of hittingGroups) {
-    const line =
-      inferBattingLine(group.values);
-    const weight =
-      recencyWeight(group.season);
+    const line = inferBattingLine(group.values);
+    const weight = recencyWeight(group.season);
     hittingPa += line.pa * weight;
   }
 
   for (const group of pitchingGroups) {
-    const line =
-      inferPitchingLine(group.values);
-    const weight =
-      recencyWeight(group.season);
+    const line = inferPitchingLine(group.values);
+    const weight = recencyWeight(group.season);
     pitchingBf += line.bf * weight;
     pitchingIp += line.ip * weight;
-    pitchingGames +=
-      line.games * weight;
-    pitchingStarts +=
-      line.gs * weight;
+    pitchingGames += line.games * weight;
+    pitchingStarts += line.gs * weight;
   }
 
   const designatedPitcher =
     ["P", "SP", "RP"].includes(
-      String(
-        player.position ?? ""
-      ).toUpperCase()
+      String(player.position ?? "").toUpperCase()
     );
 
-  const hitterThreshold =
-    designatedPitcher ? 20 : 50;
+  const hittingEligible =
+    hittingPa >= (designatedPitcher ? 20 : 50);
 
   const pitchingEligible =
     designatedPitcher
@@ -801,27 +783,23 @@ function twoWayEvidence(player, data) {
           pitchingBf >= 20
         )
       : (
-          pitchingIp >= 10 ||
-          pitchingBf >= 40
+          pitchingStarts >= 1 ||
+          pitchingIp >= 30 ||
+          pitchingBf >= 120
         );
 
   const eligible =
-    hittingPa >= hitterThreshold &&
+    hittingEligible &&
     pitchingEligible;
 
   return freeze({
     eligible,
     designatedPitcher,
-    hittingPa:
-      round(hittingPa, 1),
-    pitchingBf:
-      round(pitchingBf, 1),
-    pitchingIp:
-      round(pitchingIp, 1),
-    pitchingGames:
-      round(pitchingGames, 1),
-    pitchingStarts:
-      round(pitchingStarts, 1),
+    hittingPa: round(hittingPa, 1),
+    pitchingBf: round(pitchingBf, 1),
+    pitchingIp: round(pitchingIp, 1),
+    pitchingGames: round(pitchingGames, 1),
+    pitchingStarts: round(pitchingStarts, 1),
     seasons: freeze(
       [
         ...new Set([
@@ -832,9 +810,7 @@ function twoWayEvidence(player, data) {
             (row) => row.season
           )
         ])
-      ].sort(
-        (a, b) => b - a
-      )
+      ].sort((a, b) => b - a)
     )
   });
 }

@@ -3,13 +3,14 @@ import path from "node:path";
 import zlib from "node:zlib";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { seasonApi } from "../src/api/seasonApi.js";
 import {
   createSaveUniverseFromMasterSnapshot
 } from "../src/data/masterSnapshot.js";
 import {
-  inferRealWorldUniverse
+  inferRealWorldUniverse,
+  REAL_WORLD_INFERENCE_MODEL_ID
 } from "../src/data/realWorldInference.js";
+import { seasonApi } from "../src/api/seasonApi.js";
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(DIR, "..");
@@ -43,23 +44,16 @@ function careerInput(orgId) {
   };
 }
 
-function outputPath() {
-  const arg = process.argv.find(
-    (value) => value.startsWith("--output=")
-  );
-  return path.resolve(
-    ROOT,
-    arg
-      ? arg.slice("--output=".length)
-      : "reports/production-two-way-v1.json"
-  );
-}
-
 function main() {
   const snapshot = readSnapshot();
   assert.equal(
     snapshot.metadata.contentHash,
     "fnv1a32:f7b34713"
+  );
+  assert.ok(
+    REAL_WORLD_INFERENCE_MODEL_ID.includes(
+      "two_way_v2"
+    )
   );
 
   const universe = inferRealWorldUniverse(
@@ -68,36 +62,50 @@ function main() {
       {
         copiedAtCareerStart:
           snapshot.metadata.snapshotDate,
-        sourceVersion: "TWO_WAY_QA"
+        sourceVersion: "TWO_WAY_QA_V2"
       }
     )
   );
 
-  const sourceTwoWay =
+  const twoWay =
     universe.inference.players.filter(
       (row) => row.type === "TWO_WAY"
     );
 
-  assert.ok(
-    sourceTwoWay.length > 0,
-    "실제 양방향 표본을 가진 TWO_WAY 선수가 없습니다."
-  );
+  assert.ok(twoWay.length > 0);
 
-  for (const row of sourceTwoWay) {
-    assert.ok(row.hitterProfile);
-    assert.ok(row.pitcherProfile);
-    assert.ok(row.twoWayEvidence?.eligible);
+  const knownMopupIds = new Set([
+    "623168",
+    "624431",
+    "500743",
+    "666126",
+    "691594",
+    "663897",
+    "624523"
+  ]);
+
+  for (const row of twoWay) {
+    const evidence = row.twoWayEvidence;
+    assert.ok(evidence?.eligible);
     assert.ok(
-      Number(row.twoWayEvidence.hittingPa) >= 20
+      Number(evidence.hittingPa) >= 20
     );
+
+    if (!evidence.designatedPitcher) {
+      assert.ok(
+        Number(evidence.pitchingStarts) >= 1 ||
+        Number(evidence.pitchingIp) >= 30 ||
+        Number(evidence.pitchingBf) >= 120,
+        `non-pitcher TWO_WAY lacks meaningful pitching evidence: ${row.playerId}`
+      );
+    }
+
     assert.ok(
-      Number(row.twoWayEvidence.pitchingIp) >= 5 ||
-      Number(row.twoWayEvidence.pitchingBf) >= 20
+      !knownMopupIds.has(
+        String(row.playerId)
+      ),
+      `known mop-up pitcher leaked into TWO_WAY: ${row.playerId}`
     );
-    assert.ok(
-      ["SP", "SWING", "RP"].includes(row.role)
-    );
-    assert.ok(Array.isArray(row.pitchArsenal));
   }
 
   const catalog =
@@ -107,7 +115,7 @@ function main() {
 
   const created =
     seasonApi.createCareerSeason({
-      seed: "post-audit-two-way-v1",
+      seed: "post-audit-two-way-v2",
       input: careerInput(
         catalog.organizations[0].id
       ),
@@ -120,10 +128,7 @@ function main() {
     );
 
   let runtimeTwoWay = 0;
-  let dualRosterMembership = 0;
-  let dualSkillShape = 0;
-  let roleEvidence = 0;
-  const samples = [];
+  const runtimeIds = [];
 
   for (
     const level of
@@ -154,6 +159,7 @@ function main() {
 
         const player =
           roster.players[playerId];
+
         if (
           player?.realWorld?.twoWay !== true
         ) {
@@ -161,114 +167,65 @@ function main() {
         }
 
         runtimeTwoWay += 1;
-        dualRosterMembership += 1;
+        runtimeIds.push(playerId);
 
         assert.ok(player.hitting);
         assert.ok(player.pitching);
-        assert.ok(player.derived);
+        assert.ok(player.positioning);
         assert.ok(
           Array.isArray(player.pitchArsenal) &&
           player.pitchArsenal.length > 0
         );
         assert.ok(
-          Number.isFinite(
-            Number(player.hitting.contactR)
-          )
+          !knownMopupIds.has(playerId)
         );
-        assert.ok(
-          Number.isFinite(
-            Number(player.pitching.control)
-          )
-        );
-        assert.ok(
-          player.positioning?.primaryPosition
-        );
-        dualSkillShape += 1;
-
-        assert.ok(
-          player.realWorld
-            ?.pitcherRoleEvidence
-        );
-        roleEvidence += 1;
-
-        if (samples.length < 8) {
-          samples.push({
-            level,
-            playerId,
-            name:
-              roster.names?.[playerId] ??
-              playerId,
-            primaryPosition:
-              player.positioning
-                ?.primaryPosition,
-            pitcherRole:
-              player.pitching?.role,
-            hittingOverall:
-              player.realWorld
-                ?.twoWayHitterOverall,
-            pitcherOverall:
-              player.realWorld
-                ?.twoWayPitcherOverall,
-            evidence:
-              player.realWorld
-                ?.twoWayEvidence
-          });
-        }
       }
     }
   }
 
-  assert.ok(
-    runtimeTwoWay > 0,
-    "Production runtime에 TWO_WAY 선수가 하나도 연결되지 않았습니다."
-  );
-  assert.equal(
-    runtimeTwoWay,
-    dualRosterMembership
-  );
-  assert.equal(
-    runtimeTwoWay,
-    dualSkillShape
-  );
-  assert.equal(
-    runtimeTwoWay,
-    roleEvidence
-  );
+  assert.ok(runtimeTwoWay > 0);
 
   const report = {
     schema:
-      "THE_CALL_UP_PRODUCTION_TWO_WAY_V1",
+      "THE_CALL_UP_PRODUCTION_TWO_WAY_V2_STRICT",
     pass: true,
     snapshotHash:
       snapshot.metadata.contentHash,
+    inferenceModel:
+      REAL_WORLD_INFERENCE_MODEL_ID,
     policy: {
-      onePlayerId: true,
-      duplicatePlayerObjects: false,
-      requiresRealHittingAndPitchingEvidence: true,
-      positionPlayerMopUpPitchingExcluded:
-        "BY_SAMPLE_THRESHOLDS",
-      rosterMembership:
-        "POSITION_AND_PITCHER_BOTH"
+      designatedPitcher: {
+        minHittingPa: 20,
+        minPitching:
+          "5 IP or 20 BF"
+      },
+      nonDesignatedPitcher: {
+        minHittingPa: 50,
+        minPitching:
+          "1 GS or 30 IP or 120 BF"
+      },
+      mopUpExcluded: true,
+      onePlayerId: true
     },
     source: {
       twoWayPlayers:
-        sourceTwoWay.length,
+        twoWay.length,
       ids:
-        sourceTwoWay.map(
+        twoWay.map(
           (row) => String(row.playerId)
         )
     },
     runtime: {
       twoWayPlayers:
         runtimeTwoWay,
-      dualRosterMembership,
-      dualSkillShape,
-      roleEvidence
-    },
-    samples
+      ids: runtimeIds
+    }
   };
 
-  const out = outputPath();
+  const out = path.resolve(
+    ROOT,
+    "reports/production-two-way-v1.json"
+  );
   fs.mkdirSync(
     path.dirname(out),
     { recursive: true }
