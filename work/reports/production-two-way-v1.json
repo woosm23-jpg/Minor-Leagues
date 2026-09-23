@@ -1,0 +1,230 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_TWO_WAY_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "onePlayerId": true,
+    "duplicatePlayerObjects": false,
+    "requiresRealHittingAndPitchingEvidence": true,
+    "positionPlayerMopUpPitchingExcluded": "BY_SAMPLE_THRESHOLDS",
+    "rosterMembership": "POSITION_AND_PITCHER_BOTH"
+  },
+  "source": {
+    "twoWayPlayers": 21,
+    "ids": [
+      "623168",
+      "624431",
+      "500743",
+      "660271",
+      "690997",
+      "666126",
+      "691594",
+      "663897",
+      "624523",
+      "702750",
+      "687208",
+      "625510",
+      "695742",
+      "801563",
+      "826141",
+      "690994",
+      "683091",
+      "691188",
+      "805737",
+      "829679",
+      "682625"
+    ]
+  },
+  "runtime": {
+    "twoWayPlayers": 17,
+    "dualRosterMembership": 17,
+    "dualSkillShape": 17,
+    "roleEvidence": 17
+  },
+  "samples": [
+    {
+      "level": "MLB",
+      "playerId": "623168",
+      "name": "Tyler Heineman",
+      "primaryPosition": "C",
+      "pitcherRole": "RP",
+      "hittingOverall": 50.22,
+      "pitcherOverall": 47.5,
+      "evidence": {
+        "eligible": true,
+        "designatedPitcher": false,
+        "hittingPa": 429,
+        "pitchingBf": 47.4,
+        "pitchingIp": 8.2,
+        "pitchingGames": 7.6,
+        "pitchingStarts": 0,
+        "seasons": [
+          2026,
+          2025,
+          2024
+        ]
+      }
+    },
+    {
+      "level": "MLB",
+      "playerId": "624431",
+      "name": "Jose Trevino",
+      "primaryPosition": "C",
+      "pitcherRole": "RP",
+      "hittingOverall": 48.59,
+      "pitcherOverall": 48.21,
+      "evidence": {
+        "eligible": true,
+        "designatedPitcher": false,
+        "hittingPa": 499.1,
+        "pitchingBf": 63.9,
+        "pitchingIp": 11.6,
+        "pitchingGames": 9.4,
+        "pitchingStarts": 0,
+        "seasons": [
+          2026,
+          2025,
+          2024
+        ]
+      }
+    },
+    {
+      "level": "MLB",
+      "playerId": "500743",
+      "name": "Miguel Rojas",
+      "primaryPosition": "2B",
+      "pitcherRole": "RP",
+      "hittingOverall": 52.52,
+      "pitcherOverall": 47.09,
+      "evidence": {
+        "eligible": true,
+        "designatedPitcher": false,
+        "hittingPa": 631.9,
+        "pitchingBf": 45.1,
+        "pitchingIp": 8.1,
+        "pitchingGames": 7.4,
+        "pitchingStarts": 0,
+        "seasons": [
+          2026,
+          2025,
+          2024
+        ]
+      }
+    },
+    {
+      "level": "MLB",
+      "playerId": "690997",
+      "name": "Nolan McLean",
+      "primaryPosition": "P",
+      "pitcherRole": "SP",
+      "hittingOverall": 43.13,
+      "pitcherOverall": 53.4,
+      "evidence": {
+        "eligible": true,
+        "designatedPitcher": true,
+        "hittingPa": 68.6,
+        "pitchingBf": 1415.8,
+        "pitchingIp": 341.7,
+        "pitchingGames": 62.9,
+        "pitchingStarts": 60.7,
+        "seasons": [
+          2026,
+          2025,
+          2024
+        ]
+      }
+    },
+    {
+      "level": "MLB",
+      "playerId": "666126",
+      "name": "Carlos Cortes",
+      "primaryPosition": "RF",
+      "pitcherRole": "RP",
+      "hittingOverall": 51.26,
+      "pitcherOverall": 45.58,
+      "evidence": {
+        "eligible": true,
+        "designatedPitcher": false,
+        "hittingPa": 816.4,
+        "pitchingBf": 49,
+        "pitchingIp": 9.3,
+        "pitchingGames": 9,
+        "pitchingStarts": 0,
+        "seasons": [
+          2026,
+          2025,
+          2024
+        ]
+      }
+    },
+    {
+      "level": "MLB",
+      "playerId": "691594",
+      "name": "Javier Sanoja",
+      "primaryPosition": "3B",
+      "pitcherRole": "RP",
+      "hittingOverall": 53.76,
+      "pitcherOverall": 46.56,
+      "evidence": {
+        "eligible": true,
+        "designatedPitcher": false,
+        "hittingPa": 990,
+        "pitchingBf": 65.9,
+        "pitchingIp": 11.4,
+        "pitchingGames": 10.8,
+        "pitchingStarts": 0,
+        "seasons": [
+          2026,
+          2025,
+          2024
+        ]
+      }
+    },
+    {
+      "level": "AAA",
+      "playerId": "663897",
+      "name": "Luke Williams",
+      "primaryPosition": "SS",
+      "pitcherRole": "RP",
+      "hittingOverall": 44.11,
+      "pitcherOverall": 42.28,
+      "evidence": {
+        "eligible": true,
+        "designatedPitcher": false,
+        "hittingPa": 593.2,
+        "pitchingBf": 46.1,
+        "pitchingIp": 9.6,
+        "pitchingGames": 8.8,
+        "pitchingStarts": 0,
+        "seasons": [
+          2026,
+          2025,
+          2024
+        ]
+      }
+    },
+    {
+      "level": "AAA",
+      "playerId": "624523",
+      "name": "Riley Unroe",
+      "primaryPosition": "2B",
+      "pitcherRole": "RP",
+      "hittingOverall": 42.16,
+      "pitcherOverall": 40.77,
+      "evidence": {
+        "eligible": true,
+        "designatedPitcher": false,
+        "hittingPa": 652.4,
+        "pitchingBf": 49,
+        "pitchingIp": 10.8,
+        "pitchingGames": 7,
+        "pitchingStarts": 0,
+        "seasons": [
+          2026,
+          2025,
+          2024
+        ]
+      }
+    }
+  ]
+}

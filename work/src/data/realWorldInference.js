@@ -730,21 +730,292 @@ function buildIndexes(data) {
   return { ...data, _statsIndex:statsIndex, _trackingIndex:trackingIndex, _arsenalIndex:arsenalIndex, _playerLevelById:playerLevelById };
 }
 
-function inferRealWorldUniverse(universe) {
-  if (!universe || universe.origin !== "MASTER_SNAPSHOT" || !universe.data) return universe;
-  if (universe.inference?.schemaVersion === REAL_WORLD_INFERENCE_SCHEMA_VERSION && universe.inference?.sourceSnapshotHash === universe.sourceSnapshot?.hash && universe.inference?.modelId === REAL_WORLD_INFERENCE_MODEL_ID) return universe;
-  const indexedData = buildIndexes(universe.data);
-  const environments = inferLeagueEnvironments(indexedData);
-  const context = { standard:buildStandardPopulation(indexedData), tracking:buildTrackingPopulation(indexedData), arsenal:buildArsenalPopulation(indexedData), environments };
-  const players = [];
-  for (const player of universe.data.players ?? []) {
-    const position = String(player.position ?? "").toUpperCase();
-    const pitching = statRows(indexedData, player.id, "pitching"), hitting = statRows(indexedData, player.id, "hitting");
-    const hasPitching = ["P","SP","RP"].includes(position) || (pitching.length > 0 && hitting.length === 0);
-    players.push(hasPitching ? inferPitcher(player,indexedData,context) : inferHitter(player,indexedData,context));
+function twoWayEvidence(player, data) {
+  const hittingGroups =
+    groupPlayerSeasonLevel(
+      statRows(
+        data,
+        player.id,
+        "hitting"
+      ),
+      isTotalRow
+    ).filter(
+      (row) =>
+        Number(row.season) >= 2024
+    );
+
+  const pitchingGroups =
+    groupPlayerSeasonLevel(
+      statRows(
+        data,
+        player.id,
+        "pitching"
+      ),
+      isTotalRow
+    ).filter(
+      (row) =>
+        Number(row.season) >= 2024
+    );
+
+  let hittingPa = 0;
+  let pitchingBf = 0;
+  let pitchingIp = 0;
+  let pitchingGames = 0;
+  let pitchingStarts = 0;
+
+  for (const group of hittingGroups) {
+    const line =
+      inferBattingLine(group.values);
+    const weight =
+      recencyWeight(group.season);
+    hittingPa += line.pa * weight;
   }
-  const inference = freeze({schemaVersion:REAL_WORLD_INFERENCE_SCHEMA_VERSION,modelId:REAL_WORLD_INFERENCE_MODEL_ID,sourceSnapshotHash:universe.sourceSnapshot?.hash ?? null,referenceEnvironment:MLB_REFERENCE_ENVIRONMENT_2025,leagueEnvironments:environments,parks:buildEngineParkProfiles(universe.data.parks ?? []),players,generatedFromPublicData:true,overallAndFutureValueAreDerivedOnly:true,trackingAndArsenalStaged:(universe.data.tracking?.length??0)>0});
-  return freeze({...structuredClone(universe),inference});
+
+  for (const group of pitchingGroups) {
+    const line =
+      inferPitchingLine(group.values);
+    const weight =
+      recencyWeight(group.season);
+    pitchingBf += line.bf * weight;
+    pitchingIp += line.ip * weight;
+    pitchingGames +=
+      line.games * weight;
+    pitchingStarts +=
+      line.gs * weight;
+  }
+
+  const designatedPitcher =
+    ["P", "SP", "RP"].includes(
+      String(
+        player.position ?? ""
+      ).toUpperCase()
+    );
+
+  const hitterThreshold =
+    designatedPitcher ? 20 : 50;
+
+  const pitchingEligible =
+    designatedPitcher
+      ? (
+          pitchingIp >= 5 ||
+          pitchingBf >= 20
+        )
+      : (
+          pitchingIp >= 10 ||
+          pitchingBf >= 40
+        );
+
+  const eligible =
+    hittingPa >= hitterThreshold &&
+    pitchingEligible;
+
+  return freeze({
+    eligible,
+    designatedPitcher,
+    hittingPa:
+      round(hittingPa, 1),
+    pitchingBf:
+      round(pitchingBf, 1),
+    pitchingIp:
+      round(pitchingIp, 1),
+    pitchingGames:
+      round(pitchingGames, 1),
+    pitchingStarts:
+      round(pitchingStarts, 1),
+    seasons: freeze(
+      [
+        ...new Set([
+          ...hittingGroups.map(
+            (row) => row.season
+          ),
+          ...pitchingGroups.map(
+            (row) => row.season
+          )
+        ])
+      ].sort(
+        (a, b) => b - a
+      )
+    )
+  });
+}
+
+function inferRealWorldUniverse(universe) {
+  if (
+    !universe ||
+    universe.origin !== "MASTER_SNAPSHOT" ||
+    !universe.data
+  ) {
+    return universe;
+  }
+
+  if (
+    universe.inference?.schemaVersion ===
+      REAL_WORLD_INFERENCE_SCHEMA_VERSION &&
+    universe.inference?.sourceSnapshotHash ===
+      universe.sourceSnapshot?.hash &&
+    universe.inference?.modelId ===
+      REAL_WORLD_INFERENCE_MODEL_ID
+  ) {
+    return universe;
+  }
+
+  const indexedData =
+    buildIndexes(universe.data);
+  const environments =
+    inferLeagueEnvironments(indexedData);
+  const context = {
+    standard:
+      buildStandardPopulation(
+        indexedData
+      ),
+    tracking:
+      buildTrackingPopulation(
+        indexedData
+      ),
+    arsenal:
+      buildArsenalPopulation(
+        indexedData
+      ),
+    environments
+  };
+
+  const players = [];
+
+  for (
+    const player of
+    universe.data.players ?? []
+  ) {
+    const position =
+      String(
+        player.position ?? ""
+      ).toUpperCase();
+
+    const pitching =
+      statRows(
+        indexedData,
+        player.id,
+        "pitching"
+      );
+    const hitting =
+      statRows(
+        indexedData,
+        player.id,
+        "hitting"
+      );
+
+    const dual =
+      twoWayEvidence(
+        player,
+        indexedData
+      );
+
+    if (dual.eligible) {
+      const hitter =
+        inferHitter(
+          player,
+          indexedData,
+          context
+        );
+      const pitcher =
+        inferPitcher(
+          player,
+          indexedData,
+          context
+        );
+
+      players.push(
+        freeze({
+          ...hitter,
+          type: "TWO_WAY",
+          overall:
+            Math.max(
+              Number(
+                hitter.overall ?? 20
+              ),
+              Number(
+                pitcher.overall ?? 20
+              )
+            ),
+          role:
+            pitcher.role,
+          roleEvidence:
+            pitcher.roleEvidence,
+          pitchArsenal:
+            pitcher.pitchArsenal,
+          pitcherRatings:
+            pitcher.ratings,
+          hitterOverall:
+            hitter.overall,
+          pitcherOverall:
+            pitcher.overall,
+          twoWayEvidence:
+            dual,
+          hitterProfile:
+            hitter,
+          pitcherProfile:
+            pitcher
+        })
+      );
+      continue;
+    }
+
+    const hasPitching =
+      ["P", "SP", "RP"].includes(
+        position
+      ) ||
+      (
+        pitching.length > 0 &&
+        hitting.length === 0
+      );
+
+    players.push(
+      hasPitching
+        ? inferPitcher(
+            player,
+            indexedData,
+            context
+          )
+        : inferHitter(
+            player,
+            indexedData,
+            context
+          )
+    );
+  }
+
+  const inference = freeze({
+    schemaVersion:
+      REAL_WORLD_INFERENCE_SCHEMA_VERSION,
+    modelId:
+      REAL_WORLD_INFERENCE_MODEL_ID,
+    sourceSnapshotHash:
+      universe.sourceSnapshot?.hash ??
+      null,
+    referenceEnvironment:
+      MLB_REFERENCE_ENVIRONMENT_2025,
+    leagueEnvironments:
+      environments,
+    parks:
+      buildEngineParkProfiles(
+        universe.data.parks ?? []
+      ),
+    players,
+    generatedFromPublicData: true,
+    overallAndFutureValueAreDerivedOnly:
+      true,
+    trackingAndArsenalStaged:
+      (
+        universe.data.tracking?.length ??
+        0
+      ) > 0,
+    twoWayDetection:
+      "REAL_HITTING_AND_PITCHING_SAMPLE_V1"
+  });
+
+  return freeze({
+    ...structuredClone(universe),
+    inference
+  });
 }
 
 function getInferredPlayer(universe, playerId) { return universe?.inference?.players?.find((row)=>String(row.playerId)===String(playerId)) ?? null; }

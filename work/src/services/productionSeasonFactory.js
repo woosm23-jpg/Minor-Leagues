@@ -239,6 +239,95 @@ function productionFacts(
   });
 }
 
+function hitterInferenceView(inference) {
+  return inference?.type === "TWO_WAY"
+    ? inference.hitterProfile
+    : inference;
+}
+
+function pitcherInferenceView(inference) {
+  return inference?.type === "TWO_WAY"
+    ? inference.pitcherProfile
+    : inference;
+}
+
+function isProductionPitcherInference(inference) {
+  return (
+    inference?.type === "PITCHER" ||
+    inference?.type === "TWO_WAY"
+  );
+}
+
+function isProductionHitterInference(inference) {
+  return inference?.type !== "PITCHER";
+}
+
+function mergeTwoWayEnginePlayer(
+  hitterEngine,
+  pitcherEngine,
+  inference
+) {
+  return freeze({
+    ...pitcherEngine,
+    id: hitterEngine.id,
+    bats: hitterEngine.bats,
+    throws: hitterEngine.throws,
+    ovr: Math.max(
+      Number(hitterEngine.ovr ?? 20),
+      Number(pitcherEngine.ovr ?? 20)
+    ),
+    hitting: hitterEngine.hitting,
+    tendencies:
+      hitterEngine.tendencies,
+    fielding:
+      hitterEngine.fielding,
+    running:
+      hitterEngine.running,
+    positioning:
+      hitterEngine.positioning,
+    physical:
+      hitterEngine.physical,
+    realWorld: freeze({
+      ...(hitterEngine.realWorld ?? {}),
+      ...(pitcherEngine.realWorld ?? {}),
+      durabilitySource:
+        hitterEngine.realWorld
+          ?.durabilitySource ??
+        pitcherEngine.realWorld
+          ?.durabilitySource ??
+        null,
+      hiddenDevelopmentPrior:
+        hitterEngine.realWorld
+          ?.hiddenDevelopmentPrior ??
+        pitcherEngine.realWorld
+          ?.hiddenDevelopmentPrior ??
+        null,
+      pitcherRoleSource:
+        pitcherEngine.realWorld
+          ?.pitcherRoleSource ??
+        null,
+      pitcherRoleEvidence:
+        pitcherEngine.realWorld
+          ?.pitcherRoleEvidence ??
+        null,
+      twoWay: true,
+      twoWayEvidence:
+        inference?.twoWayEvidence ??
+        null,
+      twoWayHitterOverall:
+        inference?.hitterOverall ??
+        inference?.hitterProfile
+          ?.overall ??
+        null,
+      twoWayPitcherOverall:
+        inference?.pitcherOverall ??
+        inference?.pitcherProfile
+          ?.overall ??
+        null
+    })
+  });
+}
+
 function engineHitter(player, inference, { seed = "" } = {}) {
   const r = inference?.ratings ?? {};
   const positionProfile =
@@ -546,8 +635,22 @@ function benchCoverage(
 
 function createProductionRoster(team, snapshotPlayers, universe, inferenceById, { userPlayer = null, userPlayerName = null, seed = "", pitchArsenalIndex = new Map() } = {}) {
   const playersForTeam = snapshotPlayers.filter((player) => String(playerAssignedTeamId(player)) === String(team.id) && isPlayerGameAvailable(player));
-  const pitchers = playersForTeam.filter((player) => inferenceById.get(String(player.id))?.type === "PITCHER");
-  const hitters = playersForTeam.filter((player) => inferenceById.get(String(player.id))?.type !== "PITCHER");
+  const pitchers = playersForTeam.filter(
+    (player) =>
+      isProductionPitcherInference(
+        inferenceById.get(
+          String(player.id)
+        )
+      )
+  );
+  const hitters = playersForTeam.filter(
+    (player) =>
+      isProductionHitterInference(
+        inferenceById.get(
+          String(player.id)
+        )
+      )
+  );
   if (hitters.length < MIN_PRODUCTION_HITTERS) throw new RangeError(`${team.name} production roster 야수가 부족합니다: ${hitters.length} < ${MIN_PRODUCTION_HITTERS}`);
   if (pitchers.length < MIN_PRODUCTION_PITCHERS) throw new RangeError(`${team.name} production roster 투수가 부족합니다: ${pitchers.length} < ${MIN_PRODUCTION_PITCHERS}`);
 
@@ -563,29 +666,85 @@ function createProductionRoster(team, snapshotPlayers, universe, inferenceById, 
   const enginePlayers = {};
   const names = {};
   for (const player of hitters) {
-    enginePlayers[String(player.id)] = engineHitter(player, inferenceById.get(String(player.id)), { seed });
-    names[String(player.id)] = player.fullName;
+    const inference =
+      inferenceById.get(
+        String(player.id)
+      );
+    enginePlayers[String(player.id)] =
+      engineHitter(
+        player,
+        hitterInferenceView(inference),
+        { seed }
+      );
+    names[String(player.id)] =
+      player.fullName;
   }
   for (const player of pitchers) {
-    const inference = inferenceById.get(String(player.id));
-    const realPitchArsenal = normalizeInferredPitchArsenal(inference, {
-      level: String(team.level),
-      season: universe.sourceSnapshot?.season ?? 2026
-    });
-    const pitchArsenal = realPitchArsenal.length
-      ? realPitchArsenal
-      : createGeneratedRandomArsenal({
-          playerId: String(player.id),
-          seed,
+    const inference =
+      inferenceById.get(
+        String(player.id)
+      );
+    const pitcherInference =
+      pitcherInferenceView(
+        inference
+      );
+
+    const realPitchArsenal =
+      normalizeInferredPitchArsenal(
+        pitcherInference,
+        {
           level: String(team.level),
-          season: universe.sourceSnapshot?.season ?? 2026
-        });
-    enginePlayers[String(player.id)] = enginePitcher(
-      player,
-      inference,
-      { seed, pitchArsenal }
-    );
-    names[String(player.id)] = player.fullName;
+          season:
+            universe.sourceSnapshot
+              ?.season ?? 2026
+        }
+      );
+
+    const pitchArsenal =
+      realPitchArsenal.length
+        ? realPitchArsenal
+        : createGeneratedRandomArsenal({
+            playerId:
+              String(player.id),
+            seed,
+            level:
+              String(team.level),
+            season:
+              universe.sourceSnapshot
+                ?.season ?? 2026
+          });
+
+    const pitcherEngine =
+      enginePitcher(
+        player,
+        pitcherInference,
+        { seed, pitchArsenal }
+      );
+
+    if (
+      inference?.type ===
+        "TWO_WAY" &&
+      enginePlayers[
+        String(player.id)
+      ]
+    ) {
+      enginePlayers[
+        String(player.id)
+      ] = mergeTwoWayEnginePlayer(
+        enginePlayers[
+          String(player.id)
+        ],
+        pitcherEngine,
+        inference
+      );
+    } else {
+      enginePlayers[
+        String(player.id)
+      ] = pitcherEngine;
+    }
+
+    names[String(player.id)] =
+      player.fullName;
   }
   if (userPlayer) {
     enginePlayers[userPlayer.id] = userPlayer;
@@ -613,18 +772,37 @@ function createProductionRoster(team, snapshotPlayers, universe, inferenceById, 
       )
     }));
 
-  const rankedPitchers = [...pitchers].sort((a, b) => Number(inferenceById.get(String(b.id))?.overall ?? 50) - Number(inferenceById.get(String(a.id))?.overall ?? 50) || String(a.id).localeCompare(String(b.id)));
+  const rankedPitchers = [...pitchers].sort(
+    (a, b) =>
+      Number(
+        pitcherInferenceView(
+          inferenceById.get(
+            String(b.id)
+          )
+        )?.overall ?? 50
+      ) -
+        Number(
+          pitcherInferenceView(
+            inferenceById.get(
+              String(a.id)
+            )
+          )?.overall ?? 50
+        ) ||
+      String(a.id).localeCompare(
+        String(b.id)
+      )
+  );
   const preferredStarters = rankedPitchers.filter(
     (p) =>
-      inferenceById.get(String(p.id))?.role === "SP"
+      pitcherInferenceView(inferenceById.get(String(p.id)))?.role === "SP"
   );
   const swingStarters = rankedPitchers.filter(
     (p) =>
-      inferenceById.get(String(p.id))?.role === "SWING"
+      pitcherInferenceView(inferenceById.get(String(p.id)))?.role === "SWING"
   );
   const reliefFallback = rankedPitchers.filter(
     (p) =>
-      inferenceById.get(String(p.id))?.role === "RP"
+      pitcherInferenceView(inferenceById.get(String(p.id)))?.role === "RP"
   );
   const starters = [
     ...preferredStarters,
@@ -690,8 +868,22 @@ function validateProductionRuntimeUniverse(universe) {
     for (const team of teams) {
       if ((scheduleCounts[String(team.id)] ?? 0) < 100) throw new RangeError(`${level} 실제 일정 coverage가 부족합니다: ${team.name} ${(scheduleCounts[String(team.id)] ?? 0)}경기`);
       const roster = universe.data.players.filter((player) => String(playerAssignedTeamId(player)) === String(team.id) && isPlayerGameAvailable(player));
-      const pitcherCount = roster.filter((player) => inferenceById.get(String(player.id))?.type === "PITCHER").length;
-      const hitterCount = roster.length - pitcherCount;
+      const pitcherCount = roster.filter(
+        (player) =>
+          isProductionPitcherInference(
+            inferenceById.get(
+              String(player.id)
+            )
+          )
+      ).length;
+      const hitterCount = roster.filter(
+        (player) =>
+          isProductionHitterInference(
+            inferenceById.get(
+              String(player.id)
+            )
+          )
+      ).length;
       if (hitterCount < MIN_PRODUCTION_HITTERS || pitcherCount < MIN_PRODUCTION_PITCHERS) throw new RangeError(`${team.name} production roster coverage가 부족합니다: H${hitterCount}/P${pitcherCount}`);
     }
   }
