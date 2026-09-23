@@ -1,0 +1,144 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_MANIFEST_V3",
+  "pass": true,
+  "snapshotSchema": 2,
+  "snapshotId": "mlb-milb-2026-2026-09-20-v3-production",
+  "snapshotDate": "2026-09-20",
+  "season": 2026,
+  "contentHash": "fnv1a32:f7b34713",
+  "builtFrom": {
+    "baseV2": {
+      "snapshotId": "mlb-milb-2026-2026-09-20-v2-production",
+      "contentHash": "fnv1a32:21eb3434",
+      "path": "work/data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz"
+    },
+    "phaseC": {
+      "schema": "THE_CALL_UP_PHASE_C_MANIFEST_V1",
+      "sha256": "cfe8000f998f438c73c59e836725deff69d7ad4def58d97f6bbf683ca94ea87a",
+      "baseSnapshotHash": "fnv1a32:21eb3434",
+      "path": "work/data/the_call_up_phase_c/statcast-phase-c-2026.json.gz"
+    },
+    "phaseD": {
+      "schema": "THE_CALL_UP_PHASE_D_PUBLIC_SCOUTING_MANIFEST_V1",
+      "sha256": "54554149776c25f7038398bb1e952bbecb6f43bee821c90f8b74cfaeffb50e28",
+      "baseSnapshotHash": "fnv1a32:21eb3434",
+      "path": "work/data/the_call_up_phase_d/public-scouting-2026.json.gz"
+    }
+  },
+  "coverage": {
+    "teams": 150,
+    "players": 5429,
+    "statsRows": 80606,
+    "scheduleGames": 10710,
+    "parks": 30,
+    "trackingRows": 14988,
+    "trackingPlayers": 2149,
+    "pitchArsenalRows": 12023,
+    "pitchArsenalPlayers": 1288,
+    "publicScoutingPlayers": 1127
+  },
+  "duplicateChecks": {
+    "basePlayerIdsUnique": true,
+    "phaseDPlayerIdsUnique": true,
+    "phaseCTrackingIdsKnown": true,
+    "phaseCArsenalIdsKnown": true,
+    "phaseDIdsKnown": true
+  },
+  "evidenceSpotChecks": {
+    "trackingPlayers": [
+      {
+        "playerId": "434378",
+        "name": "Justin Verlander",
+        "rows": 9,
+        "metricGroups": [
+          "PITCHING_BATTED_BALL",
+          "PITCHING_LOCATION",
+          "PITCHING_SWING"
+        ]
+      },
+      {
+        "playerId": "445276",
+        "name": "Kenley Jansen",
+        "rows": 9,
+        "metricGroups": [
+          "PITCHING_BATTED_BALL",
+          "PITCHING_LOCATION",
+          "PITCHING_SWING"
+        ]
+      },
+      {
+        "playerId": "453286",
+        "name": "Max Scherzer",
+        "rows": 9,
+        "metricGroups": [
+          "PITCHING_BATTED_BALL",
+          "PITCHING_LOCATION",
+          "PITCHING_SWING"
+        ]
+      }
+    ],
+    "pitchArsenalPlayers": [
+      {
+        "playerId": "434378",
+        "name": "Justin Verlander",
+        "rows": 15,
+        "pitchTypes": [
+          "CH",
+          "CU",
+          "FF",
+          "SI",
+          "SL",
+          "ST"
+        ]
+      },
+      {
+        "playerId": "445276",
+        "name": "Kenley Jansen",
+        "rows": 11,
+        "pitchTypes": [
+          "FC",
+          "SI",
+          "SL",
+          "ST"
+        ]
+      },
+      {
+        "playerId": "453286",
+        "name": "Max Scherzer",
+        "rows": 15,
+        "pitchTypes": [
+          "CH",
+          "CU",
+          "FC",
+          "FF",
+          "SL"
+        ]
+      }
+    ],
+    "publicScoutingPlayers": [
+      {
+        "playerId": "663494",
+        "name": "Bryan Torres",
+        "futureValue": 37.5,
+        "risk": "LOW"
+      },
+      {
+        "playerId": "663795",
+        "name": "Justin Hagenman",
+        "futureValue": 40,
+        "risk": "LOW"
+      },
+      {
+        "playerId": "665993",
+        "name": "Cristhian Tortosa",
+        "futureValue": 37.5,
+        "risk": "MEDIUM"
+      }
+    ]
+  },
+  "file": {
+    "path": "work/data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz",
+    "bytes": 6590580,
+    "sha256": "8fed585180113f91139406c34e47212f75a511db65e90d867e1bad1a773158a3"
+  }
+}
