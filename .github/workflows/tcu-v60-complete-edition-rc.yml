@@ -94,7 +94,7 @@ jobs:
         run: |
           set -euo pipefail
           cd work
-          node scripts/verify-fast-sim-v38.js --pa-samples 10000 --games 100 --verify --output reports/v60-fast-sim.json
+          node scripts/verify-fast-sim-v38.js --verify --output reports/v60-fast-sim.json
           test -s reports/v60-fast-sim.json
 
       - name: v60 persistence regression
