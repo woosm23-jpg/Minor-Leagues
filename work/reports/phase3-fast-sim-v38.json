@@ -1,0 +1,459 @@
+{
+  "reportVersion": 1,
+  "version": "v38",
+  "feature": "Fast Simulation Engine foundation + parity harness",
+  "lookup": {
+    "id": "fast_sim_lookup_v38_detailed_fit_1",
+    "totalDetailedBips": 810000,
+    "samplesPerProfile": 30000
+  },
+  "paSamplesPerProfile": 40000,
+  "profileParity": {
+    "LOW_OFFENSE": {
+      "detailed": {
+        "terminal": {
+          "BB": 0.0822,
+          "HBP": 0.010825,
+          "K": 0.2507,
+          "OUT": 0.46315,
+          "ROE": 0,
+          "1B": 0.130225,
+          "2B": 0.04135,
+          "3B": 0.003675,
+          "HR": 0.017875
+        },
+        "bip": {
+          "GB": 0.280425,
+          "LD": 0.15755,
+          "FB": 0.1724,
+          "PU": 0.0459
+        }
+      },
+      "fast": {
+        "terminal": {
+          "BB": 0.082175,
+          "HBP": 0.010475,
+          "K": 0.2534,
+          "OUT": 0.46025,
+          "ROE": 0,
+          "1B": 0.131375,
+          "2B": 0.040825,
+          "3B": 0.0034,
+          "HR": 0.0181
+        },
+        "bip": {
+          "GB": 0.276325,
+          "LD": 0.158175,
+          "FB": 0.173425,
+          "PU": 0.046025
+        }
+      },
+      "deltas": {
+        "BB": -0.000024999999999997247,
+        "HBP": -0.0003499999999999996,
+        "K": 0.0027000000000000357,
+        "OUT": -0.0029000000000000137,
+        "ROE": 0,
+        "1B": 0.0011499999999999844,
+        "2B": -0.0005249999999999977,
+        "3B": -0.00027500000000000007,
+        "HR": 0.00022500000000000298
+      },
+      "checks": [
+        {
+          "name": "BB",
+          "detailed": 0.0822,
+          "fast": 0.082175,
+          "delta": -0.000024999999999997247,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "K",
+          "detailed": 0.2507,
+          "fast": 0.2534,
+          "delta": 0.0027000000000000357,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "1B",
+          "detailed": 0.130225,
+          "fast": 0.131375,
+          "delta": 0.0011499999999999844,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "2B",
+          "detailed": 0.04135,
+          "fast": 0.040825,
+          "delta": -0.0005249999999999977,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "3B",
+          "detailed": 0.003675,
+          "fast": 0.0034,
+          "delta": -0.00027500000000000007,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "HR",
+          "detailed": 0.017875,
+          "fast": 0.0181,
+          "delta": 0.00022500000000000298,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "OUT",
+          "detailed": 0.46315,
+          "fast": 0.46025,
+          "delta": -0.0029000000000000137,
+          "tolerance": 0.006,
+          "pass": true
+        }
+      ],
+      "pass": true
+    },
+    "NEUTRAL": {
+      "detailed": {
+        "terminal": {
+          "BB": 0.0858,
+          "HBP": 0.01025,
+          "K": 0.22175,
+          "OUT": 0.46,
+          "ROE": 0,
+          "1B": 0.14525,
+          "2B": 0.040675,
+          "3B": 0.0041,
+          "HR": 0.032175
+        },
+        "bip": {
+          "GB": 0.288275,
+          "LD": 0.164425,
+          "FB": 0.181875,
+          "PU": 0.047625
+        }
+      },
+      "fast": {
+        "terminal": {
+          "BB": 0.085575,
+          "HBP": 0.010075,
+          "K": 0.222275,
+          "OUT": 0.462425,
+          "ROE": 0,
+          "1B": 0.14085,
+          "2B": 0.0445,
+          "3B": 0.004075,
+          "HR": 0.030225
+        },
+        "bip": {
+          "GB": 0.288875,
+          "LD": 0.164675,
+          "FB": 0.17965,
+          "PU": 0.048875
+        }
+      },
+      "deltas": {
+        "BB": -0.00022500000000000298,
+        "HBP": -0.0001749999999999998,
+        "K": 0.0005249999999999977,
+        "OUT": 0.002424999999999955,
+        "ROE": 0,
+        "1B": -0.004399999999999987,
+        "2B": 0.003824999999999995,
+        "3B": -0.000025000000000000716,
+        "HR": -0.0019500000000000038
+      },
+      "checks": [
+        {
+          "name": "BB",
+          "detailed": 0.0858,
+          "fast": 0.085575,
+          "delta": -0.00022500000000000298,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "K",
+          "detailed": 0.22175,
+          "fast": 0.222275,
+          "delta": 0.0005249999999999977,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "1B",
+          "detailed": 0.14525,
+          "fast": 0.14085,
+          "delta": -0.004399999999999987,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "2B",
+          "detailed": 0.040675,
+          "fast": 0.0445,
+          "delta": 0.003824999999999995,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "3B",
+          "detailed": 0.0041,
+          "fast": 0.004075,
+          "delta": -0.000025000000000000716,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "HR",
+          "detailed": 0.032175,
+          "fast": 0.030225,
+          "delta": -0.0019500000000000038,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "OUT",
+          "detailed": 0.46,
+          "fast": 0.462425,
+          "delta": 0.002424999999999955,
+          "tolerance": 0.006,
+          "pass": true
+        }
+      ],
+      "pass": true
+    },
+    "HIGH_OFFENSE": {
+      "detailed": {
+        "terminal": {
+          "BB": 0.087725,
+          "HBP": 0.01025,
+          "K": 0.185625,
+          "OUT": 0.470625,
+          "ROE": 0,
+          "1B": 0.153625,
+          "2B": 0.04465,
+          "3B": 0.0042,
+          "HR": 0.0433
+        },
+        "bip": {
+          "GB": 0.306375,
+          "LD": 0.171025,
+          "FB": 0.186875,
+          "PU": 0.052125
+        }
+      },
+      "fast": {
+        "terminal": {
+          "BB": 0.086875,
+          "HBP": 0.01065,
+          "K": 0.187975,
+          "OUT": 0.469525,
+          "ROE": 0,
+          "1B": 0.1524,
+          "2B": 0.0444,
+          "3B": 0.004325,
+          "HR": 0.04385
+        },
+        "bip": {
+          "GB": 0.3008,
+          "LD": 0.17215,
+          "FB": 0.190425,
+          "PU": 0.051125
+        }
+      },
+      "deltas": {
+        "BB": -0.0008500000000000035,
+        "HBP": 0.0003999999999999993,
+        "K": 0.002349999999999991,
+        "OUT": -0.0010999999999999899,
+        "ROE": 0,
+        "1B": -0.0012250000000000039,
+        "2B": -0.0002500000000000002,
+        "3B": 0.0001250000000000001,
+        "HR": 0.0005500000000000019
+      },
+      "checks": [
+        {
+          "name": "BB",
+          "detailed": 0.087725,
+          "fast": 0.086875,
+          "delta": -0.0008500000000000035,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "K",
+          "detailed": 0.185625,
+          "fast": 0.187975,
+          "delta": 0.002349999999999991,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "1B",
+          "detailed": 0.153625,
+          "fast": 0.1524,
+          "delta": -0.0012250000000000039,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "2B",
+          "detailed": 0.04465,
+          "fast": 0.0444,
+          "delta": -0.0002500000000000002,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "3B",
+          "detailed": 0.0042,
+          "fast": 0.004325,
+          "delta": 0.0001250000000000001,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "HR",
+          "detailed": 0.0433,
+          "fast": 0.04385,
+          "delta": 0.0005500000000000019,
+          "tolerance": 0.006,
+          "pass": true
+        },
+        {
+          "name": "OUT",
+          "detailed": 0.470625,
+          "fast": 0.469525,
+          "delta": -0.0010999999999999899,
+          "tolerance": 0.006,
+          "pass": true
+        }
+      ],
+      "pass": true
+    }
+  },
+  "miniLeague": {
+    "gamesPerEngine": 240,
+    "detailed": {
+      "games": 240,
+      "runs": 1735,
+      "PA": 18004,
+      "BB": 1413,
+      "K": 4497,
+      "HR": 492,
+      "H": 3767,
+      "pitches": 69804,
+      "BF": 18004,
+      "pitchersUsed": 1791,
+      "elapsedMs": 2024.7821130000002,
+      "msPerGame": 8.436592137500002,
+      "rates": {
+        "runsPerTeamGame": 3.6145833333333335,
+        "BBPerPA": 0.0784825594312375,
+        "KPerPA": 0.24977782714952232,
+        "HRPerPA": 0.02732726060875361,
+        "HPerPA": 0.20923128193734725,
+        "pitchesPerBF": 3.8771384136858478,
+        "pitchersPerTeamGame": 3.73125
+      }
+    },
+    "fast": {
+      "games": 240,
+      "runs": 1813,
+      "PA": 18154,
+      "BB": 1430,
+      "K": 4436,
+      "HR": 462,
+      "H": 3840,
+      "pitches": 70511,
+      "BF": 18154,
+      "pitchersUsed": 1781,
+      "elapsedMs": 1463.4296190000005,
+      "msPerGame": 6.097623412500002,
+      "rates": {
+        "runsPerTeamGame": 3.777083333333333,
+        "BBPerPA": 0.07877051889390768,
+        "KPerPA": 0.24435386140795418,
+        "HRPerPA": 0.025448936873416327,
+        "HPerPA": 0.21152363115566816,
+        "pitchesPerBF": 3.88404759281701,
+        "pitchersPerTeamGame": 3.7104166666666667
+      }
+    },
+    "checks": [
+      {
+        "name": "runsPerTeamGame",
+        "detailed": 3.6145833333333335,
+        "fast": 3.777083333333333,
+        "delta": 0.16249999999999964,
+        "tolerance": 0.35,
+        "pass": true
+      },
+      {
+        "name": "BBPerPA",
+        "detailed": 0.0784825594312375,
+        "fast": 0.07877051889390768,
+        "delta": 0.00028795946267018424,
+        "tolerance": 0.012,
+        "pass": true
+      },
+      {
+        "name": "KPerPA",
+        "detailed": 0.24977782714952232,
+        "fast": 0.24435386140795418,
+        "delta": -0.005423965741568143,
+        "tolerance": 0.012,
+        "pass": true
+      },
+      {
+        "name": "HRPerPA",
+        "detailed": 0.02732726060875361,
+        "fast": 0.025448936873416327,
+        "delta": -0.0018783237353372818,
+        "tolerance": 0.008,
+        "pass": true
+      },
+      {
+        "name": "HPerPA",
+        "detailed": 0.20923128193734725,
+        "fast": 0.21152363115566816,
+        "delta": 0.002292349218320916,
+        "tolerance": 0.012,
+        "pass": true
+      },
+      {
+        "name": "pitchesPerBF",
+        "detailed": 3.8771384136858478,
+        "fast": 3.88404759281701,
+        "delta": 0.00690917913116218,
+        "tolerance": 0.12,
+        "pass": true
+      },
+      {
+        "name": "pitchersPerTeamGame",
+        "detailed": 3.73125,
+        "fast": 3.7104166666666667,
+        "delta": -0.02083333333333348,
+        "tolerance": 0.3,
+        "pass": true
+      }
+    ],
+    "speedCheck": {
+      "name": "Fast/Detailed throughput",
+      "detailedMsPerGame": 8.436592137500002,
+      "fastMsPerGame": 6.097623412500002,
+      "speedup": 1.383586943103958,
+      "minimum": 1.2,
+      "pass": true
+    }
+  },
+  "pass": true
+}

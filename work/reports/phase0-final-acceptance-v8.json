@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "reportId": "phase0-final-acceptance-v8",
+  "calibrationId": "phase0_baseline_v8",
+  "ratingFitId": "rating_fit_2025_statcast_percentile_v1",
+  "createdForProject": "2026-09-18",
+  "sampleSize": 1000000,
+  "seed": "phase0-final-1m-v8",
+  "bbeSamples": 682285,
+  "observed": {
+    "paRates": {
+      "BB": 0.084251,
+      "HBP": 0.010565,
+      "K": 0.222899,
+      "BIP": 0.682285
+    },
+    "exitVelocity": {
+      "averageMph": 89.40040935451576,
+      "hardHitRate": 0.4142594370387741
+    },
+    "launchAngle": {
+      "averageDegrees": 13.54493543385,
+      "sweetSpotRate": 0.3439970100471211,
+      "typeRates": {
+        "GB": 0.42329231919212645,
+        "LD": 0.23936917856907305,
+        "FB": 0.2661922803520523,
+        "PU": 0.07114622188674821
+      }
+    },
+    "spray": {
+      "PULL": 0.39161640663359154,
+      "CENTER": 0.3649750470844295,
+      "OPPO": 0.24340854628197894
+    },
+    "contactResultRates": {
+      "OUT": 0.6770660354543923,
+      "1B": 0.21013652652483933,
+      "2B": 0.0626776200561349,
+      "3B": 0.0051635313688561234,
+      "HR": 0.044956286595777425
+    }
+  },
+  "targets": {
+    "paRates": {
+      "BB": 0.0843711254238032,
+      "HBP": 0.010577250134410077,
+      "K": 0.22298357453998838,
+      "BIP": 0.6820680499017984
+    },
+    "exitVelocity": {
+      "averageMph": 89.4,
+      "hardHitRate": 0.409
+    },
+    "launchAngle": {
+      "averageDegrees": 13.5,
+      "sweetSpotRate": 0.341,
+      "typeRates": {
+        "GB": 0.424,
+        "LD": 0.239,
+        "FB": 0.266,
+        "PU": 0.071
+      }
+    },
+    "spray": {
+      "PULL": 0.392,
+      "CENTER": 0.364,
+      "OPPO": 0.244
+    },
+    "contactResultRates": {
+      "OUT": 0.6771552209513698,
+      "1B": 0.21005260363882053,
+      "2B": 0.06229589949005035,
+      "3B": 0.005051236265945981,
+      "HR": 0.045445039653813364
+    }
+  },
+  "checks": [
+    {
+      "id": "pa-outcome-max-abs-error",
+      "actual": 0.00021695009820166256,
+      "tolerance": 0.002,
+      "pass": true
+    },
+    {
+      "id": "ev-average",
+      "actual": 0.0004093545157530798,
+      "tolerance": 0.35,
+      "pass": true
+    },
+    {
+      "id": "hard-hit-rate",
+      "actual": 0.0052594370387741285,
+      "tolerance": 0.008,
+      "pass": true
+    },
+    {
+      "id": "la-average",
+      "actual": 0.044935433850000095,
+      "tolerance": 0.4,
+      "pass": true
+    },
+    {
+      "id": "la-type-max-abs-error",
+      "actual": 0.0007076808078735342,
+      "tolerance": 0.008,
+      "pass": true
+    },
+    {
+      "id": "la-sweet-spot-rate",
+      "actual": 0.0029970100471210515,
+      "tolerance": 0.008,
+      "pass": true
+    },
+    {
+      "id": "spray-max-abs-error",
+      "actual": 0.0009750470844295256,
+      "tolerance": 0.008,
+      "pass": true
+    },
+    {
+      "id": "contact-result-max-abs-error",
+      "actual": 0.0004887530580359387,
+      "tolerance": 0.005,
+      "pass": true
+    }
+  ],
+  "passed": true
+}
