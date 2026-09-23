@@ -1,0 +1,106 @@
+{
+  "schema": "THE_CALL_UP_PRODUCTION_DYNAMIC_STUFF_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "pitcherId": "694738",
+  "baseStuff": 53,
+  "arsenalAverageQualityZ": -0.020137578571428796,
+  "pitchStuff": [
+    {
+      "pitchType": "SI",
+      "usage": 0.35300000000000004,
+      "qualityZ": -0.31792857142857095,
+      "velocityMph": 93.31,
+      "whiff": 0.0849,
+      "stuff": 51.45
+    },
+    {
+      "pitchType": "CU",
+      "usage": 0.31150000000000005,
+      "qualityZ": -0.08307142857142918,
+      "velocityMph": 76.8,
+      "whiff": 0.3451,
+      "stuff": 52.68
+    },
+    {
+      "pitchType": "CH",
+      "usage": 0.15960000000000002,
+      "qualityZ": 0.3411428571428565,
+      "velocityMph": 87.02,
+      "whiff": 0.2932,
+      "stuff": 54.76
+    },
+    {
+      "pitchType": "FC",
+      "usage": 0.10380000000000002,
+      "qualityZ": 0.2766428571428561,
+      "velocityMph": 89.49,
+      "whiff": 0.2757,
+      "stuff": 54.32
+    },
+    {
+      "pitchType": "SL",
+      "usage": 0.039700000000000006,
+      "qualityZ": 0.4957142857142867,
+      "velocityMph": 83.9,
+      "whiff": 0.6,
+      "stuff": 53.99
+    },
+    {
+      "pitchType": "FF",
+      "usage": 0.032400000000000005,
+      "qualityZ": 0.4668571428571415,
+      "velocityMph": 92.96,
+      "whiff": 0.352,
+      "stuff": 54.65
+    }
+  ],
+  "weightedStuff": 52.863845000000005,
+  "liveSelections": {
+    "FC": {
+      "stuff": 53.07,
+      "velocityMph": 89.49,
+      "strikeoutProbability": 0.24111352069906974
+    },
+    "CU": {
+      "stuff": 50.59,
+      "velocityMph": 76.8,
+      "strikeoutProbability": 0.2338442885953056
+    },
+    "SI": {
+      "stuff": 53.43,
+      "velocityMph": 93.31,
+      "strikeoutProbability": 0.2421814486511852
+    },
+    "CH": {
+      "stuff": 55.37,
+      "velocityMph": 87.02,
+      "strikeoutProbability": 0.2479916217167814
+    },
+    "FF": {
+      "stuff": 51.9,
+      "velocityMph": 92.96,
+      "strikeoutProbability": 0.23766499331397664
+    },
+    "SL": {
+      "stuff": 51.84,
+      "velocityMph": 83.9,
+      "strikeoutProbability": 0.2374890639834342
+    }
+  },
+  "generatedFallback": {
+    "pitchCount": 4,
+    "stuffRatings": [
+      49.73,
+      50.23,
+      48.85,
+      51.1
+    ]
+  },
+  "fastPass": true,
+  "detailedPass": true,
+  "interactive": {
+    "pitchType": "CU",
+    "velocityMph": 76.8
+  }
+}

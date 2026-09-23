@@ -323,17 +323,154 @@ function selectPitchFromArsenal({
   return null;
 }
 
+
+const PITCH_VELOCITY_REFERENCE = Object.freeze({
+  FF: 94.0,
+  SI: 93.0,
+  FC: 89.5,
+  SL: 85.0,
+  ST: 84.0,
+  CU: 79.0,
+  KC: 81.0,
+  CH: 85.0,
+  FS: 86.0,
+  SV: 83.0
+});
+
+const PITCH_WHIFF_REFERENCE = Object.freeze({
+  FF: 0.22,
+  SI: 0.16,
+  FC: 0.22,
+  SL: 0.30,
+  ST: 0.31,
+  CU: 0.28,
+  KC: 0.29,
+  CH: 0.30,
+  FS: 0.34,
+  SV: 0.30
+});
+
+function fallbackPitchQualityZ(pitch) {
+  const type = String(pitch?.pitchType ?? "FF").toUpperCase();
+  const velocity = finite(pitch?.velocityMph);
+  const whiff = finite(pitch?.whiff);
+  let score = 0;
+  let weight = 0;
+
+  if (velocity != null) {
+    const reference = PITCH_VELOCITY_REFERENCE[type] ?? 88;
+    score += clamp((velocity - reference) / 3.5, -2, 2) * 0.65;
+    weight += 0.65;
+  }
+
+  if (whiff != null) {
+    const reference = PITCH_WHIFF_REFERENCE[type] ?? 0.26;
+    score += clamp((whiff - reference) / 0.07, -2, 2) * 0.35;
+    weight += 0.35;
+  }
+
+  return weight > 0 ? score / weight : 0;
+}
+
+function pitchQualityZ(pitch) {
+  const real = finite(pitch?.qualityZ);
+  return real == null
+    ? fallbackPitchQualityZ(pitch)
+    : clamp(real, -2.5, 2.5);
+}
+
+function arsenalAverageQualityZ(arsenal) {
+  const rows = (arsenal ?? []).filter(
+    (row) => Number(row?.usage) > 0
+  );
+  if (!rows.length) return 0;
+
+  const total = rows.reduce(
+    (sum, row) => sum + Number(row.usage),
+    0
+  );
+  if (!(total > 0)) return 0;
+
+  return rows.reduce(
+    (sum, row) =>
+      sum +
+      pitchQualityZ(row) *
+        (Number(row.usage) / total),
+    0
+  );
+}
+
+function resolveDynamicPitchStuff({
+  baseStuff,
+  selectedPitch,
+  arsenal
+} = {}) {
+  const base = finite(baseStuff);
+  if (base == null) {
+    throw new TypeError("Dynamic Stuff에는 baseStuff가 필요합니다.");
+  }
+  if (!selectedPitch) return clamp(Math.round(base), 20, 99);
+
+  const selectedQuality = pitchQualityZ(selectedPitch);
+  const averageQuality = arsenalAverageQualityZ(arsenal);
+  const delta = selectedQuality - averageQuality;
+
+  const rawSamples = finite(selectedPitch?.samples);
+  const sampleReliability =
+    rawSamples == null
+      ? selectedPitch?.generated === true
+        ? 0.55
+        : 0.72
+      : clamp(rawSamples / (rawSamples + 120), 0.35, 0.98);
+
+  const generatedScale =
+    selectedPitch?.generated === true ? 0.72 : 1;
+  const adjustment = clamp(
+    delta * 5.5 * sampleReliability * generatedScale,
+    -7,
+    7
+  );
+
+  return clamp(
+    Number((base + adjustment).toFixed(2)),
+    20,
+    99
+  );
+}
+
+
 function createProductionPitchSelectionResolver({
   seed = ""
 } = {}) {
-  return ({ state, pitcherId, batterId, pitcher }) =>
-    selectPitchFromArsenal({
-      arsenal: pitcher?.pitchArsenal ?? [],
+  return ({
+    state,
+    pitcherId,
+    batterId,
+    pitcher,
+    pitcherProfile
+  }) => {
+    const arsenal = pitcher?.pitchArsenal ?? [];
+    const selected = selectPitchFromArsenal({
+      arsenal,
       seed,
       state,
       pitcherId,
       batterId
     });
+    if (!selected) return null;
+
+    return freeze({
+      ...selected,
+      resolvedStuff: resolveDynamicPitchStuff({
+        baseStuff:
+          pitcherProfile?.stuff ??
+          pitcher?.derived?.stuff ??
+          50,
+        selectedPitch: selected,
+        arsenal
+      })
+    });
+  };
 }
 
 export {
@@ -342,6 +479,9 @@ export {
   normalizeInferredPitchArsenal,
   buildProductionPitchArsenalIndex,
   createGeneratedRandomArsenal,
+  pitchQualityZ,
+  arsenalAverageQualityZ,
+  resolveDynamicPitchStuff,
   selectPitchFromArsenal,
   createProductionPitchSelectionResolver
 };
