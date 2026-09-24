@@ -1,0 +1,165 @@
+name: THE CALL-UP Phase 3 4P Automatic MLB Injury Call-up and Return
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-phase3-4p-automatic-injury-callup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  automatic-injury-callup-return:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify installed 4O primitives and exact source baseline
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e 'const fs=require("node:fs");const r=JSON.parse(fs.readFileSync("reports/phase3-emergency-callup-primitives-4o-v1.json","utf8"));if(r.pass!==true||r.snapshotHash!=="fnv1a32:f7b34713"||r.pending.automaticInjuryTrigger!==false)process.exit(1);console.log("4O prerequisite PASS");'
+          test -f src/api/seasonApi.js
+          test -f src/engine/career/rosterControlState.js
+      - name: Install live injury-trigger, legal return and MLB IL service credit
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat <<'TCU_4P_INSTALL' | base64 -d | gzip -d > /tmp/tcu-4p-install.py
+          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
+          BUu18ixsMAAA
+          TCU_4P_INSTALL
+          python3 /tmp/tcu-4p-install.py
+          node --check src/api/seasonApi.js
+          node --check src/engine/career/rosterControlState.js
+          git diff --check
+      - name: Verify automatic call-up, save restore, minimum IL stay and return
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat <<'TCU_4P_VERIFY' | base64 -d | gzip -d > scripts/verify-phase3-automatic-injury-callup-4p.mjs
+          H4sIAAAAAAAC/61a3W7jxhW+36dggCIksSPaXnuTlC7XkGUtVolsKZK8Qeoa2rE4kmZNkQyHlFerFdAH6G3v+ggtchWgF32iBH2HnvnhryhbSQMs1hJ55pwz
+          5+c758yILsIgijXMGIE/0yhYaLofuMSWTw5YHNFJrJ8+o5JwyopEU5a/CXE8L77j3/O3Hz16V3zLv+dv19qUeuR60B0Ffc5mUyRNIq9IyQhmgd8MaUZlWQcs
+          mhzgkB5kL633rLhogVd3pBmG3qrjv0+iFdLmBHvxvLnE1MN31KPxqsqP+DPqE8XygIp1wxjHpMz7maZNIgKPBwGLSdQK/DgKPEGItDAiIY5IE+NL7669INGM
+          +BOlw4DESeQjbYk96tauf1av0QQ4kugg2qKvbDplPBQ7GOIl6eOVF2C3ulPw9JJOCFN7HZKIwtKPOKaBL3k+mwQ+i7VBrzdyuGOtiLDAWxJDfHFp5OMFMUpO
+          NKQe1oLE2AIfmiYCebp5WuA1aPd7A8XxfUB9gz9EOhgNVrKDcI4ZOW7gJA4WoMykIZ3QmGDPS8LGSdhYHoF+gZ9zfXu8xQ1MgA/iORnzZeMkHDMfh2wexOPl
+          8cHCu2ssKPz34vDFF40wCtxkwrfdWB4LztbsY8584gU+cT44ryArgCyJiNvij4wPGYmwuQNmEYZGEFvEM51XMpss8kOCPWOnX7Jl6wUPfP31dberb0wE0ohi
+          lcrBoOWStMH3lDAndF4ZoRVEM+wrt4l4OLNIOeQugyVh2tmZdnNrWuAtiB8DtvPBYkCeMMdx9GZr1Hnbzvc8IzGXsoI9Ieqav02Q70oxwn/E7Xt4RaKOC/KA
+          ZSrJJx/iC2DmGNw4yMUrBuLW8qXr+ORB46/F2+f66PDQFv/+DLq6FiPx9agl31uz/Iv5XPA5jUSyaa4VB51hbwhm82eGaTEP4t44REeH5ukGwnya+ML9ChBl
+          SrLML4RbAomwNGXmC+XAHo4igc1+4IFRshGCKHPggeWRJfGYddk9Rxjj4qNms3ma8VNmcoS4qtEQZIenXvGPeAK29+OOm6+XweEIPQs+5QSlQDwPAo9g3zDk
+          gjPQyQZVTUtCixUKkexGaXCrIlFX3zX5Xst0AMVFbPPoeUIUiLFB3JYovqNMTmF7v6uQfD9T7LHtDblJCHEB4eOCKWEt06SX9hC5y4RqX0pecWN7CXMJCdtC
+          YDXOBHGX4FlCRGApwexGxTgoY8UELyzItFseiIoA6UDMI/fAE4u1BY2iAPYe0Wn8W2RDBFdlgzEKsvm3VDYQ/5+yU1HV5wmsG4HMjrstcYL9wAdbezUCVea5
+          LM/KXuSCB6ceji9xaHjOq97dezKJrXuyYkaeuzfebcXb5naccPQaktgAAYA69CMBMGXAwJ/Fc6Rvxx31tSKCcB03W+gkMK1LZpi3L4aZAxKHSEcXJe3wZePo
+          pY6KzAB49ZiwWM/3LeERfObs6mWMdagAyNYzah1B4YgEatsCtKlPY+gdutwwNo8wKF9FKVnY7ykno/+VkqjnrC3LyhRFYDE68zmnoSh1Ysm4c/X19aB9Me52
+          hiOwUcitY5cWWvIhgO4CU/7APkQrgiN2zYhrH282XObuDs6gXkGrENPIWfNaS5i9zmTY1EOFrW5Q9qZi7BLcV8wjjFL28iaXHNzjlfN0M2pwDbeDl6+2oHkK
+          HoiroNnjUZcWqoZHsxjS7rxgck/q4FmwkbsvGLjqGQFM47wN2YuJ9JKVeQkdImU4YYBkIVKqBPJyyZMSMhPXKNrrjzq9q/bFr2CiFM15sdGcMtkJoqNtPtwh
+          +9qsHM3p/hdJrBAlTEpYpxy1T1jwlOCaoNrYBY5aMbdVBmXfy4lVtcXu1Npstu2hlM6iMS3gngzIIIkbwbQhObM0JBnMJX7srZTPwRjF1NktRPxtQSsOrr4e
+          jXuvx9Ljw/F3TYjOwXA8aH973RmkEaDE8QzhcJ3jNd9gEZ/B5EsaQMP99bB3BZaNGAxP3MHYfQ26Dlf+xHhiKMoa7nQaCiO6oLwHYY2TIB+MkJ7E06/0mpKU
+          KgHyGRNpbZ7WE6QD0xvMoFhN/eURPn5hT7+8Oz758uhYf4w18V0RsOkIJ8NqFNHZDKqy8F5hebWi5cG6wBxai/biJwjWLPE/0lDYq2q/t8emCd2+akV2WkEy
+          FlMqHxQtEBdDVIit1hqgoBTv+/MTB5g6WmIyb/HSBm5vAT8vmBlrKWOomNjy68YszQjs5vC2OAFAsjprPlXb+klf+7apI1/QCcvY+i9/++t///6PX378z88/
+          /UtH8wD0Dx58W//5p3/+8uO/dYRnxD76SqbmnNDZPG4t4MEhehBfvpnZX36F7gJ3NVqFIKI5etNtjzotHd3hGIrjQEfxPAoe5EceWjha9QNGRSLrw6EuWeNo
+          MiexYHHe7DavWpAKaEkZvfPIKMIUeN3okCKtb8bnTQ5Kw97r0fhN8+piqN+WytWlnHibb3uDzqit2E/xMohoTHqlumYrn/IWDDrLQpmTzij4RHYZ0i0SZI01
+          IwAvukqjk1AcL6QnCz9gHQnbox0+K7aKSo4l/8BkFkC48x4ql8/UUYqa9Q0+7opuwVC0iHtXfS6Cs5gY5ePakbIwSqrmM18LjRLEInNuAG9F/+9RnyTh0Ati
+          dnbGJ/IF9LMMRvk1dW1mic5KjJZh6mHIXPURhTQGH0e2yNWNaUrPpKzV2gJfsItgnDPTh309Y8NxZovLXeJ5sNlHmQy2mYiE8UisiWnY8YELUlV+yPWST3Ac
+          k0UIJdA55PTTIDKKdtKCaWoxgdAZRos2weHqpUOcJIOYE4KzoOM10VHvlIZnqe/Ud9EMFhnYGYHgvfVeCqBT4zNJ8OnTZ0yetMiDy0+fUgbbx4BFPmdbvcJn
+          jlPqsDjgUZ9XrHxLYEQYdMBi1XNTQyihdEBSNbTmvaddjdasX5eu1jSRd+/yvANHTEjjD+tM2c07dE99166YUu93Rq037YFu6/3esMMLsJ7yFFM3B8Qda8bD
+          UXMwKqxUD9L1Qgd7PcUL6m0zue73gcV57+J74NDtfZd+QQySLxI4fNm56g10cVhlv1QNS1ZhgnsjtaQFK6AT0oVAV4Okl4gDkyj4J839LKTwkjjitDHFCTML
+          iLKSJifdGWViCBIuQ9JldqaP/L6RbAFJiCY51YfjvowktnFO6J3coyDSSl5We8lRMoJhNIhSjOSrt0kSv1gEBlCYyQPABFpLFyp0UuZPM/7586JVQUzixU+g
+          c2Ebkl5sBGAobkRCaO1eJACVDmXV8sePPzNOJj8s5XCV+VmwNNclPON4nS3JsTENiSpkl0MljfnHs3Vzegc18/50A9SbZ8VQloefuh+AIfPZT+PHSHMKFoeR
+          KtKULCCZELCFq2FNdub8/CXrWTXeszaSUEY9R/BJEkX8WOBR5yDuSA5zjiKvBb/aU9PbQpOpDnUVD3Woq++cOJXMfYau3YsD/+TwEvuqzd5J9dh0+Bjg1+/5
+          UX41Wjxp1NIBxO0eo3t6GnMJA94iWTjFaM5w9uilfXS4pY2UuKC+HApEJUmvCIwSH3kelMqo6fElK6Z03OnoghFX0AwZtcqmRipBrp09LcCnucsrEjEtiRay
+          rmZSS9MFnVHo99u8crAs5LcuX6w4wj7DYtJMjxQ5l98Ennvl4ZblysCneJRvmLaxr9Y6ZnomeoR0BtNPAyprATfqD8713bG8l7VQ2dRFyR+AXJMJoYkSLs7l
+          n+2uXrJqpyYoHv4B5lDGm6p9xoOMWgwI0r5ap6spYbsOydNVNfuuu6FDu81US66DBgX78c+Te7CMF/Bbp2ksgH9LwewWLdtTDeRmvXQE3ehsKG+ksxFIACQI
+          fRzuGOS/xwNCLb+ArqzAW81yMBhlg4M8sQGfpKWXTwf8BYVhgf7pj6f0+fPSVHBHgILs00MUSJRaQx5AXKecaL90kyGR1ivej0D9JL6LIzAYCaEjoVknolqd
+          4MFJb27LhW4r4aodKyxN/Sx861KGw5BgXuvdhA/eufQwCmbgcJYdpGq5la0wYXNDzgY18CjwXEKyDSJTdE5nhRpPZlx+ezBs8jY6l8lvSAft0fVAnOSus5AA
+          ikIvVMGXgsppGCM9gfoUyoYXDChf67lI+upQ+/xzFUJVW4AWO6xUWKNGQEVYWbb90lTWFEc5Gr+CavNrL0PPHDjF1ANt40DD7hL7E6I9zOGJhh8w5XkoIYcb
+          RO6j3BGmpkLviAcAegcLK4fsPh+UsiyzIVLFCR4TBzh0CvNkGi6miuBt7lb6gW/plVPXF+gpiTIUTFWiF+DqQ8zi/KRfpseUg/1eSScoBQarw13xoA7dJKVC
+          tjyetiqToPs1TdzeFyRgs5v8TiK/nhhfX31z1fvuSr8F5hMvcQl7UosnOj11flO6yH7ATPODWPb73irzOo8u8EcQsd/DGo+2yEKp37lPVjutBLaseL66UdDg
+          XyVTSrvc/rGZUd9dSnOUe0v1bP/O0gRIetvsdJvn3XJxlUDY9l1H8vz/qmoedTnjV5UCnv20Ql4R8llREWsxXRDAyABqi2rgHm+phMpm+TaZH+7u10+lxIVU
+          FtdAj3VT6Zp9uyNp1P2It2MkK9eZqjsa5LTs1GFMCkZlHmXaogEDfqjAINgW2NZHb9rjVrPbHV/3x/03zWH7eNy8HvUum6NOS86534v3/C7spD9+e6QjfnUk
+          TmNRqfjzexK7/vpI/rJt0G52x/1B7+K6JU7lgHu7NQKoUmK6gG1cVvvqojlQp3XyNEPcIhZzJz/fHclTXDt7gCq2s+t/UKWqZPl2vQYGUano2HWFqFiq7NoC
+          tpHiZvIeFWwUgfspozE5CfqZNevvy+Q7ga+V29rhAw4LftAAiC/S8SgjEoEnqRYYyj+EvgxJ4nYhO3leDwiTDUyJWaaN3Kl8B3U2Xl1iv+m7PQGCg8QjrA8p
+          BQleYaCuZ3tJ3JtKYiZZncubVkms/AL7KiBNC57QqkJT6Nb57yYHMn/PRdEHRZp8BCkqKWvApfi1DwOCa5/+kBDpeWkK5Q+FSvZaNhB2FcfEcGPnQLdBaQ9l
+          Zy2M5AQlEAK8n/2SVFsel87K1I2JRlkacdC1rAqnZOpsDKXo5KrJSoL7qtjbAK8VgjLk8p8gCzMJEfyN1PQU1NHm1HWJD/WZLuUh3ReHYrhlIVRrUIP6UwI9
+          o2vp4hR3yqzFvUuj/BY6/X1v/pNdE0GfDJ0mA5bqNkYtfeD3ddklbL4CVRo/CT5I3NC8MJ/rfyk0aIFHLH5x+ugS8YsoyMC1vFw/3UCsT+YGMdcpCyKaXWKe
+          wpgygSnFIh9ozK/znSNo6f8HvCdsfvouAAA=
+          TCU_4P_VERIFY
+          node --check scripts/verify-phase3-automatic-injury-callup-4p.mjs
+          node scripts/verify-phase3-automatic-injury-callup-4p.mjs
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/phase3-automatic-injury-callup-4p-v1.json","utf8"));if(r.pass!==true||!Object.values(r.gates).every(Boolean)||r.service.after<=r.service.before)process.exit(1);console.log("4P automatic emergency injury/return PASS");'
+      - name: Regression check 4O legal policy, normal promotions and postseason units
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase3-emergency-callup-primitives-4o.mjs
+          node scripts/verify-season-promotion-ai-v22.js --verify --output=/tmp/tcu-4p-prior-promotion.json
+          node --test tests/postseasonRotation4I.test.js tests/postseasonRoster4H.test.js
+          git diff --exit-code -- reports/phase3-emergency-callup-primitives-4o-v1.json
+          git diff --check
+      - name: Commit only verified 4P source, isolated test and report
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add src/api/seasonApi.js src/engine/career/rosterControlState.js scripts/verify-phase3-automatic-injury-callup-4p.mjs reports/phase3-automatic-injury-callup-4p-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo '4P integration already committed.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'phase3: integrate automatic MLB injury callups, IL returns and service (4P)'
+            git push origin HEAD:main
+          fi
