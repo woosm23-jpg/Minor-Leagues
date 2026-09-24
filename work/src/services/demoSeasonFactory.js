@@ -5,6 +5,7 @@ import { getSeasonEffectivePlayer } from "../engine/season/playerSeasonState.js"
 import { buildDailyLineup } from "../engine/season/lineupRestAI.js";
 import { getSeasonEffectivePitcher, orderAvailableBullpen, pitcherAvailability, selectSeasonStarter } from "../engine/season/pitcherSeasonState.js";
 import { healthAvailability } from "../engine/season/injuryState.js";
+import { assessBullpenRecovery } from "../engine/season/bullpenRecoveryPolicy.js";
 import { resolveProductionGamePark } from "./productionParkResolver.js";
 
 const POSITION_ORDER = Object.freeze(["SS", "CF", "1B", "DH", "RF", "3B", "2B", "C", "LF"]);
@@ -357,23 +358,32 @@ function buildTeamScheduleContext(league, scheduleGame, teamId) {
 
 function buildBullpenMeta(
   bullpenIds,
-  pitcherStates = {}
+  pitcherStates = {},
+  gameDate
 ) {
   return Object.freeze(
     Object.fromEntries(
-      bullpenIds.map((id) => [
-        id,
-        Object.freeze({
-          pregameFatigue: Number(
-            pitcherStates?.[id]?.fatigue ?? 0
-          ),
-          availability: pitcherAvailability(
-            pitcherStates?.[id]
-          ),
-          lastAppearanceDate:
-            pitcherStates?.[id]?.lastAppearanceDate ?? null
-        })
-      ])
+      bullpenIds.map((id) => {
+        const state = pitcherStates?.[id] ?? null;
+        const recovery = assessBullpenRecovery({
+          gameDate,
+          lastAppearanceDate: state?.lastAppearanceDate ?? null,
+          lastPitchCount: state?.lastPitchCount ?? 0
+        });
+
+        return [
+          id,
+          Object.freeze({
+            pregameFatigue: Number(state?.fatigue ?? 0),
+            availability: pitcherAvailability(state),
+            lastAppearanceDate: state?.lastAppearanceDate ?? null,
+            lastPitchCount: Number(state?.lastPitchCount ?? 0),
+            recoveryStatus: recovery.status,
+            daysSinceAppearance: recovery.daysSinceAppearance,
+            recoveryReason: recovery.reason
+          })
+        ];
+      })
     )
   );
 }
@@ -467,7 +477,8 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
         bullpenIds: awayBullpen,
         bullpenMeta: buildBullpenMeta(
           awayBullpen,
-          pitcherStates
+          pitcherStates,
+          scheduleGame.date
         )
       }),
       home: Object.freeze({
@@ -475,7 +486,8 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
         bullpenIds: homeBullpen,
         bullpenMeta: buildBullpenMeta(
           homeBullpen,
-          pitcherStates
+          pitcherStates,
+          scheduleGame.date
         )
       })
     }),

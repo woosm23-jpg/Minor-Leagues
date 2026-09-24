@@ -1,0 +1,32 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_BULLPEN_RECOVERY_4F_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "existingSaveSchemaPreserved": true,
+    "recoveryInputs": [
+      "GAME_DATE",
+      "LAST_APPEARANCE_DATE",
+      "LAST_PITCH_COUNT",
+      "PREGAME_FATIGUE",
+      "HEALTH_AVAILABILITY"
+    ],
+    "heavyPreviousDayRestThresholdPitches": 30,
+    "limitedPreviousDayThresholdPitches": 18,
+    "limitedTwoDaysAgoThresholdPitches": 45,
+    "emergencyFallback": "ONLY_IF_NO_READY_ARM",
+    "starterHookTiming": "UNCHANGED"
+  },
+  "synthetic": {
+    "readyCloser": "cl",
+    "protectedCloser": "su",
+    "emergencyArm": "cl"
+  },
+  "productionSmoke": {
+    "checkedGames": 40,
+    "metadataRows": 787,
+    "injectedHeavyOutings": 40,
+    "protectedFromReentry": 40,
+    "pitcherChanges": 229
+  }
+}

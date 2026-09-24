@@ -205,6 +205,16 @@ function availabilityPenalty(meta) {
   return 0;
 }
 
+function recoveryPenalty(meta) {
+  const status = String(
+    meta?.recoveryStatus ?? "READY"
+  ).toUpperCase();
+
+  if (status === "REST") return 80;
+  if (status === "LIMITED") return 12;
+  return 0;
+}
+
 function candidateScore({ player, role, target, meta }) {
   const pregameFatigue = Math.max(
     0,
@@ -214,7 +224,8 @@ function candidateScore({ player, role, target, meta }) {
   return relieverQuality(player)
     + roleFitBonus(target, role)
     - pregameFatigue * 0.18
-    - availabilityPenalty(meta);
+    - availabilityPenalty(meta)
+    - recoveryPenalty(meta);
 }
 
 function chooseBullpenArm({ state, fieldingTeam, plan, lookup }) {
@@ -238,6 +249,7 @@ function chooseBullpenArm({ state, fieldingTeam, plan, lookup }) {
       return {
         id,
         role,
+        meta,
         quality: relieverQuality(player),
         score: candidateScore({ player, role, target, meta })
       };
@@ -249,7 +261,35 @@ function chooseBullpenArm({ state, fieldingTeam, plan, lookup }) {
         a.id.localeCompare(b.id)
     );
 
-  return candidates[0]?.id ?? null;
+  const normal = candidates.filter(
+    (row) => {
+      const availability = String(
+        row.meta?.availability ?? "READY"
+      ).toUpperCase();
+      const recovery = String(
+        row.meta?.recoveryStatus ?? "READY"
+      ).toUpperCase();
+
+      return availability !== "INJURED" &&
+        availability !== "UNAVAILABLE" &&
+        recovery !== "REST";
+    }
+  );
+
+  if (normal.length > 0) {
+    return normal[0].id;
+  }
+
+  // Emergency: preserve the game's ability to finish if every usable
+  // reliever is resting or otherwise unavailable. Never use an injured arm.
+  const emergency = candidates.filter(
+    (row) =>
+      String(
+        row.meta?.availability ?? "READY"
+      ).toUpperCase() !== "INJURED"
+  );
+
+  return emergency[0]?.id ?? null;
 }
 
 /**
