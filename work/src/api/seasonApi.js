@@ -988,16 +988,59 @@ function addPitchingTotals(store,map,starterId){for(const[id,line]of Object.entr
 function postseasonDate(year,round,leagueLabel,gameIndex){let key=round;if(round==="DIVISION_SERIES")key=`${leagueLabel}_DIVISION_SERIES`;if(round==="LCS")key=`${leagueLabel}_LCS`;const dates=POSTSEASON_RULESET_2026.scheduleMonthDays[key];return `${year}-${dates[Math.min(gameIndex,dates.length-1)]}`;}
 function seedForTeam(state,teamId){for(const league of Object.values(state.field.leagues)){const row=league.seeds.find((seed)=>seed.teamId===teamId);if(row)return row.seed;}return 99;}
 function regularStanding(session,teamId){return stateForLevel(session,"MLB").standings[teamId];}
-function simulatePostseasonSeries(session,{round,leagueId,leagueLabel,teamAId,teamBId,highTeamId,seriesId}){
+// Phase 3 4H: series within a round are disjoint, but their dates overlap.
+// Track recovery per pitcher so a series processed later cannot rewind another
+// team's calendar. At the round boundary, settle everyone to one save-safe date.
+function recoverPostseasonPitchersForGame(session, game, recoveryDates) {
+  const rosters = session.fixture.levelLeagues.MLB.rosters;
+  for (const teamId of [game.awayTeamId, game.homeTeamId]) {
+    const roster = rosters[teamId];
+    const eligible = new Set(session.postseasonState.rosters[teamId]);
+    for (const playerId of roster.pitchers ?? []) {
+      if (!eligible.has(playerId)) continue;
+      const player = roster.players?.[playerId] ?? findPlayer(session, playerId);
+      if (!player?.pitching) continue;
+      const fromDate = recoveryDates.get(playerId) ?? session.playerStateDate;
+      const days = daysBetween(fromDate, game.date);
+      if (days > 0) {
+        const current = session.pitcherStates[playerId] ?? createPitcherSeasonState(player);
+        session.pitcherStates[playerId] = recoverPitcherSeasonState(current, player, days);
+      }
+      recoveryDates.set(playerId, game.date);
+    }
+  }
+}
+function settlePostseasonPitcherCalendar(session, calendar) {
+  const targetDate = calendar.maxGameDate;
+  if (!targetDate) return;
+  const startDate = session.playerStateDate;
+  const days = daysBetween(startDate, targetDate);
+  if (days === 0) return;
+  session.pitcherStates = Object.fromEntries(Object.entries(session.pitcherStates).map(([id, state]) => {
+    const fromDate = calendar.recoveryDates.get(id) ?? startDate;
+    const rest = daysBetween(fromDate, targetDate);
+    return [id, rest > 0 ? recoverPitcherSeasonState(state, findPlayer(session, id), rest) : state];
+  }));
+  // Keep player-state recovery aligned with playerStateDate. Postseason batting
+  // is still recorded only in postseasonState, never the regular season table.
+  session.playerStates = Object.fromEntries(Object.entries(session.playerStates).map(([id, state]) =>
+    [id, recoverPositionPlayer(state, days)]
+  ));
+  session.playerStateDate = targetDate;
+}
+function simulatePostseasonSeries(session,{round,leagueId,leagueLabel,teamAId,teamBId,highTeamId,seriesId},calendar){
   const cfg=POSTSEASON_RULESET_2026.rounds[round],winsNeeded=Math.floor(cfg.bestOf/2)+1,lowTeamId=highTeamId===teamAId?teamBId:teamAId;
   let highWins=0,lowWins=0;const games=[];
   for(let gameIndex=0;gameIndex<cfg.bestOf&&highWins<winsNeeded&&lowWins<winsNeeded;gameIndex+=1){
     const highHome=cfg.homePattern[gameIndex]===1,homeTeamId=highHome?highTeamId:lowTeamId,awayTeamId=highHome?lowTeamId:highTeamId;
     const gameId=`POST_${session.postseasonState.seasonYear}_${seriesId}_G${gameIndex+1}`;
     const game={gameId,date:postseasonDate(session.postseasonState.seasonYear,round,leagueLabel,gameIndex),awayTeamId,homeTeamId,status:"SCHEDULED",seriesId,seriesGame:gameIndex+1,gamesInSeries:cfg.bestOf,awayRotationIndex:gameIndex%5,homeRotationIndex:gameIndex%5};
+    recoverPostseasonPitchersForGame(session,game,calendar.recoveryDates);
     const fixture=createSeasonGameFixture({seasonFixture:postseasonFixtureForGame(session,awayTeamId,homeTeamId),scheduleGame:game,playerStates:session.playerStates,pitcherStates:session.pitcherStates,roleStates:session.roleStates,level:"MLB"});
     const result=simulateSeasonFixtureGame(fixture,{seed:`${session.fixture.seed}:POST:${gameId}`});
     const ba=battingMapFromResult(result,"away"),bh=battingMapFromResult(result,"home"),pa=pitchingMapFromResult(result,"away"),ph=pitchingMapFromResult(result,"home");
+    applyCompletedGamePitcherStates(session,fixture,{away:pa,home:ph},game.date);
+    if(!calendar.maxGameDate || game.date>calendar.maxGameDate) calendar.maxGameDate=game.date;
     addBattingTotals(session.postseasonState.stats.batting,ba);addBattingTotals(session.postseasonState.stats.batting,bh);
     addPitchingTotals(session.postseasonState.stats.pitching,pa,fixture.initialState.currentPitcherId.away);addPitchingTotals(session.postseasonState.stats.pitching,ph,fixture.initialState.currentPitcherId.home);
     if(round==="WORLD_SERIES"){addBattingTotals(session.postseasonState.stats.worldSeriesBatting,ba);addBattingTotals(session.postseasonState.stats.worldSeriesBatting,bh);addPitchingTotals(session.postseasonState.stats.worldSeriesPitching,pa,fixture.initialState.currentPitcherId.away);addPitchingTotals(session.postseasonState.stats.worldSeriesPitching,ph,fixture.initialState.currentPitcherId.home);}
@@ -1054,7 +1097,11 @@ function finalizeSeasonHistory(session){
   for(const award of wonAwards)session.careerEventState=appendCareerEvent(session.careerEventState,{type:"MAJOR_AWARD",date:session.postseasonState.completedDate,playerId:userId,importance:award==="MVP"||award==="WORLD_SERIES_MVP"?"CAREER":"MAJOR",source:"SEASON_AWARDS",level:"MLB",teamId:userTeamId,reasonCodes:[award],statValue:award});
 }
 function advancePostseasonRoundInternal(session){
-  const state=ensurePostseasonState(session);if(state.status==="COMPLETE")return false;const round=state.currentRound,results=roundSeriesSpecs(session,round).map((spec)=>simulatePostseasonSeries(session,spec));state.rounds[round]=results;const idx=POSTSEASON_ROUND_ORDER.indexOf(round);
+  const state=ensurePostseasonState(session);if(state.status==="COMPLETE")return false;
+  const round=state.currentRound,calendar={recoveryDates:new Map(),maxGameDate:null};
+  const results=roundSeriesSpecs(session,round).map((spec)=>simulatePostseasonSeries(session,spec,calendar));
+  settlePostseasonPitcherCalendar(session,calendar);
+  state.rounds[round]=results;const idx=POSTSEASON_ROUND_ORDER.indexOf(round);
   if(round==="WORLD_SERIES"){state.status="COMPLETE";state.currentRound=null;state.championTeamId=results[0].winnerTeamId;state.runnerUpTeamId=results[0].loserTeamId;state.completedDate=results[0].games.at(-1).date;finalizeSeasonHistory(session);}else state.currentRound=POSTSEASON_ROUND_ORDER[idx+1];
   return true;
 }

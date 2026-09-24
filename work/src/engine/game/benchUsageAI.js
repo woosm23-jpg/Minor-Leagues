@@ -588,6 +588,7 @@ function candidateRows({
       !used.has(
         row.playerId
       ) &&
+      state.currentPitcherId?.[team] !== row.playerId &&
       Number(
         row.fatigue ?? 0
       ) < 82 &&

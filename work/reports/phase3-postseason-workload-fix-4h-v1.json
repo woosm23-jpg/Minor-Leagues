@@ -1,0 +1,44 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_POSTSEASON_WORKLOAD_FIX_4H_V1",
+  "pass": true,
+  "seed": "phase3-4h-postseason-workload-baseline",
+  "snapshotHash": "fnv1a32:f7b34713",
+  "rules": {
+    "saveSchemaUnchanged": true,
+    "regularSeasonStatsUnchanged": true,
+    "sharedPitcherGameApplication": true,
+    "perTeamOverlappingCalendar": true,
+    "roundEndRecovery": true
+  },
+  "wildCard": {
+    "round": "WILD_CARD",
+    "seriesCount": 4,
+    "gameCount": 11,
+    "fromDate": "2026-09-27",
+    "toDate": "2026-10-01",
+    "usedPitchers": 71,
+    "appearanceCount": 91
+  },
+  "divisionSeries": {
+    "round": "DIVISION_SERIES",
+    "seriesCount": 4,
+    "gameCount": 15,
+    "fromDate": "2026-10-01",
+    "toDate": "2026-10-08",
+    "usedPitchers": 76,
+    "appearanceCount": 112
+  },
+  "determinism": {
+    "sameSeed": true,
+    "roundResultsEqual": true,
+    "statsEqual": true,
+    "pitcherStatesEqual": true
+  },
+  "saveRestore": {
+    "full": true,
+    "workloadPreserved": true,
+    "statsPreserved": true
+  },
+  "baselineReference": "reports/phase3-postseason-workload-baseline-4h-v1.json",
+  "shortRotation": "DEFERRED_TO_SEPARATE_POLICY_GATE"
+}
