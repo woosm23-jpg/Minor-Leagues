@@ -1,0 +1,52 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_POSTSEASON_SHORT_ROTATION_4I_V1",
+  "pass": true,
+  "seed": "phase3-4h-postseason-workload-baseline",
+  "snapshotHash": "fnv1a32:f7b34713",
+  "scope": {
+    "wildCardRotation": 3,
+    "longSeriesRotation": 4,
+    "pitcherRestUsesLastAppearance": true,
+    "injuredStartersExcluded": true,
+    "regularSeasonUnchanged": true,
+    "saveSchemaUnchanged": true
+  },
+  "wildCard": {
+    "round": "WILD_CARD",
+    "rotationSize": 3,
+    "seriesCount": 4,
+    "gameCount": 10,
+    "starterAssignments": 20,
+    "repeatedStarterAssignments": 0,
+    "reasonCounts": {
+      "ROTATION_BACKUP": 19,
+      "ROTATION": 1
+    },
+    "pitcherAppearances": 81
+  },
+  "divisionSeries": {
+    "round": "DIVISION_SERIES",
+    "rotationSize": 4,
+    "seriesCount": 4,
+    "gameCount": 18,
+    "starterAssignments": 36,
+    "repeatedStarterAssignments": 14,
+    "reasonCounts": {
+      "ROTATION_BACKUP": 7,
+      "ROTATION": 29
+    },
+    "pitcherAppearances": 128
+  },
+  "saveRestore": {
+    "full": true,
+    "pitcherWorkloadPreserved": true
+  },
+  "determinism": {
+    "sameSeedRound": true,
+    "roundResultsEqual": true,
+    "statsEqual": true,
+    "pitcherStatesEqual": true
+  },
+  "baselineReference": "reports/phase3-postseason-workload-fix-4h-v1.json",
+  "note": "Four-man rotation is the default for longer series. Healthy and rested fifth starters or bullpen days may be used before emergency short rest."
+}

@@ -394,8 +394,18 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
   const homeRoster = league.rosters[scheduleGame.homeTeamId];
   if (!awayRoster || !homeRoster) throw new RangeError("scheduleGame의 팀 roster를 찾을 수 없습니다.");
 
-  const awayPitcherId = selectSeasonStarter(awayRoster, scheduleGame.awayRotationIndex, pitcherStates);
-  const homePitcherId = selectSeasonStarter(homeRoster, scheduleGame.homeRotationIndex, pitcherStates);
+  // 4I: only postseason fixtures may request an explicit starter; ordinary
+  // regular-season fixture selection remains unchanged.
+  const starterForGame = (roster, rotationIndex, explicitId) => {
+    if (explicitId == null) return selectSeasonStarter(roster, rotationIndex, pitcherStates);
+    const id = String(explicitId);
+    if (level !== "MLB" || !String(scheduleGame.gameId ?? "").startsWith("POST_")) throw new RangeError("postseason 선발 지정은 포스트시즌 MLB 경기 전용입니다.");
+    if (!(roster.pitchers ?? []).includes(id) || !roster.players?.[id]) throw new RangeError("postseason 선발 투수가 해당 팀 로스터에 없습니다.");
+    if (pitcherAvailability(pitcherStates?.[id]) === "INJURED") throw new RangeError("부상 투수는 포스트시즌 선발로 지정할 수 없습니다.");
+    return id;
+  };
+  const awayPitcherId = starterForGame(awayRoster, scheduleGame.awayRotationIndex, scheduleGame.awayPostseasonStarterId);
+  const homePitcherId = starterForGame(homeRoster, scheduleGame.homeRotationIndex, scheduleGame.homePostseasonStarterId);
   const awayDaily = buildDailyLineup(
     awayRoster,
     playerStates,
@@ -422,8 +432,8 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
       )
     }
   );
-  const awayBullpen = orderAvailableBullpen(awayRoster, pitcherStates);
-  const homeBullpen = orderAvailableBullpen(homeRoster, pitcherStates);
+  const awayBullpen = orderAvailableBullpen(awayRoster, pitcherStates).filter((id) => id !== awayPitcherId);
+  const homeBullpen = orderAvailableBullpen(homeRoster, pitcherStates).filter((id) => id !== homePitcherId);
 
   const basePlayers = { ...awayRoster.players, ...homeRoster.players };
   const players = Object.freeze(Object.fromEntries(Object.entries(basePlayers).map(([id, player]) => {

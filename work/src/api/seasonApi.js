@@ -30,6 +30,7 @@ import { executeTrade } from "../services/tradeService.js";
 import { OFFSEASON_PHASES, createOffseasonState, normalizeOffseasonState, completeOffseasonPhase, getOffseasonPublicView } from "../engine/career/offseasonPipeline.js";
 import { POSTSEASON_RULESET_2026, POSTSEASON_ROUND_ORDER, createPostseasonState, normalizePostseasonState, getPostseasonPublicView, createHistoryState, normalizeHistoryState, appendSeasonHistory, getHistoryPublicView } from "../engine/career/postseasonHistory.js";
 import { selectPostseasonRosterPlayerIds } from "../engine/career/postseasonRosterSelection.js";
+import { selectPostseasonStarter } from "../engine/career/postseasonRotationPolicy.js";
 import { createAmateurAcquisitionState, normalizeAmateurAcquisitionState, prepareAmateurYear, processInternationalSignings, advanceAmateurCalendar, getAmateurAcquisitionPublicView } from "../engine/career/amateurAcquisition.js";
 import { createRetirementHallState, normalizeRetirementHallState, recordMlbSeason, archiveRetiredPlayers, announceUserFinalSeason, retireUserPlayer, processHallOfFameYear, getRetirementHallPublicView } from "../engine/career/retirementHallOfFame.js";
 
@@ -1034,9 +1035,15 @@ function simulatePostseasonSeries(session,{round,leagueId,leagueLabel,teamAId,te
   for(let gameIndex=0;gameIndex<cfg.bestOf&&highWins<winsNeeded&&lowWins<winsNeeded;gameIndex+=1){
     const highHome=cfg.homePattern[gameIndex]===1,homeTeamId=highHome?highTeamId:lowTeamId,awayTeamId=highHome?lowTeamId:highTeamId;
     const gameId=`POST_${session.postseasonState.seasonYear}_${seriesId}_G${gameIndex+1}`;
-    const game={gameId,date:postseasonDate(session.postseasonState.seasonYear,round,leagueLabel,gameIndex),awayTeamId,homeTeamId,status:"SCHEDULED",seriesId,seriesGame:gameIndex+1,gamesInSeries:cfg.bestOf,awayRotationIndex:gameIndex%5,homeRotationIndex:gameIndex%5};
+    const rotationSize=round==="WILD_CARD"?3:4;
+    const game={gameId,date:postseasonDate(session.postseasonState.seasonYear,round,leagueLabel,gameIndex),awayTeamId,homeTeamId,status:"SCHEDULED",seriesId,seriesGame:gameIndex+1,gamesInSeries:cfg.bestOf,awayRotationIndex:gameIndex%rotationSize,homeRotationIndex:gameIndex%rotationSize};
     recoverPostseasonPitchersForGame(session,game,calendar.recoveryDates);
-    const fixture=createSeasonGameFixture({seasonFixture:postseasonFixtureForGame(session,awayTeamId,homeTeamId),scheduleGame:game,playerStates:session.playerStates,pitcherStates:session.pitcherStates,roleStates:session.roleStates,level:"MLB"});
+    const seasonFixture=postseasonFixtureForGame(session,awayTeamId,homeTeamId);
+    const awayRotation=selectPostseasonStarter(seasonFixture.levelLeagues.MLB.rosters[awayTeamId],session.pitcherStates,{gameDate:game.date,gameIndex,rotationSize});
+    const homeRotation=selectPostseasonStarter(seasonFixture.levelLeagues.MLB.rosters[homeTeamId],session.pitcherStates,{gameDate:game.date,gameIndex,rotationSize});
+    const scheduledGame={...game,awayPostseasonStarterId:awayRotation.starterId,homePostseasonStarterId:homeRotation.starterId};
+    const fixture=createSeasonGameFixture({seasonFixture,scheduleGame:scheduledGame,playerStates:session.playerStates,pitcherStates:session.pitcherStates,roleStates:session.roleStates,level:"MLB"});
+    if(fixture.initialState.currentPitcherId.away!==awayRotation.starterId||fixture.initialState.currentPitcherId.home!==homeRotation.starterId)throw new RangeError("postseason 선발 정책과 실제 선발이 다릅니다.");
     const result=simulateSeasonFixtureGame(fixture,{seed:`${session.fixture.seed}:POST:${gameId}`});
     const ba=battingMapFromResult(result,"away"),bh=battingMapFromResult(result,"home"),pa=pitchingMapFromResult(result,"away"),ph=pitchingMapFromResult(result,"home");
     applyCompletedGamePitcherStates(session,fixture,{away:pa,home:ph},game.date);
@@ -1046,7 +1053,7 @@ function simulatePostseasonSeries(session,{round,leagueId,leagueLabel,teamAId,te
     if(round==="WORLD_SERIES"){addBattingTotals(session.postseasonState.stats.worldSeriesBatting,ba);addBattingTotals(session.postseasonState.stats.worldSeriesBatting,bh);addPitchingTotals(session.postseasonState.stats.worldSeriesPitching,pa,fixture.initialState.currentPitcherId.away);addPitchingTotals(session.postseasonState.stats.worldSeriesPitching,ph,fixture.initialState.currentPitcherId.home);}
     const winnerTeamId=result.awayRuns>result.homeRuns?awayTeamId:homeTeamId;if(winnerTeamId===highTeamId)highWins+=1;else lowWins+=1;
     const uid=session.fixture.userPlayerId;if(Number(ba[uid]?.PA??0)>0||Number(bh[uid]?.PA??0)>0||Number(pa[uid]?.BF??0)>0||Number(ph[uid]?.BF??0)>0)session.postseasonState.user.appearedGames+=1;
-    games.push({gameId,date:game.date,awayTeamId,homeTeamId,awayRuns:result.awayRuns,homeRuns:result.homeRuns,winnerTeamId});
+    games.push({gameId,date:game.date,awayTeamId,homeTeamId,awayRuns:result.awayRuns,homeRuns:result.homeRuns,winnerTeamId,awayStarterId:awayRotation.starterId,homeStarterId:homeRotation.starterId,awayStarterReason:awayRotation.reason,homeStarterReason:homeRotation.reason,rotationSize});
   }
   const winnerTeamId=highWins>lowWins?highTeamId:lowTeamId;
   return {seriesId,round,leagueId,leagueLabel,teamAId,teamBId,highTeamId,lowTeamId,bestOf:cfg.bestOf,games,winnerTeamId,loserTeamId:winnerTeamId===teamAId?teamBId:teamAId};
