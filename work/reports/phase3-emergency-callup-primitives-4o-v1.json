@@ -1,0 +1,45 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_EMERGENCY_CALLOUT_PRIMITIVES_4O_V1",
+  "pass": true,
+  "mode": "EXPLICIT_EMERGENCY_POLICY_AND_IN_MEMORY_ROSTER_TRANSACTION",
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "ordinaryHitterStillBlocked": true,
+    "healthyEmergencyHitterAllowed": true,
+    "unreadyOrInjuredCandidatesRejected": true,
+    "emergencyPitcherAllowed": true,
+    "insufficientNormalSampleNotInvented": true
+  },
+  "constraints": {
+    "outOfOptionsInjuredIncumbentPreserved": true,
+    "fortyManLimitEnforced": true,
+    "injuredListStatusValidated": true,
+    "noInputMutation": true
+  },
+  "production": {
+    "position": "SS",
+    "candidateId": "702679",
+    "injuredIncumbentId": "672695",
+    "injuredStatus": "MLB_INJURED_LIST",
+    "replacementStatus": "MLB_ACTIVE",
+    "fullSaveRestore": true,
+    "injuredIncumbentRetainedOn40Man": true,
+    "injuredIncumbentOptionsUnchanged": true,
+    "affiliateAndMlbRostersAtomic": true,
+    "autoReturnImplemented": false
+  },
+  "gates": {
+    "prior4nAuditPass": true,
+    "normalPromotionBehaviorUnchanged": true,
+    "emergencyHitterAndPitcherReady": true,
+    "injuredListPreservesFortyManAndOptions": true,
+    "realProductionAffiliateSwapAndFullRestore": true
+  },
+  "pending": {
+    "automaticInjuryTrigger": false,
+    "automaticReturnFromInjuredList": false,
+    "injuryListMlbServiceClock": false,
+    "normalSeasonGameplayUsesNewPath": false
+  },
+  "note": "4O adds opt-in emergency decision and legal injured-list roster transaction primitives. It does not yet turn on automatic MLB call-ups, IL returns or IL-service credit; those require the 4P scheduler/return gate."
+}

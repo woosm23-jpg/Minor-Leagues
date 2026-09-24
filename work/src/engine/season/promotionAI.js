@@ -142,6 +142,31 @@ function evaluateAaaMlbPromotion({ date, candidate, incumbent, lastTransactionDa
 }
 
 
+
+/** Explicit emergency replacement only. Ordinary performance reviews still
+ * hold when either player is injured; this pathway is opt-in for a confirmed
+ * MLB incumbent injury. Roster legality is decided separately by RosterControl.
+ */
+function evaluateAaaMlbEmergencyInjuryPromotion({ date, candidate, incumbent, config = organizationCalibration }) {
+  const ordinary = evaluateAaaMlbPromotion({ date, candidate, incumbent, config });
+  const eligible = incumbent.injured === true && candidate.injured !== true
+    && Number(candidate.fatigue ?? 0) < 58
+    && Number(candidate.depthScore ?? 0) >= config.readiness.nearDepthScore;
+  const code = eligible ? 'EMERGENCY_MLB_INJURY_COVER' :
+    (incumbent.injured !== true ? 'NO_INJURED_MLB_INCUMBENT' :
+      candidate.injured === true ? 'CANDIDATE_INJURED' :
+      Number(candidate.fatigue ?? 0) >= 58 ? 'CANDIDATE_TOO_FATIGUED' : 'CANDIDATE_NOT_READY');
+  return freeze({ ...ordinary, emergency:true, emergencyReason:code,
+    // Never treat the injured MLB player as a normal healthy demotion.
+    injuryBlocked: Boolean(candidate.injured), cooldown:false,
+    decision: eligible ? 'PROMOTE' : 'HOLD',
+    incumbentDecision: eligible ? 'INJURED_LIST' : 'HOLD',
+    candidateReasonCodes:[...new Set([code,...ordinary.candidateReasonCodes])].slice(0,4),
+    incumbentReasonCodes:[...new Set([code,...ordinary.incumbentReasonCodes])].slice(0,4),
+    reasonCodes:[...new Set([code,...ordinary.candidateReasonCodes])].slice(0,4)
+  });
+}
+
 function minorPairKey(fromLevel, toLevel) { return `${fromLevel}_${toLevel}`; }
 function validateMinorPair(fromLevel, toLevel, config) {
   const ok = (config.ladder?.adjacentPairs ?? []).some((row) => row.fromLevel === fromLevel && row.toLevel === toLevel);
@@ -332,6 +357,30 @@ function evaluateAaaMlbPitcherMovement({ date, role, candidate, incumbent, lastT
 }
 
 
+
+/** Pitcher-specific emergency coverage. A healthy, sufficiently rested AAA
+ * arm may cover an injured MLB SP/RP even without a full normal-season sample.
+ */
+function evaluateAaaMlbEmergencyInjuryPitcherMovement({ date, role, candidate, incumbent, config = organizationCalibration }) {
+  const ordinary = evaluateAaaMlbPitcherMovement({ date, role, candidate, incumbent, config });
+  const eligible = incumbent.injured === true && candidate.injured !== true
+    && Number(candidate.pitcherState?.fatigue ?? 0) < config.pitcher.unavailableFatigue
+    && Number(candidate.depthScore ?? 0) >= config.pitcher.readiness.nearDepthScore;
+  const code = eligible ? 'EMERGENCY_MLB_PITCHER_INJURY_COVER' :
+    (incumbent.injured !== true ? 'NO_INJURED_MLB_INCUMBENT' :
+      candidate.injured === true ? 'CANDIDATE_INJURED' :
+      Number(candidate.pitcherState?.fatigue ?? 0) >= config.pitcher.unavailableFatigue
+        ? 'CANDIDATE_TOO_FATIGUED' : 'CANDIDATE_NOT_READY');
+  return freeze({ ...ordinary, emergency:true, emergencyReason:code,
+    injuryBlocked:Boolean(candidate.injured), cooldown:false,
+    decision:eligible ? 'PROMOTE' : 'HOLD',
+    incumbentDecision:eligible ? 'INJURED_LIST' : 'HOLD',
+    candidateReasonCodes:[...new Set([code,...ordinary.candidateReasonCodes])].slice(0,4),
+    incumbentReasonCodes:[...new Set([code,...ordinary.incumbentReasonCodes])].slice(0,4),
+    reasonCodes:[...new Set([code,...ordinary.candidateReasonCodes])].slice(0,4)
+  });
+}
+
 /** Lower-minor SP/RP counterpart to evaluateMinorLevelPromotion. */
 function evaluateMinorLevelPitcherMovement({ date, fromLevel, toLevel, role, candidate, incumbent, lastTransactionDate = null, config = organizationCalibration }) {
   validateMinorPair(fromLevel, toLevel, config);
@@ -438,4 +487,4 @@ function getOrganizationReviewPublicView(state, { currentDate = null } = {}) {
   });
 }
 
-export { createOrganizationReviewState, normalizeOrganizationReviewState, isOrganizationReviewDue, evaluateAaaMlbPromotion, evaluateMinorLevelPromotion, evaluateAaaMlbPitcherMovement, evaluateMinorLevelPitcherMovement, applyOrganizationReview, getOrganizationEvaluationPublicView, getOrganizationReviewPublicView };
+export { createOrganizationReviewState, normalizeOrganizationReviewState, isOrganizationReviewDue, evaluateAaaMlbPromotion, evaluateAaaMlbEmergencyInjuryPromotion, evaluateMinorLevelPromotion, evaluateAaaMlbPitcherMovement, evaluateAaaMlbEmergencyInjuryPitcherMovement, evaluateMinorLevelPitcherMovement, applyOrganizationReview, getOrganizationEvaluationPublicView, getOrganizationReviewPublicView };

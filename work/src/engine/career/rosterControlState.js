@@ -4,7 +4,7 @@ const ROSTER_CONTROL_VERSION = 1;
 const BASELINES = new Set(["KNOWN_ZERO", "UNKNOWN_REAL_WORLD"]);
 const ASSIGNMENTS = new Set([
   "MINORS", "MLB_ACTIVE", "OPTIONED", "OPTIONED_UNKNOWN",
-  "DFA_PENDING", "WAIVERS_PENDING", "OUTRIGHTED", "CLAIMED_40_MAN"
+  "DFA_PENDING", "WAIVERS_PENDING", "OUTRIGHTED", "CLAIMED_40_MAN", "MLB_INJURED_LIST"
 ]);
 
 class RosterRuleError extends RangeError {
@@ -360,6 +360,51 @@ function prepareAaaMlbRosterMove({ states, candidateId, incumbentId, date, organ
   }
 }
 
+
+/** Preserve the injured incumbent's 40-man spot and option years. The
+ * temporary AAA roster placement is a rehab-reserve representation, not an
+ * option assignment. An actual automatic return is a separate scheduler gate.
+ */
+function placeOnMlbInjuredList(state, { date } = {}) {
+  validateRosterControlState(state);
+  assertIsoDate(date, 'injured-list date');
+  if (state.on40Man !== true || state.assignmentStatus !== 'MLB_ACTIVE') {
+    throw new RosterRuleError('NOT_MLB_ACTIVE', 'MLB active 40-man player is required for injured-list placement.');
+  }
+  const next = advanceRosterControlToDate(state, { toDate:date });
+  next.assignmentStatus = 'MLB_INJURED_LIST';
+  next.option.assignmentStartDate = null;
+  next.option.minorDaysThisAssignment = 0;
+  validateRosterControlState(next);
+  return next;
+}
+
+function prepareAaaMlbEmergencyInjuryMove({ states, candidateId, incumbentId, date, organizationId, organizationPlayerIds }) {
+  const original = states ?? {};
+  const next = clone(original);
+  const candidate = next[candidateId], incumbent = next[incumbentId];
+  if (!candidate || !incumbent) return { allowed:false, states:original, blockCode:'ROSTER_STATE_MISSING', candidateReasonCodes:[], incumbentReasonCodes:[] };
+  try {
+    // The 10-/15-day injured list does not free a 40-man spot. No 60-day-IL
+    // exception or unknown option year is invented by this transaction.
+    const knownCount = knownFortyManCount(next, organizationPlayerIds);
+    const alreadyForty = candidate.on40Man === true;
+    let replacement = addTo40Man(candidate, { date, knownFortyManCount:knownCount });
+    replacement.organizationId = String(organizationId);
+    replacement = recallToMlb(replacement, { date });
+    const injured = placeOnMlbInjuredList(incumbent, { date });
+    injured.organizationId = String(organizationId);
+    next[candidateId] = replacement;
+    next[incumbentId] = injured;
+    return { allowed:true, states:next, blockCode:null,
+      candidateReasonCodes:['EMERGENCY_INJURY_COVER',alreadyForty?'FORTY_MAN_ELIGIBLE':'FORTY_MAN_ADDED'],
+      incumbentReasonCodes:['MLB_INJURED_LIST','OPTIONS_PRESERVED'] };
+  } catch (error) {
+    const code = error?.code ?? 'EMERGENCY_ROSTER_RULE_BLOCK';
+    return { allowed:false, states:original, blockCode:code, candidateReasonCodes:[code], incumbentReasonCodes:[code] };
+  }
+}
+
 export {
   ROSTER_CONTROL_VERSION,
   RosterRuleError,
@@ -376,5 +421,5 @@ export {
   resetRosterControlForSeason,
   getRosterControlPublicView,
   knownFortyManCount,
-  prepareAaaMlbRosterMove
+  prepareAaaMlbRosterMove, placeOnMlbInjuredList, prepareAaaMlbEmergencyInjuryMove
 };
