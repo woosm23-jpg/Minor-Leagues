@@ -15,7 +15,7 @@ import { restoreSeasonSession, serializeSeasonSession } from "../services/season
 import { resetSeasonStatesForNewYear } from "../services/seasonRolloverService.js";
 import { createProductionEcologyState, normalizeProductionEcologyState, advanceProductionOffseasonEcology } from "../services/productionOffseasonEcology.js";
 import { applyRoleGame, createOrganizationRoleStates, getRolePublicView, normalizeRoleStates, reviewRoleIfDue } from "../engine/season/roleSystem.js";
-import { applyOrganizationReview, createOrganizationReviewState, evaluateAaaMlbPitcherMovement, evaluateAaaMlbPromotion, evaluateMinorLevelPitcherMovement, evaluateMinorLevelPromotion, getOrganizationEvaluationPublicView, getOrganizationReviewPublicView, isOrganizationReviewDue, normalizeOrganizationReviewState } from "../engine/season/promotionAI.js";
+import { applyOrganizationReview, createOrganizationReviewState, evaluateAaaMlbEmergencyInjuryPitcherMovement, evaluateAaaMlbEmergencyInjuryPromotion, evaluateAaaMlbPitcherMovement, evaluateAaaMlbPromotion, evaluateMinorLevelPitcherMovement, evaluateMinorLevelPromotion, getOrganizationEvaluationPublicView, getOrganizationReviewPublicView, isOrganizationReviewDue, normalizeOrganizationReviewState } from "../engine/season/promotionAI.js";
 import { executeAdjacentLevelSwap } from "../services/organizationRosterService.js";
 import { createCareerEventState, appendCareerEvent, getCareerTimelinePublicView, normalizeCareerEventState, recordGameCareerMoments, recordOrganizationCareerEvents, recordRoleChangeCareerEvent } from "../engine/career/careerEvents.js";
 import { getUtilityPathwayView } from "../engine/season/utilityUsage.js";
@@ -23,7 +23,7 @@ import { getPositionPlayingTimeView } from "../engine/season/playingTimeReadMode
 import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
 import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
-import { createRosterControlState, normalizeRosterControlState, advanceRosterControlToDate, getRosterControlPublicView, knownFortyManCount, prepareAaaMlbRosterMove } from "../engine/career/rosterControlState.js";
+import { createRosterControlState, normalizeRosterControlState, advanceRosterControlToDate, getRosterControlPublicView, knownFortyManCount, prepareAaaMlbEmergencyInjuryMove, prepareAaaMlbEmergencyInjuryReturn, prepareAaaMlbRosterMove } from "../engine/career/rosterControlState.js";
 import { createContractMarketState, normalizeContractMarketState, refreshContractMarketState, prepareArbitrationCase, resolveArbitration, getContractMarketPublicView } from "../engine/career/contractMarket.js";
 import { createTradeState, normalizeTradeState, requestTradeState, addTradeRumor, recordTrade, getTradePublicView } from "../engine/career/tradeState.js";
 import { executeTrade } from "../services/tradeService.js";
@@ -377,7 +377,14 @@ function normalizeContractMarketStatesForFixture(fixture, contractStates, existi
 
 function currentMlbPlayerIds(session) {
   const league = levelLeague(session, "MLB");
-  return [...new Set(Object.values(league?.rosters ?? {}).flatMap((roster) => Object.keys(roster.players ?? {})))];
+  const ids=Object.values(league?.rosters ?? {}).flatMap((roster) => Object.keys(roster.players ?? {}));
+  // The standard 10-/15-day MLB injured list retains MLB service time even
+  // though the 4O affiliate representation temporarily stores the player at AAA.
+  for (const move of session.organizationState?.emergencyInjuryMoves ?? []) {
+    if (move.status==='ACTIVE' && session.rosterControlStates?.[move.injuredPlayerId]?.assignmentStatus==='MLB_INJURED_LIST')
+      ids.push(move.injuredPlayerId);
+  }
+  return [...new Set(ids)];
 }
 
 function advanceCurrentMlbContractStates(session, date) {
@@ -1929,7 +1936,129 @@ function organizationProspectRankings(session) {
     .slice(0, 20).map((row, index) => freeze({ rank: index + 1, id: row.playerId, name: row.name, level: row.level, team: row.team, position: row.position, age: row.age, futureValue: row.scouting.futureValue, futureValueRange: row.scouting.futureValueRange, confidence: row.scouting.futureConfidence ?? row.scouting.confidence, currentConfidence: row.scouting.currentConfidence ?? row.scouting.confidence, futureConfidence: row.scouting.futureConfidence ?? row.scouting.confidence, risk: row.scouting.risk, eta: row.scouting.eta, pathway: row.scouting.pathway, isUser: row.playerId === session.fixture.userPlayerId }));
 }
 
+
+// Emergency coverage is independent of the normal 7-day performance-review
+// cadence. At most one active IL replacement is installed per position/arm;
+// each entry is persisted inside organizationState for deterministic recovery.
+const EMERGENCY_IL_POSITION_DAYS=10;
+const EMERGENCY_IL_PITCHER_DAYS=15;
+function emergencyMoveEntries(session) {
+  return [...(session.organizationState?.emergencyInjuryMoves ?? [])];
+}
+function recordEmergencyMove(session,entry,events,date) {
+  const existing=emergencyMoveEntries(session);
+  const transactions=[...(session.organizationState?.transactions ?? []),...events].slice(-40);
+  session.organizationState=freeze({ ...session.organizationState,
+    lastTransactionDate:date,transactions,
+    emergencyInjuryMoves:[...existing,entry] });
+  // Preserve the existing career-event schema, with explicit injury-list
+  // reason codes distinguishing this from a performance demotion.
+  session.careerEventState=recordOrganizationCareerEvents(session.careerEventState,events,
+    {userPlayerId:session.fixture.userPlayerId});
+}
+function returnRecoveredMlbInjuredPlayers(session,date) {
+  const records=emergencyMoveEntries(session);
+  for (const entry of records) {
+    if(entry.status!=='ACTIVE' || date<entry.minReturnDate) continue;
+    const id=entry.injuredPlayerId,replacementId=entry.replacementId;
+    const pitcher=entry.position==='SP'||entry.position==='RP';
+    const injured=pitcher?session.pitcherStates?.[id]:session.playerStates?.[id];
+    if(healthAvailability(injured?.health)==='INJURED') continue;
+    const org=session.fixture.organization;
+    if(!org?.levels?.AAA?.roster?.players?.[id] || !org?.levels?.MLB?.roster?.players?.[replacementId]) continue;
+    const prep=prepareAaaMlbEmergencyInjuryReturn({states:session.rosterControlStates,
+      returningId:id,replacementId,date,organizationId:String(org.id)});
+    if(!prep.allowed) continue; // Do not create an illegal option assignment.
+    const moved=executeAdjacentLevelSwap({fixture:session.fixture,roleStates:session.roleStates,
+      fromLevel:'AAA',toLevel:'MLB',position:entry.position,promotePlayerId:id,
+      demotePlayerId:replacementId,date,
+      promoteReasonCodes:prep.returningReasonCodes,
+      demoteReasonCodes:prep.replacementReasonCodes});
+    session.fixture=moved.fixture;session.roleStates=moved.roleStates;
+    session.rosterControlStates=prep.states;
+    session.organizationState=freeze({ ...session.organizationState,
+      lastTransactionDate:date,
+      transactions:[...(session.organizationState?.transactions ?? []),...moved.events].slice(-40),
+      emergencyInjuryMoves:emergencyMoveEntries(session).map(row=>row===entry ||
+        (row.injuredPlayerId===id && row.injuryId===entry.injuryId && row.status==='ACTIVE')
+        ? freeze({...row,status:'RETURNED',returnedDate:date}) : row) });
+    session.careerEventState=recordOrganizationCareerEvents(session.careerEventState,moved.events,
+      {userPlayerId:session.fixture.userPlayerId});
+    reconcileCurrentMlbServiceDate(session,date);
+  }
+}
+function coverMlbInjuries(session,date) {
+  const org=session.fixture.organization;
+  if(!org?.levels?.MLB?.roster || !org?.levels?.AAA?.roster) return;
+  const covered=new Set(emergencyMoveEntries(session).filter(x=>x.status==='ACTIVE').map(x=>x.injuredPlayerId));
+  // Only actual injured MLB lineup starters / SP / RP depth members need this
+  // reserve swap. Healthy role competition still uses the ordinary evaluator.
+  const targets=[];
+  for(const slot of org.levels.MLB.roster.lineupSlots ?? []) targets.push({id:slot.starterId,position:slot.position,pitcher:false});
+  for(const id of org.levels.MLB.roster.starters ?? []) targets.push({id,position:'SP',pitcher:true});
+  for(const id of org.levels.MLB.roster.bullpen ?? []) targets.push({id,position:'RP',pitcher:true});
+  for(const target of targets) {
+    const orgNow=session.fixture.organization;
+    const mlb=orgNow.levels.MLB.roster,aaa=orgNow.levels.AAA.roster;
+    const id=target.id;
+    if(covered.has(id) || !mlb.players?.[id]) continue;
+    const state=target.pitcher?session.pitcherStates?.[id]:session.playerStates?.[id];
+    if(healthAvailability(state?.health)!=='INJURED' ||
+       session.rosterControlStates?.[id]?.assignmentStatus!=='MLB_ACTIVE') continue;
+    const options=rosterCandidatesForPosition(aaa,target.position)
+      .filter(candidateId=>candidateId!==id && aaa.players?.[candidateId]);
+    const incumbent=target.pitcher
+      ? pitcherMovementInput(session,'MLB',target.position,id)
+      : promotionCandidateInput(session,'MLB',target.position,id);
+    const ranked=options.map(candidateId=>target.pitcher
+      ? pitcherMovementInput(session,'AAA',target.position,candidateId)
+      : promotionCandidateInput(session,'AAA',target.position,candidateId))
+      .sort((a,b)=>b.depthScore-a.depthScore || a.id.localeCompare(b.id));
+    const evaluated=ranked.map(candidate=>({candidate,decision:target.pitcher
+      ? evaluateAaaMlbEmergencyInjuryPitcherMovement({date,role:target.position,candidate,incumbent})
+      : evaluateAaaMlbEmergencyInjuryPromotion({date,candidate,incumbent})}));
+    // Use ready depth before emergency-only lower-depth coverage. A legal,
+    // healthy AAA player may still have to fill a genuine MLB injury vacancy
+    // even when no normal near-ready prospect exists in this organization.
+    // This never changes ordinary promotion decisions or 4O's opt-in evaluator.
+    const prioritized=[
+      ...evaluated.filter(row=>row.decision.decision==='PROMOTE'),
+      ...evaluated.filter(row=>row.decision.emergencyReason==='CANDIDATE_NOT_READY'
+        && Number(row.candidate.depthScore)>=35)
+    ];
+    for(const {candidate,decision} of prioritized) {
+      const depthFallback=decision.decision!=='PROMOTE';
+      const prep=prepareAaaMlbEmergencyInjuryMove({states:session.rosterControlStates,
+        candidateId:candidate.id,incumbentId:id,date,organizationId:String(orgNow.id),
+        organizationPlayerIds:currentOrganizationPlayerIds(session)});
+      if(!prep.allowed) continue;
+      const moved=executeAdjacentLevelSwap({fixture:session.fixture,roleStates:session.roleStates,
+        fromLevel:'AAA',toLevel:'MLB',position:target.position,
+        promotePlayerId:candidate.id,demotePlayerId:id,date,
+        promoteReasonCodes:[depthFallback?'EMERGENCY_MLB_DEPTH_FALLBACK':decision.emergencyReason,...prep.candidateReasonCodes],
+        demoteReasonCodes:['MLB_INJURED_LIST',...prep.incumbentReasonCodes]});
+      session.fixture=moved.fixture;session.roleStates=moved.roleStates;
+      session.rosterControlStates=prep.states;
+      const injury=state.health.activeInjury;
+      recordEmergencyMove(session,freeze({status:'ACTIVE',injuredPlayerId:id,
+        replacementId:candidate.id,position:target.position,selectionMode:depthFallback?'DEPTH_FALLBACK':'NEAR_READY',injuryId:injury.injuryId,
+        placedDate:date,minReturnDate:addIsoDays(date,target.pitcher
+          ? EMERGENCY_IL_PITCHER_DAYS:EMERGENCY_IL_POSITION_DAYS),returnedDate:null}),moved.events,date);
+      covered.add(id);
+      reconcileCurrentMlbServiceDate(session,date);
+      break;
+    }
+  }
+}
+function processAutomaticMlbInjuryMoves(session,date) {
+  if(session.fixture?.worldMode!=='PRODUCTION_REAL' || !session.organizationState ||
+     !session.fixture.organization?.levels?.MLB?.roster) return;
+  returnRecoveredMlbInjuredPlayers(session,date);
+  coverMlbInjuries(session,date);
+}
+
 function runOrganizationReviewIfDue(session, date, { force = false } = {}) {
+  processAutomaticMlbInjuryMoves(session,date);
   if (!force && !isOrganizationReviewDue(session.organizationState, date)) return false;
   applyOrganizationScoutingReview(session, date, `org:${date}`);
   const organization = session.fixture.organization;
@@ -1949,8 +2078,10 @@ function runOrganizationReviewIfDue(session, date, { force = false } = {}) {
 
   // At most one adjacent-level transaction per scheduled review. This prevents
   // cascades (A->AA->AAA in one day) and keeps the persistent-role cadence.
+  const emergencyReserved=new Set(emergencyMoveEntries(session).filter(row=>row.status==='ACTIVE')
+    .flatMap(row=>[row.injuredPlayerId,row.replacementId]));
   const transactionCandidate = evaluations
-    .filter((row) => row.decision === "PROMOTE")
+    .filter((row) => row.decision === "PROMOTE" && !emergencyReserved.has(row.candidateId) && !emergencyReserved.has(row.incumbentId))
     .sort((a, b) => (b.internal.candidateScore - b.internal.incumbentScore) - (a.internal.candidateScore - a.internal.incumbentScore)
       || ORGANIZATION_REVIEW_PAIRS.findIndex((p) => p.fromLevel === b.fromLevel && p.toLevel === b.toLevel) - ORGANIZATION_REVIEW_PAIRS.findIndex((p) => p.fromLevel === a.fromLevel && p.toLevel === a.toLevel)
       || a.position.localeCompare(b.position))[0] ?? null;

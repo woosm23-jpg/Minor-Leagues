@@ -1,0 +1,53 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_AUTOMATIC_INJURY_CALLOUT_4P_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "mode": "REAL_PRODUCTION_INJECTED_INJURY_LIVE_CALENDAR",
+  "target": {
+    "id": "672515",
+    "position": "C",
+    "pitcher": false,
+    "date": "2026-03-25",
+    "attemptedTargets": 1,
+    "injuredPlayerId": "672515",
+    "replacementId": "690841",
+    "selectionMode": "DEPTH_FALLBACK",
+    "minReturnDate": "2026-04-04",
+    "returnedDate": "2026-04-04"
+  },
+  "gates": {
+    "prerequisite4oPass": true,
+    "automaticInjuryTrigger": true,
+    "legalAaaMlbEmergencySwap": true,
+    "noDuplicateEmergencyMoves": true,
+    "mandatoryInjuredListDaysRespected": true,
+    "automaticReturn": true,
+    "fortyManAndOptionRulesPreserved": true,
+    "illegalOutOfOptionsReturnBlocked": true,
+    "injuredMlbServiceDaysCredited": true,
+    "fullSaveRestoreBeforeAndAfterReturn": true,
+    "rosterMirrorsAndUniquePlayers": true
+  },
+  "service": {
+    "before": 1,
+    "after": 16
+  },
+  "calendar": [
+    {
+      "date": "2026-04-01",
+      "status": "ACTIVE",
+      "simulatedServiceDays": 8
+    },
+    {
+      "date": "2026-04-04",
+      "status": "ACTIVE",
+      "simulatedServiceDays": 11
+    },
+    {
+      "date": "2026-04-09",
+      "status": "RETURNED",
+      "simulatedServiceDays": 16
+    }
+  ],
+  "note": "Production v3 injured MLB starter is replaced by legal AAA call-up, restored after healthy minimum IL stay, and credited MLB IL service; no hidden waiver or 60-day spot is inferred."
+}

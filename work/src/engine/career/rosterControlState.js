@@ -405,6 +405,38 @@ function prepareAaaMlbEmergencyInjuryMove({ states, candidateId, incumbentId, da
   }
 }
 
+
+/** An injured MLB player returns only after health recovery and mandatory
+ * injured-list days. The temporary replacement must be legally optionable;
+ * otherwise this routine refuses to change either player's roster status.
+ */
+function prepareAaaMlbEmergencyInjuryReturn({ states, returningId, replacementId, date, organizationId }) {
+  const original=states ?? {};
+  const next=clone(original);
+  const returning=next[returningId], replacement=next[replacementId];
+  if (!returning || !replacement) return { allowed:false, states:original, blockCode:'ROSTER_STATE_MISSING', returningReasonCodes:[], replacementReasonCodes:[] };
+  try {
+    if (returning.assignmentStatus!=='MLB_INJURED_LIST' || returning.on40Man!==true)
+      throw new RosterRuleError('NOT_ON_INJURED_LIST','Returning player must be on the MLB injured list.');
+    if (replacement.assignmentStatus!=='MLB_ACTIVE' || replacement.on40Man!==true)
+      throw new RosterRuleError('REPLACEMENT_NOT_MLB_ACTIVE','Temporary replacement must still be on the MLB active roster.');
+    let activated=recallToMlb(returning,{date});
+    activated.organizationId=String(organizationId);
+    let optioned=optionToMinors(replacement,{date});
+    optioned.organizationId=String(organizationId);
+    next[returningId]=activated;
+    next[replacementId]=optioned;
+    validateRosterControlState(activated);
+    validateRosterControlState(optioned);
+    return { allowed:true, states:next, blockCode:null,
+      returningReasonCodes:['INJURED_LIST_RETURN','FORTY_MAN_RETAINED'],
+      replacementReasonCodes:['EMERGENCY_COVERAGE_ENDED',replacement.baseline==='UNKNOWN_REAL_WORLD'?'OPTION_STATUS_UNKNOWN':'OPTIONED_TO_MINORS'] };
+  } catch(error) {
+    const code=error?.code==='OUT_OF_OPTIONS'?'OUT_OF_OPTIONS_WAIVERS_REQUIRED':error?.code ?? 'RETURN_ROSTER_RULE_BLOCK';
+    return {allowed:false,states:original,blockCode:code,returningReasonCodes:[code],replacementReasonCodes:[code]};
+  }
+}
+
 export {
   ROSTER_CONTROL_VERSION,
   RosterRuleError,
@@ -421,5 +453,5 @@ export {
   resetRosterControlForSeason,
   getRosterControlPublicView,
   knownFortyManCount,
-  prepareAaaMlbRosterMove, placeOnMlbInjuredList, prepareAaaMlbEmergencyInjuryMove
+  prepareAaaMlbRosterMove, placeOnMlbInjuredList, prepareAaaMlbEmergencyInjuryMove, prepareAaaMlbEmergencyInjuryReturn
 };
