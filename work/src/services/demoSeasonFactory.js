@@ -3,7 +3,7 @@ import { createPhase1Hitter, createPhase1Pitcher } from "../engine/player/player
 import { generateRoundRobinSchedule } from "../engine/season/schedule.js";
 import { getSeasonEffectivePlayer } from "../engine/season/playerSeasonState.js";
 import { buildDailyLineup } from "../engine/season/lineupRestAI.js";
-import { getSeasonEffectivePitcher, orderAvailableBullpen, selectSeasonStarter } from "../engine/season/pitcherSeasonState.js";
+import { getSeasonEffectivePitcher, orderAvailableBullpen, pitcherAvailability, selectSeasonStarter } from "../engine/season/pitcherSeasonState.js";
 import { healthAvailability } from "../engine/season/injuryState.js";
 import { resolveProductionGamePark } from "./productionParkResolver.js";
 
@@ -355,6 +355,29 @@ function buildTeamScheduleContext(league, scheduleGame, teamId) {
   });
 }
 
+function buildBullpenMeta(
+  bullpenIds,
+  pitcherStates = {}
+) {
+  return Object.freeze(
+    Object.fromEntries(
+      bullpenIds.map((id) => [
+        id,
+        Object.freeze({
+          pregameFatigue: Number(
+            pitcherStates?.[id]?.fatigue ?? 0
+          ),
+          availability: pitcherAvailability(
+            pitcherStates?.[id]
+          ),
+          lastAppearanceDate:
+            pitcherStates?.[id]?.lastAppearanceDate ?? null
+        })
+      ])
+    )
+  );
+}
+
 function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = null, pitcherStates = null, roleStates = null, level = "AAA" }) {
   const league = seasonFixture.levelLeagues?.[level] ?? { rosters: seasonFixture.rosters, userTeamId: seasonFixture.userTeamId };
   const awayRoster = league.rosters[scheduleGame.awayTeamId];
@@ -439,8 +462,22 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
       })))
     }),
     pitchingPlans: Object.freeze({
-      away: Object.freeze({ starterId: awayPitcherId, bullpenIds: awayBullpen }),
-      home: Object.freeze({ starterId: homePitcherId, bullpenIds: homeBullpen })
+      away: Object.freeze({
+        starterId: awayPitcherId,
+        bullpenIds: awayBullpen,
+        bullpenMeta: buildBullpenMeta(
+          awayBullpen,
+          pitcherStates
+        )
+      }),
+      home: Object.freeze({
+        starterId: homePitcherId,
+        bullpenIds: homeBullpen,
+        bullpenMeta: buildBullpenMeta(
+          homeBullpen,
+          pitcherStates
+        )
+      })
     }),
     initialState
   });

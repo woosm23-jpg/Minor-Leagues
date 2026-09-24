@@ -1,0 +1,42 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_BULLPEN_LEVERAGE_4E_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "hookTiming": "UNCHANGED_CALIBRATED_PHASE1",
+    "selectionInputs": [
+      "INNING",
+      "SCORE_DIFFERENTIAL",
+      "DERIVED_BULLPEN_ROLE",
+      "RELIEVER_QUALITY",
+      "PREGAME_FATIGUE",
+      "AVAILABILITY"
+    ],
+    "highLeverage": "CLOSER_SETUP_PRIORITY",
+    "blowoutAndEarly": "LONG_MIDDLE_PRIORITY",
+    "protagonistBias": false
+  },
+  "synthetic": {
+    "roles": {
+      "cl": "CLOSER",
+      "su": "SETUP",
+      "lr": "LONG",
+      "mr": "MIDDLE"
+    },
+    "ninthArm": "cl",
+    "eighthArm": "su",
+    "earlyBlowoutArm": "lr",
+    "tiredCloserArm": "su"
+  },
+  "productionSmoke": {
+    "checkedGames": 40,
+    "metadataRows": 787,
+    "pitcherChanges": 210,
+    "roleCounts": {
+      "CLOSER": 80,
+      "SETUP": 80,
+      "MIDDLE": 547,
+      "LONG": 80
+    }
+  }
+}
