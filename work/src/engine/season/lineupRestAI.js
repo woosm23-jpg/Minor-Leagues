@@ -1,190 +1,1409 @@
+import { getSeasonEffectivePlayer } from "./playerSeasonState.js";
 import { rolePriority } from "./roleSystem.js";
-import { canUtilityCover, utilityFamiliarity } from "./utilityUsage.js";
+import {
+  canUtilityCover,
+  getUtilityCoverage,
+  utilityFamiliarity
+} from "./utilityUsage.js";
 import { optimizePositionAssignments } from "./positionAssignment.js";
 import { healthAvailability } from "./injuryState.js";
 
+const COMPETITION_MIN_GAIN = 2.75;
+
+const DEFENSE_WEIGHTS = Object.freeze({
+  C: Object.freeze({
+    fielding: 0.30,
+    reaction: 0.25,
+    speed: 0.00,
+    armStrength: 0.23,
+    armAccuracy: 0.22
+  }),
+  "1B": Object.freeze({
+    fielding: 0.42,
+    reaction: 0.30,
+    speed: 0.05,
+    armStrength: 0.08,
+    armAccuracy: 0.15
+  }),
+  "2B": Object.freeze({
+    fielding: 0.30,
+    reaction: 0.30,
+    speed: 0.18,
+    armStrength: 0.07,
+    armAccuracy: 0.15
+  }),
+  "3B": Object.freeze({
+    fielding: 0.27,
+    reaction: 0.26,
+    speed: 0.07,
+    armStrength: 0.22,
+    armAccuracy: 0.18
+  }),
+  SS: Object.freeze({
+    fielding: 0.27,
+    reaction: 0.30,
+    speed: 0.18,
+    armStrength: 0.10,
+    armAccuracy: 0.15
+  }),
+  LF: Object.freeze({
+    fielding: 0.28,
+    reaction: 0.24,
+    speed: 0.25,
+    armStrength: 0.11,
+    armAccuracy: 0.12
+  }),
+  CF: Object.freeze({
+    fielding: 0.25,
+    reaction: 0.29,
+    speed: 0.29,
+    armStrength: 0.08,
+    armAccuracy: 0.09
+  }),
+  RF: Object.freeze({
+    fielding: 0.25,
+    reaction: 0.23,
+    speed: 0.20,
+    armStrength: 0.19,
+    armAccuracy: 0.13
+  })
+});
+
 function freeze(value) {
-  if (Array.isArray(value)) return Object.freeze(value.map(freeze));
-  if (value && typeof value === "object") return Object.freeze(Object.fromEntries(Object.entries(value).map(([k, v]) => [k, freeze(v)])));
+  if (Array.isArray(value)) {
+    return Object.freeze(value.map(freeze));
+  }
+  if (value && typeof value === "object") {
+    return Object.freeze(
+      Object.fromEntries(
+        Object.entries(value).map(
+          ([key, child]) => [key, freeze(child)]
+        )
+      )
+    );
+  }
   return value;
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
 function fatigueOf(playerStates, id) {
-  return Number(playerStates?.[id]?.fatigue ?? 0);
+  return Number(
+    playerStates?.[id]?.fatigue ?? 0
+  );
+}
+
+function formOf(playerStates, id) {
+  return clamp(
+    Number(
+      playerStates?.[id]?.form ?? 0
+    ),
+    -1,
+    1
+  );
 }
 
 function available(playerStates, id) {
-  return healthAvailability(playerStates?.[id]?.health) !== "INJURED";
+  return (
+    healthAvailability(
+      playerStates?.[id]?.health
+    ) !== "INJURED"
+  );
 }
 
-function thresholdFor(position, role = null) {
+function thresholdFor(
+  position,
+  role = null
+) {
   let base = 40;
-  if (position === "C") base = 30;
-  else if (position === "CF" || position === "SS") base = 36;
-  const priority = rolePriority(role);
-  // Persistent role only nudges rest tolerance. It never bypasses fatigue.
-  const protection = Math.round((priority - 0.5) * 4);
-  return Math.max(24, Math.min(52, base + protection));
+
+  if (position === "C") {
+    base = 30;
+  } else if (
+    position === "CF" ||
+    position === "SS"
+  ) {
+    base = 36;
+  }
+
+  const priority =
+    rolePriority(role);
+
+  const protection =
+    Math.round(
+      (priority - 0.5) * 4
+    );
+
+  return Math.max(
+    24,
+    Math.min(
+      52,
+      base + protection
+    )
+  );
 }
 
-function eligibleForRest(slot, playerStates, roleStates) {
-  const fatigue = fatigueOf(playerStates, slot.starterId);
-  return fatigue >= thresholdFor(slot.position, roleStates?.[slot.starterId]?.role);
+function eligibleForRest(
+  slot,
+  playerStates,
+  roleStates
+) {
+  const fatigue =
+    fatigueOf(
+      playerStates,
+      slot.starterId
+    );
+
+  return (
+    fatigue >=
+    thresholdFor(
+      slot.position,
+      roleStates?.[
+        slot.starterId
+      ]?.role
+    )
+  );
 }
 
-function directBenchCoverage(roster, playerStates, roleStates, benchPlayerId, position) {
-  return canUtilityCover(roster, playerStates, roleStates, benchPlayerId, position);
+function directBenchCoverage(
+  roster,
+  playerStates,
+  roleStates,
+  benchPlayerId,
+  position
+) {
+  if (position === "DH") {
+    return true;
+  }
+
+  return canUtilityCover(
+    roster,
+    playerStates,
+    roleStates,
+    benchPlayerId,
+    position
+  );
 }
 
-function findUtilityShift(slots, roster, playerStates, roleStates, targetSlot, usedBenchIds) {
+function findUtilityShift(
+  slots,
+  roster,
+  playerStates,
+  roleStates,
+  targetSlot,
+  usedBenchIds
+) {
   const movers = slots
-    .filter((slot) => slot !== targetSlot && slot.playerId === slot.starterId)
-    .filter((slot) => available(playerStates, slot.starterId))
-    .filter((slot) => fatigueOf(playerStates, slot.starterId) < 52)
-    .filter((slot) => canUtilityCover(roster, playerStates, roleStates, slot.starterId, targetSlot.position));
+    .filter(
+      (slot) =>
+        slot !== targetSlot &&
+        slot.playerId ===
+          slot.starterId
+    )
+    .filter(
+      (slot) =>
+        available(
+          playerStates,
+          slot.starterId
+        )
+    )
+    .filter(
+      (slot) =>
+        fatigueOf(
+          playerStates,
+          slot.starterId
+        ) < 52
+    )
+    .filter(
+      (slot) =>
+        canUtilityCover(
+          roster,
+          playerStates,
+          roleStates,
+          slot.starterId,
+          targetSlot.position
+        )
+    );
 
   const options = [];
+
   for (const mover of movers) {
-    for (const bench of roster.bench ?? []) {
-      if (usedBenchIds.has(bench.playerId)) continue;
-      if (!available(playerStates, bench.playerId)) continue;
-      if (fatigueOf(playerStates, bench.playerId) >= 52) continue;
-      if (!canUtilityCover(roster, playerStates, roleStates, bench.playerId, mover.position)) continue;
+    for (
+      const bench of
+      roster.bench ?? []
+    ) {
+      if (
+        usedBenchIds.has(
+          bench.playerId
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        !available(
+          playerStates,
+          bench.playerId
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        fatigueOf(
+          playerStates,
+          bench.playerId
+        ) >= 52
+      ) {
+        continue;
+      }
+
+      if (
+        !canUtilityCover(
+          roster,
+          playerStates,
+          roleStates,
+          bench.playerId,
+          mover.position
+        )
+      ) {
+        continue;
+      }
+
       options.push({
         mover,
         bench,
-        moverFamiliarity: utilityFamiliarity(roster, playerStates, mover.starterId, targetSlot.position),
-        backfillFamiliarity: utilityFamiliarity(roster, playerStates, bench.playerId, mover.position)
+        moverFamiliarity:
+          utilityFamiliarity(
+            roster,
+            playerStates,
+            mover.starterId,
+            targetSlot.position
+          ),
+        backfillFamiliarity:
+          utilityFamiliarity(
+            roster,
+            playerStates,
+            bench.playerId,
+            mover.position
+          )
       });
     }
   }
-  options.sort((a, b) => b.moverFamiliarity - a.moverFamiliarity
-    || b.backfillFamiliarity - a.backfillFamiliarity
-    || fatigueOf(playerStates, a.mover.starterId) - fatigueOf(playerStates, b.mover.starterId)
-    || a.mover.position.localeCompare(b.mover.position)
-    || a.bench.playerId.localeCompare(b.bench.playerId));
+
+  options.sort(
+    (a, b) =>
+      b.moverFamiliarity -
+        a.moverFamiliarity ||
+      b.backfillFamiliarity -
+        a.backfillFamiliarity ||
+      fatigueOf(
+        playerStates,
+        a.mover.starterId
+      ) -
+        fatigueOf(
+          playerStates,
+          b.mover.starterId
+        ) ||
+      a.mover.position.localeCompare(
+        b.mover.position
+      ) ||
+      a.bench.playerId.localeCompare(
+        b.bench.playerId
+      )
+  );
+
   return options[0] ?? null;
 }
 
-/**
- * Daily lineup/rest AI.
- *
- * Stage 1 is the v32 direct bench replacement path and remains authoritative.
- * Stage 2 is a conservative utility fallback used only when a tired starter
- * still has no direct replacement. A sufficiently familiar starter may slide
- * to the uncovered position while an unused bench player backfills the mover's
- * original position. This makes real secondary-position reps possible without
- * rewriting stable baseline lineups.
- */
-function buildDailyLineup(roster, playerStates = {}, roleStates = {}) {
-  if (!roster?.lineupSlots || !Array.isArray(roster.bench)) {
-    return freeze({ lineup: [...roster.lineup], defense: { ...roster.defense }, rested: [], unavailable: [], replacements: [], utilityAssignments: [], positionAssignments: [] });
+function splitSide(opposingPitcher) {
+  const hand =
+    String(
+      opposingPitcher?.throws ?? ""
+    ).toUpperCase();
+
+  if (hand === "L") return "L";
+  if (hand === "R") return "R";
+  return null;
+}
+
+function splitValue(
+  rightValue,
+  leftValue,
+  side
+) {
+  if (side === "R") {
+    return Number(
+      rightValue ?? 50
+    );
+  }
+  if (side === "L") {
+    return Number(
+      leftValue ?? 50
+    );
   }
 
-  const slots = roster.lineupSlots.map((slot) => ({ ...slot, playerId: slot.starterId }));
+  return (
+    Number(rightValue ?? 50) +
+    Number(leftValue ?? 50)
+  ) / 2;
+}
+
+function offenseScore(
+  player,
+  opposingPitcher
+) {
+  const hitting =
+    player?.hitting ?? {};
+  const tendencies =
+    player?.tendencies ?? {};
+  const running =
+    player?.running ?? {};
+  const side =
+    splitSide(opposingPitcher);
+
+  const contact =
+    splitValue(
+      hitting.contactR,
+      hitting.contactL,
+      side
+    );
+
+  const powerUtilization =
+    splitValue(
+      tendencies.powerUtilizationR,
+      tendencies.powerUtilizationL,
+      side
+    );
+
+  return (
+    contact * 0.31 +
+    powerUtilization * 0.23 +
+    Number(
+      hitting.rawPower ?? 50
+    ) * 0.12 +
+    Number(
+      hitting.vision ?? 50
+    ) * 0.13 +
+    Number(
+      hitting.discipline ?? 50
+    ) * 0.13 +
+    Number(
+      running.speed ?? 50
+    ) * 0.08
+  );
+}
+
+function defensiveScore(
+  roster,
+  playerStates,
+  playerId,
+  position,
+  player
+) {
+  if (position === "DH") {
+    return 50;
+  }
+
+  const weights =
+    DEFENSE_WEIGHTS[position];
+
+  if (!weights) {
+    return 50;
+  }
+
+  const fielding =
+    player?.fielding ?? {};
+  const running =
+    player?.running ?? {};
+
+  const raw =
+    Number(
+      fielding.fielding ?? 50
+    ) * weights.fielding +
+    Number(
+      fielding.reaction ?? 50
+    ) * weights.reaction +
+    Number(
+      running.speed ?? 50
+    ) * weights.speed +
+    Number(
+      fielding.armStrength ?? 50
+    ) * weights.armStrength +
+    Number(
+      fielding.armAccuracy ?? 50
+    ) * weights.armAccuracy;
+
+  const familiarity =
+    clamp(
+      utilityFamiliarity(
+        roster,
+        playerStates,
+        playerId,
+        position
+      ),
+      0,
+      1
+    );
+
+  return (
+    raw *
+    (
+      0.62 +
+      familiarity * 0.38
+    )
+  );
+}
+
+function startComponents({
+  roster,
+  playerStates,
+  roleStates,
+  playerId,
+  position,
+  opposingPitcher,
+  baselineStarter = false
+}) {
+  const basePlayer =
+    roster?.players?.[playerId];
+
+  if (!basePlayer) {
+    return null;
+  }
+
+  const player =
+    getSeasonEffectivePlayer(
+      basePlayer,
+      playerStates?.[playerId] ??
+        null
+    );
+
+  const offense =
+    offenseScore(
+      player,
+      opposingPitcher
+    );
+
+  const defense =
+    defensiveScore(
+      roster,
+      playerStates,
+      playerId,
+      position,
+      player
+    );
+
+  const role =
+    roleStates?.[playerId]?.role ??
+    null;
+
+  const roleBonus =
+    rolePriority(role) * 4;
+
+  const momentumBonus =
+    clamp(
+      Number(
+        roleStates?.[playerId]
+          ?.momentum ?? 0
+      ),
+      -1,
+      1
+    ) * 1.4;
+
+  const fatiguePenalty =
+    fatigueOf(
+      playerStates,
+      playerId
+    ) * 0.045;
+
+  const stabilityBonus =
+    baselineStarter ? 1 : 0;
+
+  const score =
+    offense * 0.70 +
+    defense * 0.30 +
+    roleBonus +
+    momentumBonus -
+    fatiguePenalty +
+    stabilityBonus;
+
+  const side =
+    splitSide(opposingPitcher);
+
+  const platoonContact =
+    splitValue(
+      player?.hitting?.contactR,
+      player?.hitting?.contactL,
+      side
+    );
+
+  return Object.freeze({
+    score,
+    offense,
+    defense,
+    rolePriority:
+      rolePriority(role),
+    momentum:
+      Number(
+        roleStates?.[playerId]
+          ?.momentum ?? 0
+      ),
+    fatigue:
+      fatigueOf(
+        playerStates,
+        playerId
+      ),
+    form:
+      formOf(
+        playerStates,
+        playerId
+      ),
+    platoonContact
+  });
+}
+
+function decisionReasons(
+  candidate,
+  starter
+) {
+  const reasons = [];
+
+  if (
+    candidate.platoonContact >=
+    starter.platoonContact + 6
+  ) {
+    reasons.push(
+      "PLATOON_EDGE"
+    );
+  }
+
+  if (
+    candidate.offense >=
+    starter.offense + 4
+  ) {
+    reasons.push(
+      "OFFENSE_EDGE"
+    );
+  }
+
+  if (
+    candidate.defense >=
+    starter.defense + 5
+  ) {
+    reasons.push(
+      "DEFENSE_EDGE"
+    );
+  }
+
+  if (
+    candidate.rolePriority >=
+    starter.rolePriority + 0.08
+  ) {
+    reasons.push(
+      "ROLE_EDGE"
+    );
+  }
+
+  if (
+    candidate.form >=
+    starter.form + 0.25
+  ) {
+    reasons.push(
+      "FORM_EDGE"
+    );
+  }
+
+  if (
+    starter.fatigue >=
+    candidate.fatigue + 18
+  ) {
+    reasons.push(
+      "FATIGUE_EDGE"
+    );
+  }
+
+  return reasons.length
+    ? reasons
+    : ["TOTAL_FIT_EDGE"];
+}
+
+function applyDailyCompetition({
+  roster,
+  slots,
+  playerStates,
+  roleStates,
+  opposingPitcher,
+  usedBenchIds,
+  replacements
+}) {
+  const decisions = [];
+
+  const options = [];
+
+  for (
+    const bench of
+    roster.bench ?? []
+  ) {
+    const benchId =
+      bench.playerId;
+
+    if (
+      usedBenchIds.has(benchId)
+    ) {
+      continue;
+    }
+
+    if (
+      !available(
+        playerStates,
+        benchId
+      )
+    ) {
+      continue;
+    }
+
+    for (const slot of slots) {
+      if (
+        slot.playerId !==
+        slot.starterId
+      ) {
+        continue;
+      }
+
+      if (
+        !available(
+          playerStates,
+          slot.starterId
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        !directBenchCoverage(
+          roster,
+          playerStates,
+          roleStates,
+          benchId,
+          slot.position
+        )
+      ) {
+        continue;
+      }
+
+      const candidate =
+        startComponents({
+          roster,
+          playerStates,
+          roleStates,
+          playerId: benchId,
+          position: slot.position,
+          opposingPitcher,
+          baselineStarter: false
+        });
+
+      const starter =
+        startComponents({
+          roster,
+          playerStates,
+          roleStates,
+          playerId:
+            slot.starterId,
+          position:
+            slot.position,
+          opposingPitcher,
+          baselineStarter: true
+        });
+
+      if (
+        !candidate ||
+        !starter
+      ) {
+        continue;
+      }
+
+      const gain =
+        candidate.score -
+        starter.score;
+
+      if (
+        gain <
+        COMPETITION_MIN_GAIN
+      ) {
+        continue;
+      }
+
+      options.push({
+        bench,
+        slot,
+        candidate,
+        starter,
+        gain
+      });
+    }
+  }
+
+  options.sort(
+    (a, b) =>
+      b.gain - a.gain ||
+      a.slot.position.localeCompare(
+        b.slot.position
+      ) ||
+      a.bench.playerId.localeCompare(
+        b.bench.playerId
+      )
+  );
+
+  const replacedStarters =
+    new Set();
+
+  for (const option of options) {
+    const benchId =
+      option.bench.playerId;
+    const starterId =
+      option.slot.starterId;
+
+    if (
+      usedBenchIds.has(benchId) ||
+      replacedStarters.has(starterId)
+    ) {
+      continue;
+    }
+
+    if (
+      option.slot.playerId !==
+      starterId
+    ) {
+      continue;
+    }
+
+    option.slot.playerId =
+      benchId;
+
+    usedBenchIds.add(
+      benchId
+    );
+    replacedStarters.add(
+      starterId
+    );
+
+    const reasons =
+      decisionReasons(
+        option.candidate,
+        option.starter
+      );
+
+    replacements.push({
+      kind:
+        "COMPETITION_DIRECT",
+      playerId: benchId,
+      forPlayerId: starterId,
+      position:
+        option.slot.position,
+      reasons
+    });
+
+    decisions.push({
+      playerId: benchId,
+      forPlayerId: starterId,
+      position:
+        option.slot.position,
+      reasons,
+      scoreGain:
+        Number(
+          option.gain.toFixed(3)
+        )
+    });
+  }
+
+  return decisions;
+}
+
+function dailyBenchRows(
+  roster,
+  lineup,
+  playerStates,
+  roleStates
+) {
+  const lineupSet =
+    new Set(lineup);
+
+  const ids =
+    [
+      ...(
+        roster.positionPlayers ??
+        []
+      ),
+      ...(
+        roster.lineup ??
+        []
+      ),
+      ...(
+        roster.bench ?? []
+      ).map(
+        (row) => row.playerId
+      )
+    ];
+
+  return [
+    ...new Set(ids)
+  ]
+    .filter(
+      (playerId) =>
+        !lineupSet.has(playerId)
+    )
+    .map((playerId) => {
+      const coverage =
+        [
+          "DH",
+          ...getUtilityCoverage(
+            roster,
+            playerStates,
+            roleStates,
+            playerId
+          )
+        ];
+
+      return {
+        playerId,
+        coverage:
+          [
+            ...new Set(
+              coverage
+            )
+          ]
+      };
+    });
+}
+
+/**
+ * Daily lineup AI.
+ *
+ * Stage 0: injuries.
+ * Stage 1: fatigue/direct rest.
+ * Stage 2: utility rest fallback.
+ * Stage 3: real daily competition using current ability, opponent hand,
+ *          defensive fit, persistent role, form and fatigue.
+ *
+ * Batting-order optimization is intentionally deferred to the next bundle.
+ */
+function buildDailyLineup(
+  roster,
+  playerStates = {},
+  roleStates = {},
+  {
+    opposingPitcher = null
+  } = {}
+) {
+  if (
+    !roster?.lineupSlots ||
+    !Array.isArray(roster.bench)
+  ) {
+    return freeze({
+      lineup: [
+        ...(roster?.lineup ?? [])
+      ],
+      defense: {
+        ...(roster?.defense ?? {})
+      },
+      bench: [
+        ...(roster?.bench ?? [])
+      ],
+      rested: [],
+      unavailable: [],
+      replacements: [],
+      utilityAssignments: [],
+      competitionDecisions: [],
+      positionAssignments: []
+    });
+  }
+
+  const slots =
+    roster.lineupSlots.map(
+      (slot) => ({
+        ...slot,
+        playerId:
+          slot.starterId
+      })
+    );
+
   const rested = [];
   const unavailable = [];
   const replacements = [];
   const utilityAssignments = [];
-  const usedBenchIds = new Set();
+  const usedBenchIds =
+    new Set();
 
-  // Stage 0: injury availability is authoritative. An injured starter must be
-  // removed before ordinary fatigue/rest logic. Prefer direct coverage, then
-  // the same conservative utility shift used for rest, and finally an
-  // emergency healthy bench assignment so an unavailable player never starts.
-  const injuredTargets = slots.filter((slot) => !available(playerStates, slot.starterId));
-  for (const targetSlot of injuredTargets) {
-    if (targetSlot.playerId !== targetSlot.starterId) continue;
-    const direct = (roster.bench ?? []).find((bench) => !usedBenchIds.has(bench.playerId)
-      && available(playerStates, bench.playerId)
-      && directBenchCoverage(roster, playerStates, roleStates, bench.playerId, targetSlot.position));
+  const injuredTargets =
+    slots.filter(
+      (slot) =>
+        !available(
+          playerStates,
+          slot.starterId
+        )
+    );
+
+  for (
+    const targetSlot of
+    injuredTargets
+  ) {
+    if (
+      targetSlot.playerId !==
+      targetSlot.starterId
+    ) {
+      continue;
+    }
+
+    const direct =
+      (
+        roster.bench ?? []
+      ).find(
+        (bench) =>
+          !usedBenchIds.has(
+            bench.playerId
+          ) &&
+          available(
+            playerStates,
+            bench.playerId
+          ) &&
+          directBenchCoverage(
+            roster,
+            playerStates,
+            roleStates,
+            bench.playerId,
+            targetSlot.position
+          )
+      );
+
     if (direct) {
-      unavailable.push(targetSlot.starterId);
-      replacements.push({ kind: "INJURY_DIRECT", playerId: direct.playerId, forPlayerId: targetSlot.starterId, position: targetSlot.position });
-      targetSlot.playerId = direct.playerId;
-      usedBenchIds.add(direct.playerId);
-      continue;
-    }
-    const option = findUtilityShift(slots, roster, playerStates, roleStates, targetSlot, usedBenchIds);
-    if (option) {
-      const { mover, bench, moverFamiliarity, backfillFamiliarity } = option;
-      const moverId = mover.starterId;
-      const targetId = targetSlot.starterId;
-      mover.playerId = bench.playerId;
-      targetSlot.playerId = moverId;
-      usedBenchIds.add(bench.playerId);
-      unavailable.push(targetId);
-      replacements.push({ kind: "INJURY_UTILITY_BACKFILL", playerId: bench.playerId, forPlayerId: moverId, position: mover.position });
-      utilityAssignments.push({
-        playerId: moverId, fromPosition: mover.position, toPosition: targetSlot.position, forPlayerId: targetId,
-        backfillPlayerId: bench.playerId, familiarity: Number(moverFamiliarity.toFixed(3)), backfillFamiliarity: Number(backfillFamiliarity.toFixed(3))
+      unavailable.push(
+        targetSlot.starterId
+      );
+
+      replacements.push({
+        kind: "INJURY_DIRECT",
+        playerId:
+          direct.playerId,
+        forPlayerId:
+          targetSlot.starterId,
+        position:
+          targetSlot.position
       });
+
+      targetSlot.playerId =
+        direct.playerId;
+
+      usedBenchIds.add(
+        direct.playerId
+      );
       continue;
     }
-    const emergency = (roster.bench ?? []).find((bench) => !usedBenchIds.has(bench.playerId) && available(playerStates, bench.playerId));
+
+    const option =
+      findUtilityShift(
+        slots,
+        roster,
+        playerStates,
+        roleStates,
+        targetSlot,
+        usedBenchIds
+      );
+
+    if (option) {
+      const {
+        mover,
+        bench,
+        moverFamiliarity,
+        backfillFamiliarity
+      } = option;
+
+      const moverId =
+        mover.starterId;
+      const targetId =
+        targetSlot.starterId;
+
+      mover.playerId =
+        bench.playerId;
+      targetSlot.playerId =
+        moverId;
+
+      usedBenchIds.add(
+        bench.playerId
+      );
+      unavailable.push(
+        targetId
+      );
+
+      replacements.push({
+        kind:
+          "INJURY_UTILITY_BACKFILL",
+        playerId:
+          bench.playerId,
+        forPlayerId:
+          moverId,
+        position:
+          mover.position
+      });
+
+      utilityAssignments.push({
+        playerId:
+          moverId,
+        fromPosition:
+          mover.position,
+        toPosition:
+          targetSlot.position,
+        forPlayerId:
+          targetId,
+        backfillPlayerId:
+          bench.playerId,
+        familiarity:
+          Number(
+            moverFamiliarity.toFixed(
+              3
+            )
+          ),
+        backfillFamiliarity:
+          Number(
+            backfillFamiliarity.toFixed(
+              3
+            )
+          )
+      });
+
+      continue;
+    }
+
+    const emergency =
+      (
+        roster.bench ?? []
+      ).find(
+        (bench) =>
+          !usedBenchIds.has(
+            bench.playerId
+          ) &&
+          available(
+            playerStates,
+            bench.playerId
+          )
+      );
+
     if (emergency) {
-      unavailable.push(targetSlot.starterId);
-      replacements.push({ kind: "INJURY_EMERGENCY", playerId: emergency.playerId, forPlayerId: targetSlot.starterId, position: targetSlot.position });
-      targetSlot.playerId = emergency.playerId;
-      usedBenchIds.add(emergency.playerId);
+      unavailable.push(
+        targetSlot.starterId
+      );
+
+      replacements.push({
+        kind:
+          "INJURY_EMERGENCY",
+        playerId:
+          emergency.playerId,
+        forPlayerId:
+          targetSlot.starterId,
+        position:
+          targetSlot.position
+      });
+
+      targetSlot.playerId =
+        emergency.playerId;
+
+      usedBenchIds.add(
+        emergency.playerId
+      );
     }
   }
 
-  // Stage 1: preserve the existing direct bench-rest algorithm.
-  for (const bench of roster.bench) {
-    if (usedBenchIds.has(bench.playerId)) continue;
-    if (!available(playerStates, bench.playerId)) continue;
-    if (fatigueOf(playerStates, bench.playerId) >= 52) continue;
-    const candidates = slots
-      .filter((slot) => slot.playerId === slot.starterId && available(playerStates, slot.starterId) && directBenchCoverage(roster, playerStates, roleStates, bench.playerId, slot.position))
-      .map((slot) => ({ slot, fatigue: fatigueOf(playerStates, slot.starterId) }))
-      .filter(({ slot, fatigue }) => fatigue >= thresholdFor(slot.position, roleStates?.[slot.starterId]?.role))
-      .sort((a, b) => b.fatigue - a.fatigue || a.slot.position.localeCompare(b.slot.position));
-    const selected = candidates[0];
-    if (!selected) continue;
-    rested.push(selected.slot.starterId);
-    replacements.push({ kind: "DIRECT", playerId: bench.playerId, forPlayerId: selected.slot.starterId, position: selected.slot.position });
-    selected.slot.playerId = bench.playerId;
-    usedBenchIds.add(bench.playerId);
+  for (
+    const bench of
+    roster.bench
+  ) {
+    if (
+      usedBenchIds.has(
+        bench.playerId
+      )
+    ) {
+      continue;
+    }
+
+    if (
+      !available(
+        playerStates,
+        bench.playerId
+      )
+    ) {
+      continue;
+    }
+
+    if (
+      fatigueOf(
+        playerStates,
+        bench.playerId
+      ) >= 52
+    ) {
+      continue;
+    }
+
+    const candidates =
+      slots
+        .filter(
+          (slot) =>
+            slot.playerId ===
+              slot.starterId &&
+            available(
+              playerStates,
+              slot.starterId
+            ) &&
+            directBenchCoverage(
+              roster,
+              playerStates,
+              roleStates,
+              bench.playerId,
+              slot.position
+            )
+        )
+        .map(
+          (slot) => ({
+            slot,
+            fatigue:
+              fatigueOf(
+                playerStates,
+                slot.starterId
+              )
+          })
+        )
+        .filter(
+          ({
+            slot,
+            fatigue
+          }) =>
+            fatigue >=
+            thresholdFor(
+              slot.position,
+              roleStates?.[
+                slot.starterId
+              ]?.role
+            )
+        )
+        .sort(
+          (a, b) =>
+            b.fatigue -
+              a.fatigue ||
+            a.slot.position.localeCompare(
+              b.slot.position
+            )
+        );
+
+    const selected =
+      candidates[0];
+
+    if (!selected) {
+      continue;
+    }
+
+    rested.push(
+      selected.slot.starterId
+    );
+
+    replacements.push({
+      kind: "DIRECT",
+      playerId:
+        bench.playerId,
+      forPlayerId:
+        selected.slot.starterId,
+      position:
+        selected.slot.position
+    });
+
+    selected.slot.playerId =
+      bench.playerId;
+
+    usedBenchIds.add(
+      bench.playerId
+    );
   }
 
-  // Stage 2: utility fallback. Only uncovered fatigued starters reach here.
-  const uncovered = slots
-    .filter((slot) => slot.playerId === slot.starterId && available(playerStates, slot.starterId) && eligibleForRest(slot, playerStates, roleStates))
-    .sort((a, b) => fatigueOf(playerStates, b.starterId) - fatigueOf(playerStates, a.starterId) || a.position.localeCompare(b.position));
+  const uncovered =
+    slots
+      .filter(
+        (slot) =>
+          slot.playerId ===
+            slot.starterId &&
+          available(
+            playerStates,
+            slot.starterId
+          ) &&
+          eligibleForRest(
+            slot,
+            playerStates,
+            roleStates
+          )
+      )
+      .sort(
+        (a, b) =>
+          fatigueOf(
+            playerStates,
+            b.starterId
+          ) -
+            fatigueOf(
+              playerStates,
+              a.starterId
+            ) ||
+          a.position.localeCompare(
+            b.position
+          )
+      );
 
-  for (const targetSlot of uncovered) {
-    if (targetSlot.playerId !== targetSlot.starterId) continue;
-    const option = findUtilityShift(slots, roster, playerStates, roleStates, targetSlot, usedBenchIds);
-    if (!option) continue;
-    const { mover, bench, moverFamiliarity, backfillFamiliarity } = option;
-    const moverId = mover.starterId;
-    const targetId = targetSlot.starterId;
-    mover.playerId = bench.playerId;
-    targetSlot.playerId = moverId;
-    usedBenchIds.add(bench.playerId);
-    rested.push(targetId);
-    replacements.push({ kind: "UTILITY_BACKFILL", playerId: bench.playerId, forPlayerId: moverId, position: mover.position });
+  for (
+    const targetSlot of
+    uncovered
+  ) {
+    if (
+      targetSlot.playerId !==
+      targetSlot.starterId
+    ) {
+      continue;
+    }
+
+    const option =
+      findUtilityShift(
+        slots,
+        roster,
+        playerStates,
+        roleStates,
+        targetSlot,
+        usedBenchIds
+      );
+
+    if (!option) {
+      continue;
+    }
+
+    const {
+      mover,
+      bench,
+      moverFamiliarity,
+      backfillFamiliarity
+    } = option;
+
+    const moverId =
+      mover.starterId;
+    const targetId =
+      targetSlot.starterId;
+
+    mover.playerId =
+      bench.playerId;
+    targetSlot.playerId =
+      moverId;
+
+    usedBenchIds.add(
+      bench.playerId
+    );
+    rested.push(
+      targetId
+    );
+
+    replacements.push({
+      kind:
+        "UTILITY_BACKFILL",
+      playerId:
+        bench.playerId,
+      forPlayerId:
+        moverId,
+      position:
+        mover.position
+    });
+
     utilityAssignments.push({
-      playerId: moverId,
-      fromPosition: mover.position,
-      toPosition: targetSlot.position,
-      forPlayerId: targetId,
-      backfillPlayerId: bench.playerId,
-      familiarity: Number(moverFamiliarity.toFixed(3)),
-      backfillFamiliarity: Number(backfillFamiliarity.toFixed(3))
+      playerId:
+        moverId,
+      fromPosition:
+        mover.position,
+      toPosition:
+        targetSlot.position,
+      forPlayerId:
+        targetId,
+      backfillPlayerId:
+        bench.playerId,
+      familiarity:
+        Number(
+          moverFamiliarity.toFixed(
+            3
+          )
+        ),
+      backfillFamiliarity:
+        Number(
+          backfillFamiliarity.toFixed(
+            3
+          )
+        )
     });
   }
 
-  // Starting-nine selection and batting order are already fixed above. v36
-  // optimizes only the defensive/DH assignment of those same nine players.
-  const lineup = slots.map((slot) => slot.playerId);
-  const optimized = optimizePositionAssignments({ roster, slots, playerStates, roleStates });
+  const competitionDecisions =
+    applyDailyCompetition({
+      roster,
+      slots,
+      playerStates,
+      roleStates,
+      opposingPitcher,
+      usedBenchIds,
+      replacements
+    });
+
+  const lineup =
+    slots.map(
+      (slot) =>
+        slot.playerId
+    );
+
+  const optimized =
+    optimizePositionAssignments({
+      roster,
+      slots,
+      playerStates,
+      roleStates
+    });
+
   const defense = {};
-  for (const [position, playerId] of Object.entries(optimized.assignments)) {
-    if (position !== "DH") defense[position] = playerId;
+
+  for (
+    const [
+      position,
+      playerId
+    ] of Object.entries(
+      optimized.assignments
+    )
+  ) {
+    if (position !== "DH") {
+      defense[position] =
+        playerId;
+    }
   }
-  return freeze({ lineup, defense, rested, unavailable, replacements, utilityAssignments, positionAssignments: optimized.changes });
+
+  const bench =
+    dailyBenchRows(
+      roster,
+      lineup,
+      playerStates,
+      roleStates
+    );
+
+  return freeze({
+    lineup,
+    defense,
+    bench,
+    rested,
+    unavailable,
+    replacements,
+    utilityAssignments,
+    competitionDecisions,
+    positionAssignments:
+      optimized.changes
+  });
 }
 
-export { buildDailyLineup };
+export {
+  COMPETITION_MIN_GAIN,
+  buildDailyLineup
+};

@@ -320,10 +320,20 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
   const homeRoster = league.rosters[scheduleGame.homeTeamId];
   if (!awayRoster || !homeRoster) throw new RangeError("scheduleGame의 팀 roster를 찾을 수 없습니다.");
 
-  const awayDaily = buildDailyLineup(awayRoster, playerStates, roleStates);
-  const homeDaily = buildDailyLineup(homeRoster, playerStates, roleStates);
   const awayPitcherId = selectSeasonStarter(awayRoster, scheduleGame.awayRotationIndex, pitcherStates);
   const homePitcherId = selectSeasonStarter(homeRoster, scheduleGame.homeRotationIndex, pitcherStates);
+  const awayDaily = buildDailyLineup(
+    awayRoster,
+    playerStates,
+    roleStates,
+    { opposingPitcher: homeRoster.players?.[homePitcherId] ?? null }
+  );
+  const homeDaily = buildDailyLineup(
+    homeRoster,
+    playerStates,
+    roleStates,
+    { opposingPitcher: awayRoster.players?.[awayPitcherId] ?? null }
+  );
   const awayBullpen = orderAvailableBullpen(awayRoster, pitcherStates);
   const homeBullpen = orderAvailableBullpen(homeRoster, pitcherStates);
 
@@ -356,8 +366,8 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
     teams: Object.freeze({ away: awayRoster.team, home: homeRoster.team }), players, names, park,
     dailyLineups: Object.freeze({ away: awayDaily, home: homeDaily }),
     benchPlans: Object.freeze({
-      away: Object.freeze((awayRoster.bench ?? []).filter((row) => healthAvailability(playerStates?.[row.playerId]?.health) !== "INJURED").map((row) => Object.freeze({ playerId: row.playerId, coverage: Object.freeze([...(row.coverage ?? [])]) }))),
-      home: Object.freeze((homeRoster.bench ?? []).filter((row) => healthAvailability(playerStates?.[row.playerId]?.health) !== "INJURED").map((row) => Object.freeze({ playerId: row.playerId, coverage: Object.freeze([...(row.coverage ?? [])]) })))
+      away: Object.freeze((awayDaily.bench ?? awayRoster.bench ?? []).filter((row) => healthAvailability(playerStates?.[row.playerId]?.health) !== "INJURED").map((row) => Object.freeze({ playerId: row.playerId, coverage: Object.freeze([...(row.coverage ?? [])]) }))),
+      home: Object.freeze((homeDaily.bench ?? homeRoster.bench ?? []).filter((row) => healthAvailability(playerStates?.[row.playerId]?.health) !== "INJURED").map((row) => Object.freeze({ playerId: row.playerId, coverage: Object.freeze([...(row.coverage ?? [])]) })))
     }),
     pitchingPlans: Object.freeze({
       away: Object.freeze({ starterId: awayPitcherId, bullpenIds: awayBullpen }),

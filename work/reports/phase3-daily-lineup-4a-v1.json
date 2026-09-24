@@ -1,0 +1,32 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_DAILY_LINEUP_4A_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "injuryAvailability": "AUTHORITATIVE",
+    "fatigueRest": "EXISTING_PATH_PRESERVED",
+    "dailyCompetitionInputs": [
+      "CURRENT_ABILITY",
+      "OPPONENT_STARTER_HAND",
+      "DEFENSIVE_FIT",
+      "PERSISTENT_ROLE",
+      "FORM",
+      "FATIGUE"
+    ],
+    "hiddenPotentialUsed": false,
+    "battingOrder": "DEFERRED_TO_4B"
+  },
+  "synthetic": {
+    "vsRightStarter": "bench_rf",
+    "vsLeftStarter": "starter_RF",
+    "reasons": [
+      "PLATOON_EDGE",
+      "OFFENSE_EDGE"
+    ]
+  },
+  "productionSmoke": {
+    "checkedGames": 160,
+    "competitionGames": 51,
+    "competitionMoves": 53
+  }
+}
