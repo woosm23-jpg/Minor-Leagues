@@ -1,0 +1,10 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_ONE_DAY_PROGRESSION_V1",
+  "pass": true,
+  "firstDate": "2026-04-02",
+  "secondDate": "2026-04-03",
+  "firstDayWorldGames": 20,
+  "userAndAiSharedCalendar": true,
+  "saveRestore": true,
+  "replayDeterministic": true
+}

@@ -504,6 +504,7 @@ function startSeasonApp(root) {
         if (action === "OFFSEASON_NEXT") snapshot = seasonApi.advanceOffseasonPhase(snapshot.seasonId);
         if (action === "SIM_GAME") snapshot = seasonApi.simulateCurrentGame(snapshot.seasonId);
         if (action === "SIM_SERIES") snapshot = seasonApi.simulateCurrentSeries(snapshot.seasonId);
+        if (action === "SIM_DAY") snapshot = seasonApi.simulateOneDay(snapshot.seasonId);
         if (action === "SIM_7_DAYS") snapshot = seasonApi.simulateSevenDays(snapshot.seasonId);
         if (action === "SIM_IMPORTANT") snapshot = seasonApi.simulateToImportantEvent(snapshot.seasonId);
         majorEvent = latestMajorCareerEvent(snapshot, previousCareerSequence);

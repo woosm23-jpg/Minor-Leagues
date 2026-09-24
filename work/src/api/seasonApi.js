@@ -2642,6 +2642,12 @@ const seasonApi = Object.freeze({
     finalizeInteractiveGameIfNeeded(session, next);
     return snapshot(session);
   },
+  simulateOneDay(seasonId) {
+    const session = assertSession(seasonId);
+    const targetDate = addIsoDays(session.state.currentDate, 1);
+    advanceByCalendar(session, { command: "ONE_DAY", targetDate, stopOnImportant: true });
+    return snapshot(session);
+  },
   simulateSevenDays(seasonId) {
     const session = assertSession(seasonId);
     const targetDate = addIsoDays(session.state.currentDate, 7);

@@ -223,6 +223,7 @@ function nextGameCard(snapshot) {
       <button type="button" class="secondary" data-season-action="SIM_SERIES">시리즈 시뮬</button>
     </div>
     <div class="time-progress-actions">
+      <button type="button" class="secondary" data-season-action="SIM_DAY">하루 진행</button>
       <button type="button" class="secondary" data-season-action="SIM_7_DAYS">7일 진행</button>
       <button type="button" class="secondary" data-season-action="SIM_IMPORTANT">중요 이벤트까지</button>
     </div>
@@ -236,7 +237,7 @@ function progressStopCard(snapshot) {
   let title = "진행 완료";
   let detail = `${dateLabel(result.startedDate)} → ${dateLabel(result.endedDate)}`;
   if (result.stopReason === "DATE_REACHED") {
-    title = "7일 진행 완료";
+    title = result.command === "ONE_DAY" ? "하루 진행 완료" : "7일 진행 완료";
     detail = `${dateLabel(result.endedDate)}까지 진행 · 월드 경기 ${result.worldGamesSimulated ?? 0}경기 처리`;
   } else if (result.stopReason === "SEASON_END") {
     title = "시즌 종료에서 정지";
@@ -249,7 +250,7 @@ function progressStopCard(snapshot) {
     title = "장기 부상에서 정지";
     detail = `${dateLabel(result.stop.date)} · ${injuryFamilyLabel(injury.family)} / ${injurySeverityLabel(injury.severity)} · 예상 복귀 ${dateLabel(injury.expectedReturnDate)}`;
   }
-  return `<section class="card progress-stop-card"><div class="section-head"><strong>${esc(title)}</strong><span>${result.command === "IMPORTANT_EVENT" ? "Important Event" : "7 Days"}</span></div><p>${esc(detail)}</p></section>`;
+  return `<section class="card progress-stop-card"><div class="section-head"><strong>${esc(title)}</strong><span>${result.command === "IMPORTANT_EVENT" ? "Important Event" : result.command === "ONE_DAY" ? "1 Day" : "7 Days"}</span></div><p>${esc(detail)}</p></section>`;
 }
 
 function recentResults(snapshot) {
