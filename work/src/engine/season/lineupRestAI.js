@@ -114,57 +114,111 @@ function available(playerStates, id) {
   );
 }
 
-function thresholdFor(
-  position,
-  role = null
-) {
-  let base = 40;
+function isoDayNumber(isoDate) {
+  if (!isoDate) return null;
+  const time = Date.parse(`${isoDate}T00:00:00Z`);
+  return Number.isFinite(time)
+    ? Math.floor(time / 86400000)
+    : null;
+}
 
+function effectiveConsecutiveStarts(playerState, scheduleContext) {
+  const current = isoDayNumber(scheduleContext?.currentDate);
+  const last = isoDayNumber(playerState?.lastGameDate);
+  if (current == null || last == null || current - last !== 1) {
+    return 0;
+  }
+  return Math.max(0, Number(playerState?.consecutiveStarts ?? 0));
+}
+
+function restProfile({ roster, playerStates, playerId, scheduleContext }) {
+  const player = roster?.players?.[playerId] ?? null;
+  const state = playerStates?.[playerId] ?? null;
+  const age = Number(state?.health?.age ?? player?.physical?.age ?? 26);
+  const durability = Number(
+    state?.health?.durability ?? player?.physical?.durability ?? 60
+  );
+
+  return Object.freeze({
+    age: Number.isFinite(age) ? age : 26,
+    durability: Number.isFinite(durability) ? durability : 60,
+    consecutiveStarts: effectiveConsecutiveStarts(state, scheduleContext),
+    nextGameGapDays: Math.max(1, Number(scheduleContext?.nextGameGapDays ?? 1)),
+    gamesNext7Days: Math.max(1, Number(scheduleContext?.gamesNext7Days ?? 5))
+  });
+}
+
+function thresholdFor(position, role = null, profile = {}) {
+  let base = 40;
   if (position === "C") {
     base = 30;
-  } else if (
-    position === "CF" ||
-    position === "SS"
-  ) {
+  } else if (position === "CF" || position === "SS") {
     base = 36;
   }
 
-  const priority =
-    rolePriority(role);
+  const priority = rolePriority(role);
+  const roleProtection = Math.round((priority - 0.5) * 4);
 
-  const protection =
-    Math.round(
-      (priority - 0.5) * 4
-    );
+  const age = Number(profile.age ?? 26);
+  const ageAdjustment =
+    age >= 35 ? -6 :
+    age >= 32 ? -4 :
+    age >= 30 ? -2 :
+    age <= 23 ? 2 : 0;
 
-  return Math.max(
-    24,
-    Math.min(
-      52,
-      base + protection
-    )
+  const durability = clamp(Number(profile.durability ?? 60), 20, 99);
+  const durabilityAdjustment = clamp((durability - 60) * 0.30, -5, 7);
+
+  const consecutiveStarts = Math.max(
+    0,
+    Number(profile.consecutiveStarts ?? 0)
+  );
+  const streakAdjustment =
+    consecutiveStarts >= 4
+      ? -Math.min(8, (consecutiveStarts - 3) * 1.5)
+      : 0;
+
+  const nextGameGapDays = Math.max(1, Number(profile.nextGameGapDays ?? 1));
+  const offDayAdjustment = nextGameGapDays >= 2 ? 6 : 0;
+
+  const gamesNext7Days = Math.max(1, Number(profile.gamesNext7Days ?? 5));
+  const densityAdjustment =
+    gamesNext7Days >= 7 ? -4 :
+    gamesNext7Days >= 6 ? -2 :
+    gamesNext7Days <= 4 ? 2 : 0;
+
+  return clamp(
+    base +
+      roleProtection +
+      ageAdjustment +
+      durabilityAdjustment +
+      streakAdjustment +
+      offDayAdjustment +
+      densityAdjustment,
+    18,
+    58
   );
 }
 
 function eligibleForRest(
   slot,
+  roster,
   playerStates,
-  roleStates
+  roleStates,
+  scheduleContext
 ) {
-  const fatigue =
-    fatigueOf(
-      playerStates,
-      slot.starterId
-    );
+  const fatigue = fatigueOf(playerStates, slot.starterId);
+  const profile = restProfile({
+    roster,
+    playerStates,
+    playerId: slot.starterId,
+    scheduleContext
+  });
 
-  return (
-    fatigue >=
-    thresholdFor(
-      slot.position,
-      roleStates?.[
-        slot.starterId
-      ]?.role
-    )
+  return fatigue >= thresholdFor(
+    slot.position,
+    roleStates?.[slot.starterId]?.role,
+    profile
   );
 }
 
@@ -895,7 +949,8 @@ function buildDailyLineup(
   playerStates = {},
   roleStates = {},
   {
-    opposingPitcher = null
+    opposingPitcher = null,
+    scheduleContext = null
   } = {}
 ) {
   if (
@@ -917,7 +972,8 @@ function buildDailyLineup(
       replacements: [],
       utilityAssignments: [],
       competitionDecisions: [],
-      positionAssignments: []
+      positionAssignments: [],
+      scheduleContext: scheduleContext ?? null
     });
   }
 
@@ -1177,14 +1233,25 @@ function buildDailyLineup(
           ({
             slot,
             fatigue
-          }) =>
-            fatigue >=
-            thresholdFor(
-              slot.position,
-              roleStates?.[
-                slot.starterId
-              ]?.role
-            )
+          }) => {
+            const profile = restProfile({
+              roster,
+              playerStates,
+              playerId: slot.starterId,
+              scheduleContext
+            });
+
+            return (
+              fatigue >=
+              thresholdFor(
+                slot.position,
+                roleStates?.[
+                  slot.starterId
+                ]?.role,
+                profile
+              )
+            );
+          }
         )
         .sort(
           (a, b) =>
@@ -1236,8 +1303,10 @@ function buildDailyLineup(
           ) &&
           eligibleForRest(
             slot,
+            roster,
             playerStates,
-            roleStates
+            roleStates,
+            scheduleContext
           )
       )
       .sort(
@@ -1416,7 +1485,9 @@ function buildDailyLineup(
     utilityAssignments,
     competitionDecisions,
     positionAssignments:
-      optimized.changes
+      optimized.changes,
+    scheduleContext:
+      scheduleContext ?? null
   });
 }
 

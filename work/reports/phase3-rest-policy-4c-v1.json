@@ -1,0 +1,32 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_REST_POLICY_4C_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "inputs": [
+      "FATIGUE",
+      "POSITION",
+      "ROLE",
+      "AGE",
+      "DURABILITY",
+      "CONSECUTIVE_STARTS",
+      "NEXT_OFF_DAY",
+      "GAMES_NEXT_7_DAYS"
+    ],
+    "fixedFatigueThreshold": false,
+    "hiddenPotentialUsed": false
+  },
+  "synthetic": {
+    "denseScheduleRested": [
+      "starter_RF"
+    ],
+    "offDayTomorrowRested": [],
+    "youngDurableRested": [],
+    "streakResetAfterGap": 1
+  },
+  "productionSmoke": {
+    "checkedGames": 160,
+    "offDayEveSides": 59,
+    "denseSides": 306
+  }
+}

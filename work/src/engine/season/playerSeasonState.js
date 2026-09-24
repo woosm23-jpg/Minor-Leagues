@@ -72,6 +72,7 @@ function createPositionPlayerSeasonState(player, positionProfile = null, develop
     recentForm: [],
     gamesPlayed: 0,
     lastGameDate: null,
+    consecutiveStarts: 0,
     positionFamiliarity: initialPositionFamiliarity(player, profile),
     positionReps: initialPositionReps(player, profile),
     development: createPositionDevelopmentState(player, developmentOptions)
@@ -132,6 +133,26 @@ function gameWorkload(position, appearanceType = "START") {
   if (position === "C") return 20;
   if (position === "DH") return 10;
   return 17;
+}
+
+function isoDayNumber(isoDate) {
+  if (!isoDate) return null;
+  const time = Date.parse(`${isoDate}T00:00:00Z`);
+  return Number.isFinite(time)
+    ? Math.floor(time / 86400000)
+    : null;
+}
+
+function nextConsecutiveStarts(state, date, appearanceType) {
+  if (appearanceType !== "START") return 0;
+  const current = isoDayNumber(date);
+  const previous = isoDayNumber(state?.lastGameDate);
+  if (current == null || previous == null) {
+    return Number(state?.consecutiveStarts ?? 0) + 1;
+  }
+  return current - previous === 1
+    ? Number(state?.consecutiveStarts ?? 0) + 1
+    : 1;
 }
 
 function formScore(line) {
@@ -247,6 +268,12 @@ function applyPositionPlayerGame(state, player, { battingLine, position = "DH", 
   }), state.development.focus ?? "BALANCED");
   const devProgress = Object.fromEntries(Object.keys(state.development.progress).map((tool) => [tool, state.development.progress[tool] + (delta[tool] ?? 0) * developmentMultiplier]));
   const converted = convertProgressToGains(player, state.development, devProgress);
+  const consecutiveStarts = nextConsecutiveStarts(
+    state,
+    date,
+    appearanceType
+  );
+
   return freeze({
     ...state,
     fatigue: clamp(state.fatigue + gameWorkload(position, appearanceType), 0, 100),
@@ -254,6 +281,7 @@ function applyPositionPlayerGame(state, player, { battingLine, position = "DH", 
     recentForm: recent,
     gamesPlayed: state.gamesPlayed + 1,
     lastGameDate: date ?? state.lastGameDate,
+    consecutiveStarts,
     positionFamiliarity: positionState.familiarity,
     positionReps: positionState.reps,
     development: {
@@ -366,6 +394,7 @@ function getPositionPlayerSeasonView(state) {
     form: Number(state.form.toFixed(3)),
     formBand: formBand(state.form),
     gamesPlayed: state.gamesPlayed,
+    consecutiveStarts: Number(state.consecutiveStarts ?? 0),
     positionFamiliarity: Object.fromEntries(Object.entries(state.positionFamiliarity ?? {}).map(([key, value]) => [key, Number(value.toFixed(3))])),
     positionReps: { ...(state.positionReps ?? {}) },
     development: {

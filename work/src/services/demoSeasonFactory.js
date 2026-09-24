@@ -314,6 +314,47 @@ function createDemoSeasonFixture({ seed = "THE_CALL_UP_SEASON_V1", startDate = "
   return ensureDemoMultiLevelFixture(base);
 }
 
+function scheduleDayNumber(isoDate) {
+  const time = Date.parse(`${isoDate}T00:00:00Z`);
+  if (!Number.isFinite(time)) {
+    throw new TypeError(`유효한 schedule date가 아닙니다: ${isoDate}`);
+  }
+  return Math.floor(time / 86400000);
+}
+
+function buildTeamScheduleContext(league, scheduleGame, teamId) {
+  const currentDay = scheduleDayNumber(scheduleGame.date);
+
+  const futureDays = (league.schedule ?? [])
+    .filter(
+      (game) =>
+        game.gameId !== scheduleGame.gameId &&
+        (
+          game.awayTeamId === teamId ||
+          game.homeTeamId === teamId
+        )
+    )
+    .map((game) => scheduleDayNumber(game.date))
+    .filter((day) => day > currentDay)
+    .sort((a, b) => a - b);
+
+  const nextGameGapDays = futureDays.length
+    ? Math.max(1, futureDays[0] - currentDay)
+    : 7;
+
+  const gamesNext7Days =
+    1 +
+    futureDays.filter(
+      (day) => day <= currentDay + 6
+    ).length;
+
+  return Object.freeze({
+    currentDate: scheduleGame.date,
+    nextGameGapDays,
+    gamesNext7Days
+  });
+}
+
 function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = null, pitcherStates = null, roleStates = null, level = "AAA" }) {
   const league = seasonFixture.levelLeagues?.[level] ?? { rosters: seasonFixture.rosters, userTeamId: seasonFixture.userTeamId };
   const awayRoster = league.rosters[scheduleGame.awayTeamId];
@@ -326,13 +367,27 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
     awayRoster,
     playerStates,
     roleStates,
-    { opposingPitcher: homeRoster.players?.[homePitcherId] ?? null }
+    {
+      opposingPitcher: homeRoster.players?.[homePitcherId] ?? null,
+      scheduleContext: buildTeamScheduleContext(
+        league,
+        scheduleGame,
+        scheduleGame.awayTeamId
+      )
+    }
   );
   const homeDaily = buildDailyLineup(
     homeRoster,
     playerStates,
     roleStates,
-    { opposingPitcher: awayRoster.players?.[awayPitcherId] ?? null }
+    {
+      opposingPitcher: awayRoster.players?.[awayPitcherId] ?? null,
+      scheduleContext: buildTeamScheduleContext(
+        league,
+        scheduleGame,
+        scheduleGame.homeTeamId
+      )
+    }
   );
   const awayBullpen = orderAvailableBullpen(awayRoster, pitcherStates);
   const homeBullpen = orderAvailableBullpen(homeRoster, pitcherStates);
