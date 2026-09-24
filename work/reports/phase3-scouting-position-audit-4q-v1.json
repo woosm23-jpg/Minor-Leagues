@@ -1,0 +1,71 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_SCOUTING_POSITION_AUDIT_4Q_V1",
+  "pass": true,
+  "mode": "READ_ONLY_PRODUCTION_V3_PLUS_ENGINE_COUNTERFACTUAL",
+  "snapshotHash": "fnv1a32:f7b34713",
+  "prerequisites": {
+    "developmentPromotion4M": true,
+    "automaticInjuryCallup4P": true
+  },
+  "promotion": {
+    "hiddenPotentialInvariancePolicies": [
+      {
+        "kind": "AAA_MLB_HITTER",
+        "decision": "PROMOTE",
+        "hiddenPotentialIgnored": true
+      },
+      {
+        "kind": "A_HIGH_A_HITTER",
+        "decision": "PROMOTE",
+        "hiddenPotentialIgnored": true
+      },
+      {
+        "kind": "AAA_MLB_PITCHER",
+        "decision": "PROMOTE",
+        "hiddenPotentialIgnored": true
+      },
+      {
+        "kind": "AA_AAA_PITCHER",
+        "decision": "PROMOTE",
+        "hiddenPotentialIgnored": true
+      },
+      {
+        "kind": "EMERGENCY_HITTER",
+        "decision": "PROMOTE",
+        "hiddenPotentialIgnored": true
+      },
+      {
+        "kind": "EMERGENCY_PITCHER",
+        "decision": "PROMOTE",
+        "hiddenPotentialIgnored": true
+      }
+    ],
+    "realOrganizationEvaluationCount": 55,
+    "realReviewHiddenCeilingInvariant": true,
+    "realRosterTransactionsInvariant": true
+  },
+  "scouting": {
+    "productionProspectCount": 20,
+    "confidenceAndFvRangesValid": true,
+    "publicDetailNoHiddenInternalFields": true,
+    "prospectNoHiddenInternalFields": true
+  },
+  "position": {
+    "playerId": "user_001",
+    "primaryPosition": "SS",
+    "trainedSecondaryPosition": "LF",
+    "threshold": 0.65,
+    "beforeFamiliarity": 0.649,
+    "afterFamiliarity": 0.6514703291139241,
+    "reps": 1,
+    "beforeEligible": false,
+    "afterEligible": true,
+    "saveRestoreSame": true
+  },
+  "scope": {
+    "gameplaySourceUnchanged": true,
+    "scoutingMayRespondToPotentialEvidence": true,
+    "hiddenCeilingDoesNotControlPromotion": true,
+    "automaticInjuryRegressionCoveredByPrior4P": true
+  }
+}
