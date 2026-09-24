@@ -1,0 +1,167 @@
+name: THE CALL-UP Phase 3 4I Short Rotation Recovery
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-phase3-4i-short-rotation-recovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  short-postseason-rotation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install short rotation policy and verify
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/phase3-postseason-workload-fix-4h-v1.json","utf8"));if(r.pass!==true||r.snapshotHash!=="fnv1a32:f7b34713"||r.saveRestore.workloadPreserved!==true)process.exit(1);console.log("4H verified workload prerequisite PASS");'
+          mkdir -p scripts reports tests src/engine/career
+          cat <<'TCU_4I_APPLY' | base64 -d | gzip -d > /tmp/tcu_phase3_4i_apply.py
+          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
+          TCU_4I_APPLY
+          cat <<'TCU_4I_POLICY' | base64 -d | gzip -d > /tmp/tcu_phase3_4i_rotation_policy.js
+          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
+          TCU_4I_POLICY
+          cat <<'TCU_4I_TESTS' | base64 -d | gzip -d > /tmp/tcu_phase3_4i_rotation_tests.js
+          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
+          TCU_4I_TESTS
+          cat <<'TCU_4I_VERIFY' | base64 -d | gzip -d > /tmp/tcu_phase3_4i_verify.mjs
+          H4sIAAAAAAAC/7VY3W7byBW+91OwQLAkNxT9i01AgQ4UWVmrkS2tKGexdQ15RA6pSfjXGVK2IgjYB+ht7/oILfZqgV70iTboO/TM
+          DCmSlhWnwXYRrDUzZ87/OfMdkihNaKYgxjD88WkSKWqceNiSO/sso8TN1PYekYQ+qxP5rDpJUTavn/F1dfoxJLP6KV9XpyvFJyG+
+          Gg8myYizWddJcxrWKRlGLIk7KdlQmeY+o+4+Ssn+5tB8z+qXFigkHsqwI84dtMAjtAwT5D1kAkYviItZwcnBlMDVjygjSSx57rlJ
+          zDJlPBxOFFtYbVLMknCBNbHwCI1RhLWGRZrUxIxwhkwwSNcNLlLV2yW73mg45gxVijkl20/niOHjVpqwTOrSYnM4aNEkE9q0Tkhr
+          cQg6JbFacnEuOyPnXCimgrloP5vjqYvCcJqnUxajFFhk08XxfhTOWhGB/x0dHH3XSmni5a5gujgWHM3gY8W01zvjDAuFTuZ1ne4S
+          +oH7sTWDw5DEeHPtXWfQP5uOex1neOnA/RjfKQ7OtGt1PJx0Jv3hpWpsfk5fd7pvr0b1nUH/oj/pnW0T1U7e9N9MzqfOpDOe9Maw
+          fn01GIx6l9Ozzk+w6l30xt/3Lrs/TcEn4wno4kzUm43L3TCJMSh2r9inCuQ5eCCn2Ovybe1+QxagFIg0ZMx0TnghAp7ksadpZ5BR
+          Zooow9rts9VsPTk4sMS/P93qreYhahzq+y+/Ozng/4GYPT+PhfOLKhwL5jPsJxQbCvIzTA1FSDQUfJ9iN8Mez0vM+LZMBod8BFqK
+          XRxnToYgf3RltacUHE38lxyF2s4i0KSQVcTLTX0DTlTXugEewaDehomHcdoTjAS5GeIFDiUvZl4MXhtS5e19SOkgDxFVYAGORhlT
+          3DmKA+ypgr/0MxMm2ZJ3lWFgDfhRmM+uxZ+b9kPD5FUQHAfZ3Gj6qCaBSp3s1bqthJhHNgKBBwbXiYJU8RvKD4OG9gG/B/ZohXZK
+          4hcq6tyxGw2SDxozBadC/ql9ZKiV/sUlJcqByxx8LsVKy+sSAiFBsipEPDAzMBvhbixUErsJhQSARlzJLkkUBjSlyLrqgYnu0HKC
+          UdT3/mDbgTlPIiyXG+qaE4iHuZbXKr8FFcapoaJKbUtHE88OriHpOf3akc7te7c3RiY41w6lKDiRsdm+Nhb7tzftjYhK+WyZYtAG
+          pNm2yh+qOFC/+YZ4xm1EGIOVgqCkUSjjy9cpydw5ppbybBUIT/e99X4h8FZ/TMaudGQ8X66lPTevTPB+mHuYacTTjduH8pQ4yRSI
+          AjTIgMxCrKQhWia+r0g+oA3xdshvdFETOrAmPQVS8vhDnNzVgpwmIXGXioddwvj62UrSNljLCH3ASxs8LfVfW1KBh0QpJQm1603F
+          DKCBw90aP+Jrgq6WBI0EQ6k8NwKT9x791D4EB4HrWx5aFtVWFuC2I5SyHp8/rzbXe9VhTTcmdSsFtWtUou6v5d8bW3uw8erVgf78
+          sKIv20Els5QoirPc5pvrvaaxcHxqNxvQt0f6dsMqJBjiRpOiSjpIEkxFwvG35LRorw+2G70Gnnoce9BpPeKJpEPeAsUurvfZZi7v
+          ariiTZsifyGR+W3eMYt87qQQE8oZb/XJayg/DgNueJ8Yzt6DI0wIEXeE9kCyLp+oUi/kedizL/NohqnGWbwyv+eRaRVbpfmfVRTE
+          3xT32ntbDbR0rLRC3GfyBqosEjI30p4kNYTexm1Z6iKFlRIWKSGoqyQQkCSHwvfK3N525HNbMGpvJdU26am9yR81SxLFB2RVS4JS
+          k5qiMv4UA8CJlZXEEo3nQz5SXTjIrOZryjNU7otcNQrRHWiwQRxBaJm10UbWKiT+Nk1RxkWfFwz5pqhDY9vEdXtvXQNGESKxJjqM
+          zJUSbNp/hLZYgCyfAQ5H3huA3c4ydiUYf5/ARQ7Vjc/g6g2G9ck9h7clqtYNNc/8l6q+XcClAiCbsQIpPU5Qou5zxOaG6seLQ3R8
+          ZPkvZscnLw6P64UZIf4Y1E3iQ5IZ5PFHkgqTnjCxRP+6rptZ4ogHUdtpghQnJhI+KpigRAahelrPhAZ2NWfBi9BFFGPaBdV4sLrA
+          LEwCbSUFOIX9llyudRPuo7gYqdj1wU3FmcRpntkrPj5Z6qjKaIcPPsq4fOd+6KhGLH4CoM2Wlvrprz//529///TLv3/79Z+qwUFJ
+          Bg+jpf726z8+/fIv1UABtg5fGnNMgnnWjeD3gXEnFm8D68VLY5Z4ywmACUvtTM4HvUm/qxozyFZLhaEim9PkTv6EhyxCdAmaES7d
+          Uh0HmFPI3Uzcft0ZdC67fDJZwAsM9T6hiACba/WHq373LcwvEwBNzvDNZHreuTxz1Buj7owLCb8774ZjmG9Uw0eLhJIMD2s0fc8q
+          Ags3TUAb67I3S1/VIuPygGAZHAnHtRXDGBjAQGcIXxs7YsR5bvFjJAIUn+FJIrn1YEqRp6b8U2DGB9BcEkDocmhX3eHFCBzcU3eI
+          4I2jCvyj7IskTHEMXqjfLUb1Yrx5WrXd41DBfOdAVI4TFfiw+XR7AVjncbuKZ7iyTM54u827c/9Hy4prJPQg4J5dnyRLa+5cQ/2x
+          PzibdjtjSNET49hoDIyPak4xy+AhLCSLkblkqP9Otsqn4esiWc2kksuOwdHc2A1eeJpGFfiU10qJBff546ckeeZCc3kwvn6pKgKp
+          PCZfHtSEluPBI7PyTmF1oCKENDZqzDfQpMH3iwJ/5+qNuAkK7/9TgyX3L/8qUd540helezeeuENMoOUUWGC6ACcJoKhwmaWZ6u+U
+          7R77qsr2yEIMdU7xlaRW31DXHlh11n/Xd/hXMqc37vccXuAn2wW+KTl4Ue0VA7dEyFIn5z3I/MFgejWajs47Tu94Oho6E0eMneXX
+          s/Ir3El/+u4QHkPQweLRMKpHpQ52rM8BDAGCmQudxFqVTat8361jA7ItkJZuNk9KlDiGeFwxzAbAvkKMUhMSv+ef8Ar8yXr3Yir3
+          5GHxFUq6+iou0r8wATLPEc5oHqylpqWKRjMM4tpY5oe18vMwlNwKTX8s8mtUplXB0sOgXERiwiJrxQvTAQeKWBaK8p/ANg8zJlK7
+          0JF3g9q6kdXVfqFyCUDH2McUcw99BQKWrKA0eAEmOW1FqPa9gTAlm2PFwz4CVfkQqPDAQeEUI4RyjlGYzZcKij1RR1BZPvGz+WbE
+          5qPRDPwGL4rioSUDELxUZljJGZDKGUzBEaYBWLBUxAdwwchUBe4BQBx98Aj9HOAHGL+CMsgpIwuZJhLfwN07jq52oWn5RV43BB6X
+          X5eIv9QkVyMGpY0j/bn657jCxkmITQ59P3tF56NNRpcrOdS01y6COGqYUv4RpWQjlsVmO6UJzETMxPck60I3tA/b673/AmFCuku6
+          GQAA
+          TCU_4I_VERIFY
+          python /tmp/tcu_phase3_4i_apply.py
+          node --check src/engine/career/postseasonRotationPolicy.js
+          node --check src/api/seasonApi.js
+          node --check src/services/demoSeasonFactory.js
+          node --check scripts/verify-phase3-postseason-rotation-4i.mjs
+          node --test tests/postseasonRotation4I.test.js tests/postseasonRoster4H.test.js
+          node scripts/verify-phase3-postseason-rotation-4i.mjs
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/phase3-postseason-short-rotation-4i-v1.json","utf8"));if(r.pass!==true||r.wildCard.rotationSize!==3||r.divisionSeries.rotationSize!==4||r.wildCard.gameCount<8||r.divisionSeries.gameCount<8||r.saveRestore.pitcherWorkloadPreserved!==true||r.determinism.sameSeedRound!==true)process.exit(1);console.log("4I actual postseason short rotation gate PASS");'
+          node scripts/verify-v56-postseason-awards-history.mjs
+          node scripts/verify-phase3-bullpen-recovery-4f.mjs
+          git diff --check
+      - name: Commit verified 4I gameplay and report
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add src/api/seasonApi.js src/services/demoSeasonFactory.js src/engine/career/postseasonRotationPolicy.js tests/postseasonRotation4I.test.js scripts/verify-phase3-postseason-rotation-4i.mjs reports/phase3-postseason-short-rotation-4i-v1.json
+          if git diff --cached --quiet; then
+            echo '4I short rotation already verified; no additional commit.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'phase3: enable rested 3-4 starter postseason rotation (4I)'
+            git push origin HEAD:main
+          fi
