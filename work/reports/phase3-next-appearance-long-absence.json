@@ -1,0 +1,10 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_NEXT_APPEARANCE_LONG_ABSENCE_V1",
+  "pass": true,
+  "fixture": "DEMO_FORCED_LONG_INJURY",
+  "userTeamGamesBefore": 0,
+  "userTeamGamesAfter": 28,
+  "skippedUserTeamGames": 28,
+  "noForcedAppearance": true,
+  "saveRestore": true
+}

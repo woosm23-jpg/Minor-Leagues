@@ -430,11 +430,21 @@ function startSeasonApp(root) {
         }
         if (action === "PLAY") {
           saveMessage = "";
+          const previousStatus = snapshot.status;
+          const previousCareerSequence = latestCareerSequence(snapshot);
           snapshot = seasonApi.startCurrentGame(snapshot.seasonId);
+          majorEvent = latestMajorCareerEvent(snapshot, previousCareerSequence) ?? majorEvent;
           if (snapshot.activeGame) {
             gameView = "GAME";
             renderGame();
             void queueAutosave();
+          } else {
+            saveMessage = snapshot.nextGame
+              ? "아직 출전 경기를 찾지 못했습니다. 7일 진행으로 다음 일정을 확인하세요."
+              : "현재 시즌에 남은 출전 일정이 없습니다.";
+            const milestone = previousStatus !== "COMPLETE" && snapshot.status === "COMPLETE" ? "SEASON_END" : null;
+            renderHome();
+            void queueAutosave({ milestone });
           }
           return;
         }

@@ -2350,7 +2350,6 @@ function snapshot(session) {
 }
 
 function startCurrentGameInternal(session) {
-  let safety = 0;
   while (true) {
     const prepared = prepareNextUserGameChronologically(session);
     const level = prepared.level, game = prepared.game; if (!game) return null;
@@ -2363,7 +2362,11 @@ function startCurrentGameInternal(session) {
       finalizeSimulatedFixture(session, level, game, fixture, result);
       simulateWorldDate(session, game.date, { excludeLevel: level, excludeGameId: game.gameId });
       runOrganizationReviewIfDue(session, game.date); applySeasonEndAgingIfNeeded(session); updateCurrentDateToNextUserGame(session);
-      safety += 1; if (safety > 24) throw new RangeError("다음 사용자 출전 탐색이 안전 한도를 초과했습니다.");
+      // Each skipped team game must become FINAL. With that invariant,
+      // the finite schedule bounds Next Appearance even for a season-long injury.
+      if (scheduleGameById(session, game.gameId, level).status !== "FINAL") {
+        throw new RangeError(`다음 사용자 출전 탐색 중 경기 진행이 멈췄습니다: ${level}:${game.gameId}`);
+      }
       continue;
     }
     const gameSnapshot = gameApi.createGameFromFixture({ fixture, seed: level === "AAA" ? `${session.fixture.seed}:${game.gameId}:interactive` : `${session.fixture.seed}:${level}:${game.gameId}:interactive` });
