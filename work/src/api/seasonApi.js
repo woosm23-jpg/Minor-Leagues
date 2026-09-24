@@ -29,6 +29,7 @@ import { createTradeState, normalizeTradeState, requestTradeState, addTradeRumor
 import { executeTrade } from "../services/tradeService.js";
 import { OFFSEASON_PHASES, createOffseasonState, normalizeOffseasonState, completeOffseasonPhase, getOffseasonPublicView } from "../engine/career/offseasonPipeline.js";
 import { POSTSEASON_RULESET_2026, POSTSEASON_ROUND_ORDER, createPostseasonState, normalizePostseasonState, getPostseasonPublicView, createHistoryState, normalizeHistoryState, appendSeasonHistory, getHistoryPublicView } from "../engine/career/postseasonHistory.js";
+import { selectPostseasonRosterPlayerIds } from "../engine/career/postseasonRosterSelection.js";
 import { createAmateurAcquisitionState, normalizeAmateurAcquisitionState, prepareAmateurYear, processInternationalSignings, advanceAmateurCalendar, getAmateurAcquisitionPublicView } from "../engine/career/amateurAcquisition.js";
 import { createRetirementHallState, normalizeRetirementHallState, recordMlbSeason, archiveRetiredPlayers, announceUserFinalSeason, retireUserPlayer, processHallOfFameYear, getRetirementHallPublicView } from "../engine/career/retirementHallOfFame.js";
 
@@ -925,23 +926,13 @@ function buildPostseasonField(session){
   return {rulesetId:POSTSEASON_RULESET_2026.id,leagues,tiebreakOrder:[...POSTSEASON_RULESET_2026.tiebreakOrder]};
 }
 function rosterPlayerIdsInOrder(roster,{excludeId=null,forceIncludeId=null}={}){
-  const hitters=[],pitchers=[];
-  const push=(arr,id)=>{if(!id||id===excludeId||arr.includes(id))return;arr.push(id);};
-  for(const id of roster.lineup??[]) push(hitters,id);
-  for(const row of roster.bench??[]) push(hitters,row.playerId);
-  if(forceIncludeId&&(roster.positionPlayers??[]).includes(forceIncludeId)) push(hitters,forceIncludeId);
-  for(const id of roster.positionPlayers??[]) push(hitters,id);
-  for(const id of roster.starters??[]) push(pitchers,id);
-  if(forceIncludeId&&(roster.pitchers??[]).includes(forceIncludeId)) push(pitchers,forceIncludeId);
-  for(const id of roster.bullpen??[]) push(pitchers,id);
-  for(const id of roster.pitchers??[]) push(pitchers,id);
-  let chosenHitters=hitters.slice(0,13),chosenPitchers=pitchers.slice(0,13);
-  if(forceIncludeId&&hitters.includes(forceIncludeId)&&!chosenHitters.includes(forceIncludeId)) chosenHitters=[...chosenHitters.slice(0,12),forceIncludeId];
-  if(forceIncludeId&&pitchers.includes(forceIncludeId)&&!chosenPitchers.includes(forceIncludeId)) chosenPitchers=[...chosenPitchers.slice(0,12),forceIncludeId];
-  const ids=[...chosenHitters,...chosenPitchers];
-  if(ids.length!==POSTSEASON_RULESET_2026.rosterSize) throw new RangeError(`${roster.team?.name??roster.team?.id} postseason roster가 26명이 아닙니다: ${ids.length}`);
-  return ids;
+  return selectPostseasonRosterPlayerIds(roster,{
+    excludeId,forceIncludeId,
+    rosterSize:POSTSEASON_RULESET_2026.rosterSize,
+    maxPitchers:POSTSEASON_RULESET_2026.maxPitchers
+  });
 }
+
 function userPostseasonSelection(session,field){
   const playerId=session.fixture.userPlayerId,teamId=String(userTeamIdForLevel(session,"MLB"));
   const playoffTeam=Object.values(field.leagues).some((league)=>league.seeds.some((row)=>row.teamId===teamId));
