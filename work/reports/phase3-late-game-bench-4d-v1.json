@@ -1,0 +1,66 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_LATE_GAME_BENCH_4D_V2_FINAL",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "dailyBenchAuthoritative": true,
+    "backupCatcherProtected": true,
+    "persistentRoleUsed": true,
+    "fatigueGate": 82,
+    "leverageAwareThresholds": true,
+    "ninthInningDefenseOffenseCostMax": 16,
+    "deterministicSyntheticScenarios": [
+      "PINCH_HIT",
+      "PINCH_RUN",
+      "DEFENSIVE_REPLACEMENT"
+    ]
+  },
+  "synthetic": {
+    "pinchHit": {
+      "reason": "PINCH_HIT",
+      "team": "away",
+      "outPlayerId": "weak_rf",
+      "inPlayerId": "ph_rf",
+      "position": "RF",
+      "rationale": {
+        "offenseGain": 28.25,
+        "tacticalBonus": 2.75,
+        "pitcherThrows": "R"
+      }
+    },
+    "pinchRun": {
+      "reason": "PINCH_RUN",
+      "team": "away",
+      "outPlayerId": "slow_cf",
+      "inPlayerId": "speed_cf",
+      "position": "CF",
+      "rationale": {
+        "runningGain": 64.88,
+        "tacticalBonus": 2,
+        "base": "first"
+      }
+    },
+    "defensiveReplacement": {
+      "reason": "DEFENSIVE_REPLACEMENT",
+      "team": "home",
+      "outPlayerId": "poor_cf",
+      "inPlayerId": "def_cf",
+      "position": "CF",
+      "rationale": {
+        "defenseGain": 46.3,
+        "tacticalBonus": 2,
+        "offenseCost": 11.32
+      }
+    }
+  },
+  "productionSmoke": {
+    "checkedGames": 40,
+    "metadataRows": 331,
+    "substitutions": 64,
+    "reasons": {
+      "PINCH_HIT": 29,
+      "PINCH_RUN": 24,
+      "DEFENSIVE_REPLACEMENT": 11
+    }
+  }
+}

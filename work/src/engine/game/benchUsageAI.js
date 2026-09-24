@@ -1,67 +1,237 @@
 function freeze(value) {
-  if (Array.isArray(value)) return Object.freeze(value.map(freeze));
-  if (value && typeof value === "object") return Object.freeze(Object.fromEntries(Object.entries(value).map(([k, v]) => [k, freeze(v)])));
+  if (Array.isArray(value)) {
+    return Object.freeze(value.map(freeze));
+  }
+
+  if (
+    value &&
+    typeof value === "object"
+  ) {
+    return Object.freeze(
+      Object.fromEntries(
+        Object.entries(value).map(
+          ([key, child]) => [
+            key,
+            freeze(child)
+          ]
+        )
+      )
+    );
+  }
+
   return value;
 }
 
-const INFIELD = new Set(["1B", "2B", "3B", "SS"]);
-const OUTFIELD = new Set(["LF", "CF", "RF"]);
+const INFIELD =
+  new Set([
+    "1B",
+    "2B",
+    "3B",
+    "SS"
+  ]);
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
+const OUTFIELD =
+  new Set([
+    "LF",
+    "CF",
+    "RF"
+  ]);
+
+function clamp(
+  value,
+  min,
+  max
+) {
+  return Math.max(
+    min,
+    Math.min(max, value)
+  );
 }
 
-function activeIds(state, team) {
-  return new Set(state?.lineups?.[team] ?? []);
+function activeIds(
+  state,
+  team
+) {
+  return new Set(
+    state?.lineups?.[
+      team
+    ] ?? []
+  );
 }
 
-function usedIds(state, team) {
-  const ids = new Set();
-  for (const row of state?.substitutions ?? []) {
-    if (row.team !== team) continue;
-    ids.add(row.inPlayerId);
-    ids.add(row.outPlayerId);
+function usedIds(
+  state,
+  team
+) {
+  const ids =
+    new Set();
+
+  for (
+    const row of
+    state?.substitutions ??
+    []
+  ) {
+    if (
+      row.team !== team
+    ) {
+      continue;
+    }
+
+    ids.add(
+      row.inPlayerId
+    );
+    ids.add(
+      row.outPlayerId
+    );
   }
+
   return ids;
 }
 
-function playerPosition(state, team, playerId) {
-  for (const [position, id] of Object.entries(state?.defensiveAlignment?.[team] ?? {})) {
-    if (position !== "P" && id === playerId) return position;
+function playerPosition(
+  state,
+  team,
+  playerId
+) {
+  for (
+    const [
+      position,
+      id
+    ] of Object.entries(
+      state
+        ?.defensiveAlignment
+        ?.[team] ?? {}
+    )
+  ) {
+    if (
+      position !== "P" &&
+      id === playerId
+    ) {
+      return position;
+    }
   }
+
   return "DH";
 }
 
-function canCover(benchRow, position) {
-  if (position === "DH") return true;
-  return (benchRow?.coverage ?? []).includes(position);
+function canCover(
+  benchRow,
+  position
+) {
+  if (
+    position === "DH"
+  ) {
+    return true;
+  }
+
+  return (
+    benchRow?.coverage ??
+    []
+  ).includes(position);
 }
 
-function isBackupCatcher(benchRow) {
-  return (benchRow?.coverage ?? []).includes("C");
+function isBackupCatcher(
+  benchRow
+) {
+  return (
+    benchRow?.coverage ??
+    []
+  ).includes("C");
 }
 
-function handedContact(player, pitcherThrows = "R") {
-  const hitting = player?.hitting ?? {};
-  if (pitcherThrows === "L") return Number(hitting.contactL ?? hitting.contactR ?? 50);
-  return Number(hitting.contactR ?? hitting.contactL ?? 50);
+function handedContact(
+  player,
+  pitcherThrows = "R"
+) {
+  const hitting =
+    player?.hitting ?? {};
+
+  if (
+    pitcherThrows === "L"
+  ) {
+    return Number(
+      hitting.contactL ??
+      hitting.contactR ??
+      50
+    );
+  }
+
+  return Number(
+    hitting.contactR ??
+    hitting.contactL ??
+    50
+  );
 }
 
-function handedPower(player, pitcherThrows = "R") {
-  const tendencies = player?.tendencies ?? {};
-  const hitting = player?.hitting ?? {};
-  if (pitcherThrows === "L") return Number(tendencies.powerUtilizationL ?? hitting.rawPower ?? 50);
-  return Number(tendencies.powerUtilizationR ?? hitting.rawPower ?? 50);
+function handedPower(
+  player,
+  pitcherThrows = "R"
+) {
+  const tendencies =
+    player?.tendencies ?? {};
+  const hitting =
+    player?.hitting ?? {};
+
+  if (
+    pitcherThrows === "L"
+  ) {
+    return Number(
+      tendencies
+        .powerUtilizationL ??
+      hitting.rawPower ??
+      50
+    );
+  }
+
+  return Number(
+    tendencies
+      .powerUtilizationR ??
+    hitting.rawPower ??
+    50
+  );
 }
 
-function offenseScore(player, pitcherThrows = "R") {
-  const hitting = player?.hitting ?? {};
-  const contact = handedContact(player, pitcherThrows);
-  const power = handedPower(player, pitcherThrows);
-  const vision = Number(hitting.vision ?? 50);
-  const discipline = Number(hitting.discipline ?? 50);
-  const switchBonus = player?.bats === "S" ? 0.8 : 0;
-  return contact * 0.42 + power * 0.23 + vision * 0.15 + discipline * 0.20 + switchBonus;
+function offenseScore(
+  player,
+  pitcherThrows = "R"
+) {
+  const hitting =
+    player?.hitting ?? {};
+
+  const contact =
+    handedContact(
+      player,
+      pitcherThrows
+    );
+
+  const power =
+    handedPower(
+      player,
+      pitcherThrows
+    );
+
+  const vision =
+    Number(
+      hitting.vision ?? 50
+    );
+
+  const discipline =
+    Number(
+      hitting.discipline ?? 50
+    );
+
+  const switchBonus =
+    player?.bats === "S"
+      ? 0.8
+      : 0;
+
+  return (
+    contact * 0.42 +
+    power * 0.23 +
+    vision * 0.15 +
+    discipline * 0.20 +
+    switchBonus
+  );
 }
 
 function defenseScore(
@@ -74,18 +244,36 @@ function defenseScore(
     player?.running ?? {};
 
   const skill =
-    Number(fielding.fielding ?? 50);
+    Number(
+      fielding.fielding ??
+      50
+    );
   const reaction =
-    Number(fielding.reaction ?? 50);
+    Number(
+      fielding.reaction ??
+      50
+    );
   const armStrength =
-    Number(fielding.armStrength ?? 50);
+    Number(
+      fielding.armStrength ??
+      50
+    );
   const armAccuracy =
-    Number(fielding.armAccuracy ?? 50);
+    Number(
+      fielding.armAccuracy ??
+      50
+    );
   const speed =
-    Number(running.speed ?? 50);
+    Number(
+      running.speed ??
+      50
+    );
 
   let raw;
-  if (position === "C") {
+
+  if (
+    position === "C"
+  ) {
     raw =
       skill * 0.30 +
       reaction * 0.20 +
@@ -144,197 +332,1185 @@ function defenseScore(
     position === "DH"
       ? 1
       : Number(
-          player?.positioning
-            ?.familiarity?.[
-              position
-            ] ?? 0.35
+          player
+            ?.positioning
+            ?.familiarity
+            ?.[position] ??
+          0.35
         );
 
-  return raw * (
-    0.72 +
-    0.28 *
-      clamp(
-        familiarity,
-        0.35,
-        1
+  return (
+    raw *
+    (
+      0.72 +
+      0.28 *
+        clamp(
+          familiarity,
+          0.35,
+          1
+        )
+    )
+  );
+}
+
+function runningScore(
+  player
+) {
+  const running =
+    player?.running ?? {};
+
+  return (
+    Number(
+      running.speed ??
+      50
+    ) * 0.72 +
+    Number(
+      running.baserunning ??
+      50
+    ) * 0.28
+  );
+}
+
+function roleTagsForRow(
+  row
+) {
+  const coverage =
+    row?.coverage ?? [];
+
+  const infieldCount =
+    coverage.filter(
+      (position) =>
+        INFIELD.has(
+          position
+        )
+    ).length;
+
+  const outfieldCount =
+    coverage.filter(
+      (position) =>
+        OUTFIELD.has(
+          position
+        )
+    ).length;
+
+  const tags = [];
+
+  if (
+    coverage.includes("C")
+  ) {
+    tags.push(
+      "BACKUP_CATCHER"
+    );
+  }
+
+  if (
+    infieldCount >= 2
+  ) {
+    tags.push(
+      "UTILITY_INFIELDER"
+    );
+  }
+
+  if (
+    outfieldCount >= 2
+  ) {
+    tags.push(
+      "FOURTH_OUTFIELDER"
+    );
+  }
+
+  if (
+    row?.role ===
+    "PLATOON"
+  ) {
+    tags.push(
+      "PLATOON_BAT"
+    );
+  }
+
+  if (
+    row?.role ===
+    "UTILITY"
+  ) {
+    tags.push(
+      "UTILITY_ROLE"
+    );
+  }
+
+  if (
+    row?.role ===
+    "ROTATION"
+  ) {
+    tags.push(
+      "ROTATION_ROLE"
+    );
+  }
+
+  return tags;
+}
+
+function classifyBenchRoles({
+  players = {},
+  benchPlan = []
+} = {}) {
+  const rows =
+    benchPlan.map(
+      (row) => {
+        const coverage =
+          row?.coverage?.length
+            ? row.coverage
+            : ["DH"];
+
+        return {
+          playerId:
+            row.playerId,
+          roles:
+            roleTagsForRow(
+              row
+            ),
+          offense:
+            offenseScore(
+              players[
+                row.playerId
+              ]
+            ),
+          speedDefense:
+            runningScore(
+              players[
+                row.playerId
+              ]
+            ) +
+            Math.max(
+              ...coverage.map(
+                (position) =>
+                  position === "DH"
+                    ? 45
+                    : defenseScore(
+                        players[
+                          row.playerId
+                        ],
+                        position
+                      )
+              )
+            )
+        };
+      }
+    );
+
+  if (
+    rows.length > 0
+  ) {
+    const nonCatcherPool =
+      rows.filter(
+        (row) =>
+          !row.roles.includes(
+            "BACKUP_CATCHER"
+          )
+      );
+
+    const pinchBatPool =
+      nonCatcherPool.length > 0
+        ? nonCatcherPool
+        : rows;
+
+    [
+      ...pinchBatPool
+    ]
+      .sort(
+        (a, b) =>
+          b.offense -
+            a.offense ||
+          a.playerId
+            .localeCompare(
+              b.playerId
+            )
+      )[0]
+      .roles.push(
+        "PINCH_BAT"
+      );
+
+    [
+      ...rows
+    ]
+      .sort(
+        (a, b) =>
+          b.speedDefense -
+            a.speedDefense ||
+          a.playerId
+            .localeCompare(
+              b.playerId
+            )
+      )[0]
+      .roles.push(
+        "SPEED_DEFENSE_SPECIALIST"
+      );
+  }
+
+  return freeze(
+    Object.fromEntries(
+      rows.map(
+        (row) => [
+          row.playerId,
+          [
+            ...new Set(
+              row.roles
+            )
+          ]
+        ]
+      )
+    )
+  );
+}
+
+function candidateRows({
+  state,
+  team,
+  benchPlan,
+  position
+}) {
+  const active =
+    activeIds(
+      state,
+      team
+    );
+
+  const used =
+    usedIds(
+      state,
+      team
+    );
+
+  return benchPlan.filter(
+    (row) =>
+      !active.has(
+        row.playerId
+      ) &&
+      !used.has(
+        row.playerId
+      ) &&
+      Number(
+        row.fatigue ?? 0
+      ) < 82 &&
+      canCover(
+        row,
+        position
       )
   );
 }
 
-function runningScore(player) {
-  const running = player?.running ?? {};
-  return Number(running.speed ?? 50) * 0.72 + Number(running.baserunning ?? 50) * 0.28;
+function scoreDiff(
+  state,
+  team
+) {
+  const other =
+    team === "away"
+      ? "home"
+      : "away";
+
+  return (
+    Number(
+      state?.score?.[
+        team
+      ] ?? 0
+    ) -
+    Number(
+      state?.score?.[
+        other
+      ] ?? 0
+    )
+  );
 }
 
-function roleTagsForRow(row) {
-  const coverage = row?.coverage ?? [];
-  const infieldCount = coverage.filter((position) => INFIELD.has(position)).length;
-  const outfieldCount = coverage.filter((position) => OUTFIELD.has(position)).length;
-  const tags = [];
-  if (coverage.includes("C")) tags.push("BACKUP_CATCHER");
-  if (infieldCount >= 2) tags.push("UTILITY_INFIELDER");
-  if (outfieldCount >= 2) tags.push("FOURTH_OUTFIELDER");
-  return tags;
+function currentPitcherThrows(
+  state,
+  players
+) {
+  const fieldingTeam =
+    state.half === "TOP"
+      ? "home"
+      : "away";
+
+  const pitcherId =
+    state
+      .currentPitcherId
+      ?.[fieldingTeam];
+
+  return (
+    players?.[
+      pitcherId
+    ]?.throws ??
+    "R"
+  );
 }
 
-/**
- * Read-only bench-role classification. It intentionally derives roles from the
- * roster's actual coverage and tools rather than from OVR.
- */
-function classifyBenchRoles({ players = {}, benchPlan = [] } = {}) {
-  const rows = benchPlan.map((row) => ({
-    playerId: row.playerId,
-    roles: roleTagsForRow(row),
-    offense: offenseScore(players[row.playerId]),
-    speedDefense: runningScore(players[row.playerId]) + Math.max(...(row.coverage ?? ["DH"]).map((position) => position === "DH" ? 45 : defenseScore(players[row.playerId], position)))
-  }));
-  if (rows.length > 0) {
-    [...rows].sort((a, b) => b.offense - a.offense || a.playerId.localeCompare(b.playerId))[0].roles.push("PINCH_BAT");
-    [...rows].sort((a, b) => b.speedDefense - a.speedDefense || a.playerId.localeCompare(b.playerId))[0].roles.push("SPEED_DEFENSE_SPECIALIST");
+function alreadyUsedAtCurrentPA(
+  state,
+  team,
+  reason
+) {
+  return (
+    state.substitutions ??
+    []
+  ).some(
+    (row) =>
+      row.team === team &&
+      row.reason === reason &&
+      row.plateAppearances ===
+        state.plateAppearances
+  );
+}
+
+function benchTags(
+  benchRoles,
+  playerId
+) {
+  return (
+    benchRoles?.[
+      playerId
+    ] ?? []
+  );
+}
+
+function tacticalBonus(
+  row,
+  tags,
+  purpose
+) {
+  let bonus =
+    clamp(
+      Number(
+        row?.momentum ??
+        0
+      ),
+      -1,
+      1
+    ) * 0.45;
+
+  if (
+    purpose ===
+    "PINCH_HIT"
+  ) {
+    if (
+      tags.includes(
+        "PINCH_BAT"
+      )
+    ) {
+      bonus += 1.4;
+    }
+
+    if (
+      tags.includes(
+        "PLATOON_BAT"
+      )
+    ) {
+      bonus += 0.8;
+    }
+
+    if (
+      row?.role ===
+      "PLATOON"
+    ) {
+      bonus += 0.5;
+    }
   }
-  return freeze(Object.fromEntries(rows.map((row) => [row.playerId, [...new Set(row.roles)]])));
+
+  if (
+    purpose ===
+      "PINCH_RUN" ||
+    purpose ===
+      "DEFENSIVE_REPLACEMENT"
+  ) {
+    if (
+      tags.includes(
+        "SPEED_DEFENSE_SPECIALIST"
+      )
+    ) {
+      bonus += 1.5;
+    }
+
+    if (
+      row?.role ===
+        "UTILITY" ||
+      row?.role ===
+        "ROTATION"
+    ) {
+      bonus += 0.5;
+    }
+  }
+
+  return bonus;
 }
 
-function candidateRows({ state, team, benchPlan, position }) {
-  const active = activeIds(state, team);
-  const used = usedIds(state, team);
-  return benchPlan.filter((row) => !active.has(row.playerId) && !used.has(row.playerId) && canCover(row, position));
+function pinchRunMinimumGain(
+  state,
+  diff
+) {
+  if (
+    state.inning >= 9 &&
+    diff >= -1 &&
+    diff <= 1
+  ) {
+    return 7;
+  }
+
+  return 10;
 }
 
-function scoreDiff(state, team) {
-  const other = team === "away" ? "home" : "away";
-  return Number(state?.score?.[team] ?? 0) - Number(state?.score?.[other] ?? 0);
+function pinchHitMinimumGain(
+  state,
+  diff
+) {
+  if (
+    state.inning >= 9 &&
+    diff >= -2 &&
+    diff <= 0
+  ) {
+    return 2.5;
+  }
+
+  if (
+    state.inning === 8 &&
+    diff >= -2 &&
+    diff <= 0
+  ) {
+    return 3.25;
+  }
+
+  return 4;
 }
 
-function currentPitcherThrows(state, players) {
-  const fieldingTeam = state.half === "TOP" ? "home" : "away";
-  const pitcherId = state.currentPitcherId?.[fieldingTeam];
-  return players?.[pitcherId]?.throws ?? "R";
+function defenseMinimumGain(
+  state
+) {
+  return (
+    state.inning >= 9
+      ? 4.5
+      : 5.5
+  );
 }
 
-function alreadyUsedAtCurrentPA(state, team, reason) {
-  return (state.substitutions ?? []).some((row) => row.team === team && row.reason === reason && row.plateAppearances === state.plateAppearances);
+function maxDefenseOffenseCost(
+  state
+) {
+  if (
+    state.inning >= 9
+  ) {
+    return 16;
+  }
+
+  return 10;
 }
 
-function choosePinchRunner({ state, team, players, benchPlan }) {
-  if (state.inning < 8) return null;
-  const diff = scoreDiff(state, team);
-  if (diff < -2 || diff > 1) return null;
-  if (alreadyUsedAtCurrentPA(state, team, "PINCH_RUN")) return null;
+function choosePinchRunner({
+  state,
+  team,
+  players,
+  benchPlan,
+  benchRoles
+}) {
+  if (
+    state.inning < 8
+  ) {
+    return null;
+  }
 
-  const occupied = ["third", "second", "first"]
-    .map((base) => ({ base, playerId: state.bases?.[base] ?? null }))
-    .filter((row) => row.playerId);
-  for (const row of occupied) {
-    const outPlayer = players[row.playerId];
-    if (!outPlayer) continue;
-    const position = playerPosition(state, team, row.playerId);
-    const current = runningScore(outPlayer);
-    const candidates = candidateRows({ state, team, benchPlan, position })
-      .filter((candidate) => !(isBackupCatcher(candidate) && position !== "C"))
-      .map((candidate) => ({ candidate, gain: runningScore(players[candidate.playerId]) - current }))
-      .filter((entry) => entry.gain >= 10)
-      .sort((a, b) => b.gain - a.gain || a.candidate.playerId.localeCompare(b.candidate.playerId));
-    if (candidates.length > 0) {
-      return freeze({
-        reason: "PINCH_RUN",
+  const diff =
+    scoreDiff(
+      state,
+      team
+    );
+
+  if (
+    diff < -2 ||
+    diff > 1
+  ) {
+    return null;
+  }
+
+  if (
+    alreadyUsedAtCurrentPA(
+      state,
+      team,
+      "PINCH_RUN"
+    )
+  ) {
+    return null;
+  }
+
+  const occupied =
+    [
+      "third",
+      "second",
+      "first"
+    ]
+      .map(
+        (base) => ({
+          base,
+          playerId:
+            state.bases?.[
+              base
+            ] ?? null
+        })
+      )
+      .filter(
+        (row) =>
+          row.playerId
+      );
+
+  for (
+    const row of
+    occupied
+  ) {
+    const outPlayer =
+      players[
+        row.playerId
+      ];
+
+    if (
+      !outPlayer
+    ) {
+      continue;
+    }
+
+    const position =
+      playerPosition(
+        state,
         team,
-        outPlayerId: row.playerId,
-        inPlayerId: candidates[0].candidate.playerId,
+        row.playerId
+      );
+
+    const current =
+      runningScore(
+        outPlayer
+      );
+
+    const candidates =
+      candidateRows({
+        state,
+        team,
+        benchPlan,
+        position
+      })
+        .filter(
+          (candidate) =>
+            !(
+              isBackupCatcher(
+                candidate
+              ) &&
+              position !== "C"
+            )
+        )
+        .map(
+          (candidate) => {
+            const rawGain =
+              runningScore(
+                players[
+                  candidate.playerId
+                ]
+              ) -
+              current;
+
+            const tactical =
+              tacticalBonus(
+                candidate,
+                benchTags(
+                  benchRoles,
+                  candidate.playerId
+                ),
+                "PINCH_RUN"
+              );
+
+            return {
+              candidate,
+              rawGain,
+              tactical,
+              gain:
+                rawGain +
+                tactical
+            };
+          }
+        )
+        .filter(
+          (entry) =>
+            entry.gain >=
+            pinchRunMinimumGain(
+              state,
+              diff
+            )
+        )
+        .sort(
+          (a, b) =>
+            b.gain -
+              a.gain ||
+            b.rawGain -
+              a.rawGain ||
+            a.candidate
+              .playerId
+              .localeCompare(
+                b.candidate
+                  .playerId
+              )
+        );
+
+    if (
+      candidates.length > 0
+    ) {
+      const best =
+        candidates[0];
+
+      return freeze({
+        reason:
+          "PINCH_RUN",
+        team,
+        outPlayerId:
+          row.playerId,
+        inPlayerId:
+          best.candidate
+            .playerId,
         position,
-        rationale: { runningGain: Number(candidates[0].gain.toFixed(2)), base: row.base }
+        rationale: {
+          runningGain:
+            Number(
+              best.rawGain
+                .toFixed(2)
+            ),
+          tacticalBonus:
+            Number(
+              best.tactical
+                .toFixed(2)
+            ),
+          base:
+            row.base
+        }
       });
     }
   }
+
   return null;
 }
 
-function choosePinchHitter({ state, team, players, benchPlan }) {
-  if (state.inning < 7) return null;
-  const diff = scoreDiff(state, team);
-  if (diff < -3 || diff > 0) return null;
-  if (alreadyUsedAtCurrentPA(state, team, "PINCH_HIT")) return null;
-  const slotIndex = state.battingOrderIndex?.[team] ?? 0;
-  const outPlayerId = state.lineups?.[team]?.[slotIndex];
-  if (!outPlayerId) return null;
-  const position = playerPosition(state, team, outPlayerId);
-  const pitcherThrows = currentPitcherThrows(state, players);
-  const currentScore = offenseScore(players[outPlayerId], pitcherThrows);
-  const candidates = candidateRows({ state, team, benchPlan, position })
-    .filter((candidate) => !(isBackupCatcher(candidate) && position !== "C"))
-    .map((candidate) => ({ candidate, gain: offenseScore(players[candidate.playerId], pitcherThrows) - currentScore }))
-    .filter((entry) => entry.gain >= 4.0)
-    .sort((a, b) => b.gain - a.gain || a.candidate.playerId.localeCompare(b.candidate.playerId));
-  if (candidates.length === 0) return null;
+function choosePinchHitter({
+  state,
+  team,
+  players,
+  benchPlan,
+  benchRoles
+}) {
+  if (
+    state.inning < 7
+  ) {
+    return null;
+  }
+
+  const diff =
+    scoreDiff(
+      state,
+      team
+    );
+
+  if (
+    diff < -3 ||
+    diff > 0
+  ) {
+    return null;
+  }
+
+  if (
+    alreadyUsedAtCurrentPA(
+      state,
+      team,
+      "PINCH_HIT"
+    )
+  ) {
+    return null;
+  }
+
+  const slotIndex =
+    state
+      .battingOrderIndex
+      ?.[team] ?? 0;
+
+  const outPlayerId =
+    state
+      .lineups
+      ?.[team]
+      ?.[slotIndex];
+
+  if (
+    !outPlayerId
+  ) {
+    return null;
+  }
+
+  const position =
+    playerPosition(
+      state,
+      team,
+      outPlayerId
+    );
+
+  const pitcherThrows =
+    currentPitcherThrows(
+      state,
+      players
+    );
+
+  const currentScore =
+    offenseScore(
+      players[
+        outPlayerId
+      ],
+      pitcherThrows
+    );
+
+  const candidates =
+    candidateRows({
+      state,
+      team,
+      benchPlan,
+      position
+    })
+      .filter(
+        (candidate) =>
+          !(
+            isBackupCatcher(
+              candidate
+            ) &&
+            position !== "C"
+          )
+      )
+      .map(
+        (candidate) => {
+          const rawGain =
+            offenseScore(
+              players[
+                candidate.playerId
+              ],
+              pitcherThrows
+            ) -
+            currentScore;
+
+          const tactical =
+            tacticalBonus(
+              candidate,
+              benchTags(
+                benchRoles,
+                candidate.playerId
+              ),
+              "PINCH_HIT"
+            );
+
+          return {
+            candidate,
+            rawGain,
+            tactical,
+            gain:
+              rawGain +
+              tactical
+          };
+        }
+      )
+      .filter(
+        (entry) =>
+          entry.gain >=
+          pinchHitMinimumGain(
+            state,
+            diff
+          )
+      )
+      .sort(
+        (a, b) =>
+          b.gain -
+            a.gain ||
+          b.rawGain -
+            a.rawGain ||
+          a.candidate
+            .playerId
+            .localeCompare(
+              b.candidate
+                .playerId
+            )
+      );
+
+  if (
+    candidates.length === 0
+  ) {
+    return null;
+  }
+
+  const best =
+    candidates[0];
+
   return freeze({
-    reason: "PINCH_HIT",
+    reason:
+      "PINCH_HIT",
     team,
     outPlayerId,
-    inPlayerId: candidates[0].candidate.playerId,
+    inPlayerId:
+      best.candidate
+        .playerId,
     position,
-    rationale: { offenseGain: Number(candidates[0].gain.toFixed(2)), pitcherThrows }
+    rationale: {
+      offenseGain:
+        Number(
+          best.rawGain
+            .toFixed(2)
+        ),
+      tacticalBonus:
+        Number(
+          best.tactical
+            .toFixed(2)
+        ),
+      pitcherThrows
+    }
   });
 }
 
-function chooseDefensiveReplacement({ state, team, players, benchPlan }) {
-  if (state.inning < 8) return null;
-  const diff = scoreDiff(state, team);
-  if (diff < 1 || diff > 3) return null;
-  const usedThisHalf = (state.substitutions ?? []).some((row) => row.team === team && row.reason === "DEFENSIVE_REPLACEMENT" && row.inning === state.inning && row.half === state.half);
-  if (usedThisHalf) return null;
+function chooseDefensiveReplacement({
+  state,
+  team,
+  players,
+  benchPlan,
+  benchRoles
+}) {
+  if (
+    state.inning < 8
+  ) {
+    return null;
+  }
 
-  const pitcherThrows = currentPitcherThrows(state, players);
+  const diff =
+    scoreDiff(
+      state,
+      team
+    );
+
+  if (
+    diff < 1 ||
+    diff > 3
+  ) {
+    return null;
+  }
+
+  const usedThisHalf =
+    (
+      state.substitutions ??
+      []
+    ).some(
+      (row) =>
+        row.team === team &&
+        row.reason ===
+          "DEFENSIVE_REPLACEMENT" &&
+        row.inning ===
+          state.inning &&
+        row.half ===
+          state.half
+    );
+
+  if (
+    usedThisHalf
+  ) {
+    return null;
+  }
+
+  const pitcherThrows =
+    currentPitcherThrows(
+      state,
+      players
+    );
+
   const options = [];
-  for (const outPlayerId of state.lineups?.[team] ?? []) {
-    const position = playerPosition(state, team, outPlayerId);
-    if (position === "DH") continue;
-    const currentDefense = defenseScore(players[outPlayerId], position);
-    const currentOffense = offenseScore(players[outPlayerId], pitcherThrows);
-    for (const candidate of candidateRows({ state, team, benchPlan, position })) {
-      if (isBackupCatcher(candidate) && position !== "C") continue;
-      const inPlayer = players[candidate.playerId];
-      const defenseGain = defenseScore(inPlayer, position) - currentDefense;
-      const offenseCost = currentOffense - offenseScore(inPlayer, pitcherThrows);
-      if (defenseGain < 5.5 || offenseCost > 10) continue;
-      options.push({ candidate, outPlayerId, position, defenseGain, offenseCost });
+
+  for (
+    const outPlayerId of
+    state.lineups?.[
+      team
+    ] ?? []
+  ) {
+    const position =
+      playerPosition(
+        state,
+        team,
+        outPlayerId
+      );
+
+    if (
+      position === "DH"
+    ) {
+      continue;
+    }
+
+    const currentDefense =
+      defenseScore(
+        players[
+          outPlayerId
+        ],
+        position
+      );
+
+    const currentOffense =
+      offenseScore(
+        players[
+          outPlayerId
+        ],
+        pitcherThrows
+      );
+
+    for (
+      const candidate of
+      candidateRows({
+        state,
+        team,
+        benchPlan,
+        position
+      })
+    ) {
+      if (
+        isBackupCatcher(
+          candidate
+        ) &&
+        position !== "C"
+      ) {
+        continue;
+      }
+
+      const inPlayer =
+        players[
+          candidate.playerId
+        ];
+
+      const rawDefenseGain =
+        defenseScore(
+          inPlayer,
+          position
+        ) -
+        currentDefense;
+
+      const offenseCost =
+        currentOffense -
+        offenseScore(
+          inPlayer,
+          pitcherThrows
+        );
+
+      const tactical =
+        tacticalBonus(
+          candidate,
+          benchTags(
+            benchRoles,
+            candidate.playerId
+          ),
+          "DEFENSIVE_REPLACEMENT"
+        );
+
+      const totalGain =
+        rawDefenseGain +
+        tactical;
+
+      if (
+        totalGain <
+          defenseMinimumGain(
+            state
+          ) ||
+        offenseCost >
+          maxDefenseOffenseCost(
+            state
+          )
+      ) {
+        continue;
+      }
+
+      options.push({
+        candidate,
+        outPlayerId,
+        position,
+        rawDefenseGain,
+        tactical,
+        totalGain,
+        offenseCost
+      });
     }
   }
-  options.sort((a, b) => b.defenseGain - a.defenseGain || a.offenseCost - b.offenseCost || a.outPlayerId.localeCompare(b.outPlayerId) || a.candidate.playerId.localeCompare(b.candidate.playerId));
-  if (options.length === 0) return null;
-  const best = options[0];
+
+  options.sort(
+    (a, b) =>
+      b.totalGain -
+        a.totalGain ||
+      a.offenseCost -
+        b.offenseCost ||
+      a.outPlayerId
+        .localeCompare(
+          b.outPlayerId
+        ) ||
+      a.candidate
+        .playerId
+        .localeCompare(
+          b.candidate
+            .playerId
+        )
+  );
+
+  if (
+    options.length === 0
+  ) {
+    return null;
+  }
+
+  const best =
+    options[0];
+
   return freeze({
-    reason: "DEFENSIVE_REPLACEMENT",
+    reason:
+      "DEFENSIVE_REPLACEMENT",
     team,
-    outPlayerId: best.outPlayerId,
-    inPlayerId: best.candidate.playerId,
-    position: best.position,
-    rationale: { defenseGain: Number(best.defenseGain.toFixed(2)), offenseCost: Number(clamp(best.offenseCost, -99, 99).toFixed(2)) }
+    outPlayerId:
+      best.outPlayerId,
+    inPlayerId:
+      best.candidate
+        .playerId,
+    position:
+      best.position,
+    rationale: {
+      defenseGain:
+        Number(
+          best.rawDefenseGain
+            .toFixed(2)
+        ),
+      tacticalBonus:
+        Number(
+          best.tactical
+            .toFixed(2)
+        ),
+      offenseCost:
+        Number(
+          clamp(
+            best.offenseCost,
+            -99,
+            99
+          ).toFixed(2)
+        )
+    }
   });
 }
 
-/**
- * Deterministic late-game bench manager. The same function is used by full AI
- * simulation and interactive/Quick-AB season games. It returns one move at a
- * time so authoritative state mutation remains in GameState.
- */
-function createLateGameBenchManager({ players = {}, benchPlans = {} } = {}) {
-  return function lateGameBenchManager({ state, battingTeam, fieldingTeam }) {
-    if (!state || state.status !== "IN_PROGRESS") return null;
-    const offensePlan = benchPlans?.[battingTeam] ?? [];
-    const defensePlan = benchPlans?.[fieldingTeam] ?? [];
+function createLateGameBenchManager({
+  players = {},
+  benchPlans = {}
+} = {}) {
+  const benchRoles =
+    Object.fromEntries(
+      Object.entries(
+        benchPlans
+      ).map(
+        ([team, plan]) => [
+          team,
+          classifyBenchRoles({
+            players,
+            benchPlan:
+              plan ?? []
+          })
+        ]
+      )
+    );
 
-    if (offensePlan.length > 0) {
-      const runner = choosePinchRunner({ state, team: battingTeam, players, benchPlan: offensePlan });
-      if (runner) return runner;
-      const hitter = choosePinchHitter({ state, team: battingTeam, players, benchPlan: offensePlan });
-      if (hitter) return hitter;
+  return function lateGameBenchManager({
+    state,
+    battingTeam,
+    fieldingTeam
+  }) {
+    if (
+      !state ||
+      state.status !==
+        "IN_PROGRESS"
+    ) {
+      return null;
     }
-    if (defensePlan.length > 0) {
-      const replacement = chooseDefensiveReplacement({ state, team: fieldingTeam, players, benchPlan: defensePlan });
-      if (replacement) return replacement;
+
+    const offensePlan =
+      benchPlans?.[
+        battingTeam
+      ] ?? [];
+
+    const defensePlan =
+      benchPlans?.[
+        fieldingTeam
+      ] ?? [];
+
+    if (
+      offensePlan.length > 0
+    ) {
+      const runner =
+        choosePinchRunner({
+          state,
+          team:
+            battingTeam,
+          players,
+          benchPlan:
+            offensePlan,
+          benchRoles:
+            benchRoles[
+              battingTeam
+            ]
+        });
+
+      if (
+        runner
+      ) {
+        return runner;
+      }
+
+      const hitter =
+        choosePinchHitter({
+          state,
+          team:
+            battingTeam,
+          players,
+          benchPlan:
+            offensePlan,
+          benchRoles:
+            benchRoles[
+              battingTeam
+            ]
+        });
+
+      if (
+        hitter
+      ) {
+        return hitter;
+      }
     }
+
+    if (
+      defensePlan.length > 0
+    ) {
+      const replacement =
+        chooseDefensiveReplacement({
+          state,
+          team:
+            fieldingTeam,
+          players,
+          benchPlan:
+            defensePlan,
+          benchRoles:
+            benchRoles[
+              fieldingTeam
+            ]
+        });
+
+      if (
+        replacement
+      ) {
+        return replacement;
+      }
+    }
+
     return null;
   };
 }
 
-export { offenseScore, defenseScore, classifyBenchRoles, createLateGameBenchManager };
+export {
+  offenseScore,
+  defenseScore,
+  classifyBenchRoles,
+  createLateGameBenchManager
+};

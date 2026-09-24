@@ -421,8 +421,22 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
     teams: Object.freeze({ away: awayRoster.team, home: homeRoster.team }), players, names, park,
     dailyLineups: Object.freeze({ away: awayDaily, home: homeDaily }),
     benchPlans: Object.freeze({
-      away: Object.freeze((awayDaily.bench ?? awayRoster.bench ?? []).filter((row) => healthAvailability(playerStates?.[row.playerId]?.health) !== "INJURED").map((row) => Object.freeze({ playerId: row.playerId, coverage: Object.freeze([...(row.coverage ?? [])]) }))),
-      home: Object.freeze((homeDaily.bench ?? homeRoster.bench ?? []).filter((row) => healthAvailability(playerStates?.[row.playerId]?.health) !== "INJURED").map((row) => Object.freeze({ playerId: row.playerId, coverage: Object.freeze([...(row.coverage ?? [])]) })))
+      away: Object.freeze((awayDaily.bench ?? awayRoster.bench ?? []).filter((row) => healthAvailability(playerStates?.[row.playerId]?.health) !== "INJURED").map((row) => Object.freeze({
+        playerId: row.playerId,
+        coverage: Object.freeze([...(row.coverage ?? [])]),
+        role: roleStates?.[row.playerId]?.role ?? null,
+        momentum: Number(roleStates?.[row.playerId]?.momentum ?? 0),
+        fatigue: Number(playerStates?.[row.playerId]?.fatigue ?? 0),
+        form: Number(playerStates?.[row.playerId]?.form ?? 0)
+      }))),
+      home: Object.freeze((homeDaily.bench ?? homeRoster.bench ?? []).filter((row) => healthAvailability(playerStates?.[row.playerId]?.health) !== "INJURED").map((row) => Object.freeze({
+        playerId: row.playerId,
+        coverage: Object.freeze([...(row.coverage ?? [])]),
+        role: roleStates?.[row.playerId]?.role ?? null,
+        momentum: Number(roleStates?.[row.playerId]?.momentum ?? 0),
+        fatigue: Number(playerStates?.[row.playerId]?.fatigue ?? 0),
+        form: Number(playerStates?.[row.playerId]?.form ?? 0)
+      })))
     }),
     pitchingPlans: Object.freeze({
       away: Object.freeze({ starterId: awayPitcherId, bullpenIds: awayBullpen }),
