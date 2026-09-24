@@ -1,0 +1,132 @@
+name: THE CALL-UP Phase 3 Training Coach Feedback
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE3_COACH_FEEDBACK.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  coaching-feedback-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Add public-stat coach advice and player-choice UI
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          python3 - <<'PY_PATCH'
+          from pathlib import Path
+
+          def replace_once(path, before, after):
+              p = Path(path)
+              source = p.read_text(encoding='utf-8')
+              count = source.count(before)
+              if count != 1:
+                  raise RuntimeError(f'{path}: expected exactly one main-branch patch anchor; found {count}')
+              p.write_text(source.replace(before, after, 1), encoding='utf-8')
+
+          def new_file(path, source):
+              p = Path(path)
+              if p.exists():
+                  raise RuntimeError(f'{path}: already exists; inspect main rather than overwrite')
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.write_text(source, encoding='utf-8')
+
+          new_file('src/engine/season/coachingFeedback.js', 'const TRAINING_FOCUSES = new Set([\n  "BALANCED", "CONTACT", "POWER", "PLATE_DISCIPLINE", "DEFENSE", "SPEED"\n]);\nconst VERSATILITY_ROLES = new Set(["UTILITY", "ROTATION"]);\n\n// Player-safe coaching advice. No hidden ceiling, growth rate, scouting truth,\n// protagonist flags, or manager decision inputs are read or modified here.\nfunction getTrainingCoachFeedback({ seasonLine = null, roleState = null, playingTime = null, currentFocus = "BALANCED" } = {}) {\n  if (!TRAINING_FOCUSES.has(currentFocus)) throw new RangeError(`지원하지 않는 훈련 집중입니다: ${currentFocus}`);\n  const pa = Math.max(0, Math.floor(Number(seasonLine?.PA ?? 0) || 0));\n  const strikeouts = Math.max(0, Number(seasonLine?.SO ?? 0) || 0);\n  const walks = Math.max(0, Number(seasonLine?.BB ?? 0) || 0);\n  const secondaryGames = Math.max(0, Number(playingTime?.secondaryGames ?? 0) || 0);\n  let recommendedFocus = "BALANCED";\n  let reasonCode = pa < 60 ? "SMALL_SAMPLE" : "GENERAL_DEVELOPMENT";\n\n  if (VERSATILITY_ROLES.has(roleState?.role) && secondaryGames >= 2) {\n    recommendedFocus = "DEFENSE";\n    reasonCode = "SECONDARY_POSITION_USAGE";\n  } else if (pa >= 60 && strikeouts / pa >= 0.28) {\n    recommendedFocus = "CONTACT";\n    reasonCode = "STRIKEOUT_RATE";\n  } else if (pa >= 60 && walks / pa <= 0.045) {\n    recommendedFocus = "PLATE_DISCIPLINE";\n    reasonCode = "WALK_RATE";\n  }\n\n  return Object.freeze({\n    recommendedFocus,\n    reasonCode,\n    selectedFocus: currentFocus,\n    aligned: recommendedFocus === currentFocus,\n    effect: "DEVELOPMENT_ALLOCATION_ONLY",\n    samplePA: pa\n  });\n}\n\nexport { getTrainingCoachFeedback };\n')
+          replace_once(
+              'src/api/seasonApi.js',
+              'import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";',
+              'import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";\n'
+              'import { getTrainingCoachFeedback } from "../engine/season/coachingFeedback.js";'
+          )
+          replace_once(
+              'src/api/seasonApi.js',
+              '    roleFit,\n    leaderRanks: playerRankSummary(leaderState, playerId, session.fixture.userPlayerId)',
+              '    roleFit,\n'
+              '    coaching: isUser ? getTrainingCoachFeedback({\n'
+              '      seasonLine, roleState, playingTime,\n'
+              '      currentFocus: status?.development?.focus ?? "BALANCED"\n'
+              '    }) : null,\n'
+              '    leaderRanks: playerRankSummary(leaderState, playerId, session.fixture.userPlayerId)'
+          )
+          replace_once(
+              'src/ui/seasonRender.js',
+              '  const options = [\n    ["CONTACT", "컨택트"],',
+              '  const options = [\n    ["BALANCED", "균형"],\n    ["CONTACT", "컨택트"],'
+          )
+          replace_once(
+              'src/ui/seasonRender.js',
+              '\n}\n\nfunction conditionCard(snapshot) {',
+              '\n}\n\n'
+              'function coachTrainingFeedback(coaching) {\n'
+              '  if (!coaching) return "";\n'
+              '  const reasons = {\n'
+              '    SMALL_SAMPLE: "타석 표본이 아직 적어 여러 툴을 고르게 다듬는 편을 권합니다.",\n'
+              '    GENERAL_DEVELOPMENT: "최근 성적만으로 특정 약점을 단정하기 어려워 균형 훈련을 권합니다.",\n'
+              '    SECONDARY_POSITION_USAGE: "여러 포지션 출전이 늘어 수비 훈련을 권합니다.",\n'
+              '    STRIKEOUT_RATE: "최근 삼진 비율을 보고 컨택트 훈련을 권합니다.",\n'
+              '    WALK_RATE: "최근 볼넷 비율을 보고 선구안 훈련을 권합니다."\n'
+              '  };\n'
+              '  const response = coaching.aligned\n'
+              '    ? "현재 훈련이 코치 제안과 일치합니다."\n'
+              '    : `내 선택: ${trainingFocusLabel(coaching.selectedFocus)}. 다른 훈련을 선택해도 유지됩니다.`;\n'
+              '  return `<p class="condition-note"><strong>코치 제안 · ${esc(trainingFocusLabel(coaching.recommendedFocus))}</strong> '
+              '${esc(reasons[coaching.reasonCode] ?? reasons.GENERAL_DEVELOPMENT)} ${esc(response)} '
+              '코치 제안에 따른 추가 능력치·승격 보너스는 없습니다.</p>`;\n'
+              '}\n\nfunction conditionCard(snapshot) {'
+          )
+          replace_once(
+              'src/ui/seasonRender.js',
+              '    ${trainingFocusControls(dev.focus ?? "BALANCED")}\n    <p class="condition-note">Form',
+              '    ${trainingFocusControls(dev.focus ?? "BALANCED")}\n    ${coachTrainingFeedback(snapshot.userPlayer?.coaching)}\n    <p class="condition-note">Form'
+          )
+          replace_once(
+              'src/ui/seasonRender.js',
+              '    ${trainingFocusControls(status.development?.focus ?? "BALANCED")}\n    <p class="condition-note">진행 바',
+              '    ${trainingFocusControls(status.development?.focus ?? "BALANCED")}\n    ${coachTrainingFeedback(player.coaching)}\n    <p class="condition-note">진행 바'
+          )
+          new_file('tests/trainingCoachFeedback.test.js', 'import assert from \'node:assert/strict\';\nimport test from \'node:test\';\nimport { writeFileSync } from \'node:fs\';\nimport { getTrainingCoachFeedback } from \'../src/engine/season/coachingFeedback.js\';\nimport { seasonApi } from \'../src/api/seasonApi.js\';\nimport { renderSeason } from \'../src/ui/seasonRender.js\';\n\ntest(\'coach advice uses public sample and current role, never true potential\', () => {\n  assert.equal(getTrainingCoachFeedback({ seasonLine: { PA: 100, SO: 31, BB: 9 } }).recommendedFocus, \'CONTACT\');\n  assert.equal(getTrainingCoachFeedback({ seasonLine: { PA: 100, SO: 12, BB: 3 } }).recommendedFocus, \'PLATE_DISCIPLINE\');\n  assert.equal(getTrainingCoachFeedback({ seasonLine: { PA: 15, SO: 10, BB: 0 } }).recommendedFocus, \'BALANCED\');\n  const hidden = { get() { throw Error(\'hidden potential must not be accessed\'); } };\n  const line = { PA: 12, SO: 1, BB: 2 };\n  const role = { role: \'UTILITY\' };\n  const usage = { secondaryGames: 3 };\n  for (const obj of [line, role, usage]) Object.defineProperty(obj, \'trueCeiling\', hidden);\n  const utility = getTrainingCoachFeedback({\n    seasonLine: line, roleState: role, playingTime: usage, currentFocus: \'SPEED\'\n  });\n  assert.equal(utility.recommendedFocus, \'DEFENSE\');\n  assert.equal(utility.aligned, false);\n  assert.equal(utility.effect, \'DEVELOPMENT_ALLOCATION_ONLY\');\n});\n\ntest(\'player choice, live coach view, balanced control, and save/replay remain consistent\', () => {\n  const initial = seasonApi.createDemoSeason({ seed: \'phase3-training-coach-feedback\', startDate: \'2026-04-01\' });\n  const id = initial.seasonId;\n  assert.equal(initial.userPlayer.coaching.recommendedFocus, \'BALANCED\');\n  assert.equal(initial.userPlayer.coaching.aligned, true);\n  const before = seasonApi.serializeSeason(id);\n  const changed = seasonApi.setTrainingFocus(id, \'POWER\');\n  assert.equal(changed.userPlayer.status.development.focus, \'POWER\');\n  assert.equal(changed.userPlayer.coaching.selectedFocus, \'POWER\');\n  assert.equal(changed.userPlayer.coaching.aligned, false);\n  assert.deepEqual(seasonApi.serializeSeason(id).playerStates[before.fixture.userPlayerId].development.progress,\n    before.playerStates[before.fixture.userPlayerId].development.progress,\n    \'coach recommendation must not award instant progress or ratings\');\n\n  const root = { innerHTML: \'\', querySelectorAll: () => [], querySelector: () => null };\n  renderSeason(root, changed, {}, \'HOME\', {});\n  assert.match(root.innerHTML, /data-training-focus="BALANCED"/);\n  assert.match(root.innerHTML, /코치 제안/);\n  assert.match(root.innerHTML, /내 선택/);\n  renderSeason(root, changed, {}, \'PLAYER\', { playerSection: \'DEVELOPMENT\' });\n  assert.match(root.innerHTML, /코치 제안/);\n\n  const checkpoint = seasonApi.serializeSeason(id);\n  const restored = seasonApi.restoreSeason(checkpoint);\n  assert.deepEqual(restored.userPlayer.coaching, changed.userPlayer.coaching);\n  assert.equal(restored.userPlayer.status.development.focus, \'POWER\');\n\n  const afterDay = seasonApi.simulateOneDay(id);\n  const dayPayload = seasonApi.serializeSeason(id);\n  const replay = seasonApi.restoreSeason(dayPayload);\n  assert.deepEqual(replay.userPlayer.coaching, afterDay.userPlayer.coaching);\n  assert.equal(replay.userPlayer.status.development.focus, \'POWER\');\n\n  const reset = seasonApi.setTrainingFocus(id, \'BALANCED\');\n  assert.equal(reset.userPlayer.coaching.selectedFocus, \'BALANCED\');\n  assert.equal(reset.userPlayer.coaching.aligned, reset.userPlayer.coaching.recommendedFocus === \'BALANCED\');\n\n  writeFileSync(\'reports/phase3-training-coach-feedback.json\', JSON.stringify({\n    schema: \'THE_CALL_UP_PHASE3_TRAINING_COACH_FEEDBACK_V1\',\n    pass: true,\n    playerFocusChangesPersist: true,\n    adviceUsesOnlyPublicInputs: true,\n    noInstantProgressBonus: true,\n    balancedChoiceAvailable: true,\n    homeAndDevelopmentUi: true,\n    saveRestoreAndOneDayReplay: true\n  }, null, 2) + \'\\n\', \'utf8\');\n});\n')
+          PY_PATCH
+          node --check src/engine/season/coachingFeedback.js
+          node --check src/api/seasonApi.js
+          node --check src/ui/seasonRender.js
+          node --check tests/trainingCoachFeedback.test.js
+          git diff --check
+
+      - name: Run existing tests plus coach feedback and verify report
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          npm test
+          node --input-type=module <<'JS_ASSERT'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const r = JSON.parse(readFileSync('reports/phase3-training-coach-feedback.json', 'utf8'));
+          assert.equal(r.pass, true);
+          for (const key of ['playerFocusChangesPersist', 'adviceUsesOnlyPublicInputs', 'noInstantProgressBonus', 'balancedChoiceAvailable', 'homeAndDevelopmentUi', 'saveRestoreAndOneDayReplay']) assert.equal(r[key], true, key);
+          console.log('Phase 3 training coach feedback gate PASS');
+          JS_ASSERT
+
+      - name: Commit only verified source test and report
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add src/engine/season/coachingFeedback.js src/api/seasonApi.js src/ui/seasonRender.js tests/trainingCoachFeedback.test.js reports/phase3-training-coach-feedback.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No verified source changes staged; refusing empty success commit.'
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase3: connect training choices to public coaching feedback'
+          git push origin HEAD:main
