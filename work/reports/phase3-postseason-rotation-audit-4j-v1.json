@@ -1,0 +1,240 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_POSTSEASON_ROTATION_AUDIT_4J_V1",
+  "pass": true,
+  "mode": "READ_ONLY_BASELINE",
+  "snapshotHash": "fnv1a32:f7b34713",
+  "seed": "phase3-4h-postseason-workload-baseline",
+  "startingStateDate": "2026-09-27",
+  "wildCard": {
+    "seriesCount": 4,
+    "gameCount": 10,
+    "starterAssignments": 20,
+    "allGameReasonCounts": {
+      "ROTATION_BACKUP": 19,
+      "ROTATION": 1
+    },
+    "openingGameTeamCount": 8,
+    "openingFallbackReasonCounts": {
+      "SCHEDULED_SHORT_REST": 7,
+      "SCHEDULED_USED": 1
+    },
+    "openingDecisions": [
+      {
+        "gameId": "POST_2026_AL_WC_3_6_G1",
+        "date": "2026-09-29",
+        "seriesId": null,
+        "teamId": "110",
+        "side": "away",
+        "scheduledStarterId": "669432",
+        "actualStarterId": "669358",
+        "actualReason": "ROTATION_BACKUP",
+        "replayMatched": true,
+        "scheduled": {
+          "availability": "READY",
+          "fatigue": 8.28,
+          "lastAppearanceDate": "2026-09-26",
+          "lastPitchCount": 81,
+          "daysSinceLastAppearance": 3,
+          "minimumRestGap": 4,
+          "rested": false
+        },
+        "selected": {
+          "daysSinceLastAppearance": 7,
+          "lastPitchCount": 88,
+          "pregameFatigue": 0
+        },
+        "reasonForFallback": "SCHEDULED_SHORT_REST"
+      },
+      {
+        "gameId": "POST_2026_AL_WC_3_6_G1",
+        "date": "2026-09-29",
+        "seriesId": null,
+        "teamId": "140",
+        "side": "home",
+        "scheduledStarterId": "543135",
+        "actualStarterId": "669022",
+        "actualReason": "ROTATION_BACKUP",
+        "replayMatched": true,
+        "scheduled": {
+          "availability": "READY",
+          "fatigue": 16.2,
+          "lastAppearanceDate": "2026-09-26",
+          "lastPitchCount": 90,
+          "daysSinceLastAppearance": 3,
+          "minimumRestGap": 4,
+          "rested": false
+        },
+        "selected": {
+          "daysSinceLastAppearance": 6,
+          "lastPitchCount": 93,
+          "pregameFatigue": 0
+        },
+        "reasonForFallback": "SCHEDULED_SHORT_REST"
+      },
+      {
+        "gameId": "POST_2026_AL_WC_4_5_G1",
+        "date": "2026-09-29",
+        "seriesId": null,
+        "teamId": "142",
+        "side": "away",
+        "scheduledStarterId": "657746",
+        "actualStarterId": "641927",
+        "actualReason": "ROTATION_BACKUP",
+        "replayMatched": true,
+        "scheduled": {
+          "availability": "READY",
+          "fatigue": 15.32,
+          "lastAppearanceDate": "2026-09-26",
+          "lastPitchCount": 89,
+          "daysSinceLastAppearance": 3,
+          "minimumRestGap": 4,
+          "rested": false
+        },
+        "selected": {
+          "daysSinceLastAppearance": 7,
+          "lastPitchCount": 85,
+          "pregameFatigue": 0
+        },
+        "reasonForFallback": "SCHEDULED_SHORT_REST"
+      },
+      {
+        "gameId": "POST_2026_AL_WC_4_5_G1",
+        "date": "2026-09-29",
+        "seriesId": null,
+        "teamId": "118",
+        "side": "home",
+        "scheduledStarterId": "608379",
+        "actualStarterId": "677976",
+        "actualReason": "ROTATION_BACKUP",
+        "replayMatched": true,
+        "scheduled": {
+          "availability": "READY",
+          "fatigue": 32.92,
+          "lastAppearanceDate": "2026-09-26",
+          "lastPitchCount": 109,
+          "daysSinceLastAppearance": 3,
+          "minimumRestGap": 4,
+          "rested": false
+        },
+        "selected": {
+          "daysSinceLastAppearance": 6,
+          "lastPitchCount": 88,
+          "pregameFatigue": 0
+        },
+        "reasonForFallback": "SCHEDULED_SHORT_REST"
+      },
+      {
+        "gameId": "POST_2026_NL_WC_3_6_G1",
+        "date": "2026-09-29",
+        "seriesId": null,
+        "teamId": "121",
+        "side": "away",
+        "scheduledStarterId": "640455",
+        "actualStarterId": "673540",
+        "actualReason": "ROTATION_BACKUP",
+        "replayMatched": true,
+        "scheduled": {
+          "availability": "READY",
+          "fatigue": 15.32,
+          "lastAppearanceDate": "2026-09-26",
+          "lastPitchCount": 89,
+          "daysSinceLastAppearance": 3,
+          "minimumRestGap": 4,
+          "rested": false
+        },
+        "selected": {
+          "daysSinceLastAppearance": 6,
+          "lastPitchCount": 83,
+          "pregameFatigue": 0
+        },
+        "reasonForFallback": "SCHEDULED_SHORT_REST"
+      },
+      {
+        "gameId": "POST_2026_NL_WC_3_6_G1",
+        "date": "2026-09-29",
+        "seriesId": null,
+        "teamId": "119",
+        "side": "home",
+        "scheduledStarterId": "669373",
+        "actualStarterId": "669373",
+        "actualReason": "ROTATION",
+        "replayMatched": true,
+        "scheduled": {
+          "availability": "READY",
+          "fatigue": 0,
+          "lastAppearanceDate": "2026-09-26",
+          "lastPitchCount": 57,
+          "daysSinceLastAppearance": 3,
+          "minimumRestGap": 3,
+          "rested": true
+        },
+        "selected": {
+          "daysSinceLastAppearance": 3,
+          "lastPitchCount": 57,
+          "pregameFatigue": 0
+        },
+        "reasonForFallback": "SCHEDULED_USED"
+      },
+      {
+        "gameId": "POST_2026_NL_WC_4_5_G1",
+        "date": "2026-09-29",
+        "seriesId": null,
+        "teamId": "144",
+        "side": "away",
+        "scheduledStarterId": "519242",
+        "actualStarterId": "641816",
+        "actualReason": "ROTATION_BACKUP",
+        "replayMatched": true,
+        "scheduled": {
+          "availability": "READY",
+          "fatigue": 10.92,
+          "lastAppearanceDate": "2026-09-26",
+          "lastPitchCount": 84,
+          "daysSinceLastAppearance": 3,
+          "minimumRestGap": 4,
+          "rested": false
+        },
+        "selected": {
+          "daysSinceLastAppearance": 6,
+          "lastPitchCount": 87,
+          "pregameFatigue": 0
+        },
+        "reasonForFallback": "SCHEDULED_SHORT_REST"
+      },
+      {
+        "gameId": "POST_2026_NL_WC_4_5_G1",
+        "date": "2026-09-29",
+        "seriesId": null,
+        "teamId": "112",
+        "side": "home",
+        "scheduledStarterId": "592332",
+        "actualStarterId": "607067",
+        "actualReason": "ROTATION_BACKUP",
+        "replayMatched": true,
+        "scheduled": {
+          "availability": "READY",
+          "fatigue": 15.32,
+          "lastAppearanceDate": "2026-09-26",
+          "lastPitchCount": 89,
+          "daysSinceLastAppearance": 3,
+          "minimumRestGap": 4,
+          "rested": false
+        },
+        "selected": {
+          "daysSinceLastAppearance": 6,
+          "lastPitchCount": 94,
+          "pregameFatigue": 0
+        },
+        "reasonForFallback": "SCHEDULED_SHORT_REST"
+      }
+    ]
+  },
+  "gates": {
+    "replayedOpeningSelections": 8,
+    "allOpeningSelectionsMatch": true,
+    "prior4iReasonCountsUnchanged": true,
+    "regularSeasonStatsUnchanged": true,
+    "fullSaveValid": true
+  },
+  "interpretation": "Opening-game diagnosis is precise for all eight distinct Wild Card teams. Later-game pregame states are not claimed without per-game snapshots."
+}
