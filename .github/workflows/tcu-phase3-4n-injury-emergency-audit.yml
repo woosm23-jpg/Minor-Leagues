@@ -1,0 +1,99 @@
+name: THE CALL-UP Phase 3 4N Injury and Emergency Audit
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-phase3-4n-injury-emergency-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  injury-emergency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify prior production and postseason baselines
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node -e 'const fs=require("node:fs");for(const path of ["reports/phase3-development-promotion-audit-4m-v1.json","reports/phase3-full-postseason-rotation-gate-4l-v1.json"]){const x=JSON.parse(fs.readFileSync(path,"utf8"));if(x.pass!==true||x.snapshotHash!=="fnv1a32:f7b34713")process.exit(1);}console.log("4M and 4L baseline PASS");'
+          node --test tests/postseasonRotation4I.test.js tests/postseasonRoster4H.test.js
+      - name: Audit real 2026 injury replacements recovery and emergency call-up gap
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          mkdir -p scripts reports
+          cat <<'TCU_4N_SCRIPT' | base64 -d | gzip -d > scripts/verify-phase3-injury-emergency-audit-4n.mjs
+          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
+          Ai/OILp4o+lAR5c2oTx5J2fbR/8FjH5q4IwpAAA=
+          TCU_4N_SCRIPT
+          node --check scripts/verify-phase3-injury-emergency-audit-4n.mjs
+          node scripts/verify-phase3-injury-emergency-audit-4n.mjs
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/phase3-injury-emergency-audit-4n-v1.json","utf8"));if(r.pass!==true||r.gates.injuredPlayerExcluded!==true||r.gates.injuredStarterExcluded!==true||r.gates.injuriesPersistedAcrossRestore!==true||r.gates.injuryRecoveryVerified!==true||r.gates.emergencyCallupGapExplicitlyReported!==true)process.exit(1);console.log("4N verified injury fixture and explicit emergency-callup diagnostic PASS");'
+          git diff --exit-code -- src
+          git diff --check
+      - name: Commit only the verified 4N audit script and report
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add scripts/verify-phase3-injury-emergency-audit-4n.mjs reports/phase3-injury-emergency-audit-4n-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo '4N audit already committed.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'phase3: audit injury replacements and emergency callup policy (4N)'
+            git push origin HEAD:main
+          fi
