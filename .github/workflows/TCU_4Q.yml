@@ -1,0 +1,115 @@
+name: THE CALL-UP Phase 3 4Q Scouting and Position Audit
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_4Q.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scouting-position-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify 4M and 4P production baselines
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e 'const f=require("node:fs");const m=JSON.parse(f.readFileSync("reports/phase3-development-promotion-audit-4m-v1.json"));const p=JSON.parse(f.readFileSync("reports/phase3-automatic-injury-callup-4p-v1.json"));if(!m.pass||!p.pass||!p.gates.automaticInjuryTrigger||!p.gates.automaticReturn||m.snapshotHash!==p.snapshotHash)process.exit(1);console.log("4M/4P baselines PASS");'
+      - name: Install isolated 4Q verifier without modifying game code
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat <<'TCU_4Q_SCRIPT' | base64 -d | gzip -d > scripts/verify-phase3-scouting-position-4q.mjs
+          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
+          TCU_4Q_SCRIPT
+          node --check scripts/verify-phase3-scouting-position-4q.mjs
+          git diff --exit-code -- src
+      - name: Test scouting privacy, promotion inputs and positional adaptation
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase3-scouting-position-4q.mjs
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/phase3-scouting-position-audit-4q-v1.json"));if(!r.pass||r.promotion.hiddenPotentialInvariancePolicies.length!==6||!r.promotion.realReviewHiddenCeilingInvariant||!r.position.saveRestoreSame||!r.scouting.publicDetailNoHiddenInternalFields)process.exit(1);console.log("4Q targeted audit PASS");'
+          git diff --exit-code -- src
+          git diff --check
+      - name: Preserve existing postseason and production-position coverage
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/postseasonRotation4I.test.js tests/postseasonRoster4H.test.js
+          node scripts/verify-production-position-familiarity.mjs --output=/tmp/tcu-4q-production-position.json > /tmp/tcu-4q-production-position.log
+          node -e 'const f=require("node:fs");const r=JSON.parse(f.readFileSync("/tmp/tcu-4q-production-position.json"));if(r.pass!==true)process.exit(1);console.log("Production positional source evidence PASS");'
+          git diff --exit-code -- src
+      - name: Commit verified 4Q audit script and report only
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add scripts/verify-phase3-scouting-position-4q.mjs reports/phase3-scouting-position-audit-4q-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo '4Q already committed.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'phase3: audit scouting and dynamic position adaptation (4Q)'
+            git push origin HEAD:main
+          fi
