@@ -1,0 +1,174 @@
+name: THE CALL-UP Phase 3 One Day Player Calendar
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE3_ONE_DAY.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  one-day-player-calendar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Add one-day command, Korean UI and regression
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          python3 - <<'PY_PATCH'
+          from pathlib import Path
+
+          def replace_once(path, before, after):
+              p = Path(path)
+              source = p.read_text(encoding='utf-8')
+              count = source.count(before)
+              if count != 1:
+                  raise RuntimeError(f'{path}: expected exactly one patch anchor; found {count}. Inspect current main before editing.')
+              p.write_text(source.replace(before, after, 1), encoding='utf-8')
+
+          replace_once(
+              'src/api/seasonApi.js',
+              '  simulateSevenDays(seasonId) {\n',
+              '  simulateOneDay(seasonId) {\n'
+              '    const session = assertSession(seasonId);\n'
+              '    const targetDate = addIsoDays(session.state.currentDate, 1);\n'
+              '    advanceByCalendar(session, { command: "ONE_DAY", targetDate, stopOnImportant: true });\n'
+              '    return snapshot(session);\n'
+              '  },\n'
+              '  simulateSevenDays(seasonId) {\n'
+          )
+          replace_once(
+              'src/app/seasonApp.js',
+              '        if (action === "SIM_7_DAYS") snapshot = seasonApi.simulateSevenDays(snapshot.seasonId);\n',
+              '        if (action === "SIM_DAY") snapshot = seasonApi.simulateOneDay(snapshot.seasonId);\n'
+              '        if (action === "SIM_7_DAYS") snapshot = seasonApi.simulateSevenDays(snapshot.seasonId);\n'
+          )
+          replace_once(
+              'src/ui/seasonRender.js',
+              '    <div class="time-progress-actions">\n'
+              '      <button type="button" class="secondary" data-season-action="SIM_7_DAYS">7일 진행</button>\n',
+              '    <div class="time-progress-actions">\n'
+              '      <button type="button" class="secondary" data-season-action="SIM_DAY">하루 진행</button>\n'
+              '      <button type="button" class="secondary" data-season-action="SIM_7_DAYS">7일 진행</button>\n'
+          )
+          replace_once(
+              'src/ui/seasonRender.js',
+              '    title = "7일 진행 완료";\n',
+              '    title = result.command === "ONE_DAY" ? "하루 진행 완료" : "7일 진행 완료";\n'
+          )
+          replace_once(
+              'src/ui/seasonRender.js',
+              'result.command === "IMPORTANT_EVENT" ? "Important Event" : "7 Days"',
+              'result.command === "IMPORTANT_EVENT" ? "Important Event" : result.command === "ONE_DAY" ? "1 Day" : "7 Days"'
+          )
+
+          test_path = Path('tests/dailyProgress.test.js')
+          if test_path.exists():
+              raise RuntimeError(f'{test_path}: existing test must be reviewed, refusing overwrite')
+          test_path.write_text(r'''import assert from 'node:assert/strict';
+          import test from 'node:test';
+          import { writeFileSync } from 'node:fs';
+          import { seasonApi } from '../src/api/seasonApi.js';
+
+          const fields = (snap) => ({
+            currentDate: snap.currentDate,
+            status: snap.status,
+            userSeasonLine: snap.userSeasonLine,
+            record: snap.record,
+            worldGames: snap.progress.worldLeagueGamesCompleted,
+            playerGames: snap.progress.gamesPlayed,
+            events: snap.careerTimeline.events
+          });
+
+          test('One Day progresses the shared world once and resumes deterministically after restore', () => {
+            const initial = seasonApi.createDemoSeason({
+              seed: 'phase3-one-day-daily-progression', startDate: '2026-04-01'
+            });
+            const seasonId = initial.seasonId;
+            const before = seasonApi.serializeSeason(seasonId);
+            const day1 = seasonApi.simulateOneDay(seasonId);
+            assert.equal(day1.lastProgress.command, 'ONE_DAY');
+            assert.equal(day1.lastProgress.startedDate, '2026-04-01');
+            assert.equal(day1.lastProgress.targetDate, '2026-04-02');
+            assert.equal(day1.currentDate, '2026-04-02');
+            assert.equal(day1.lastProgress.daysAdvanced, 1);
+            assert.ok(day1.progress.worldLeagueGamesCompleted > initial.progress.worldLeagueGamesCompleted);
+            const saveDay1 = seasonApi.serializeSeason(seasonId);
+            const restoreDay1 = seasonApi.restoreSeason(saveDay1);
+            assert.deepEqual(fields(restoreDay1), fields(day1));
+
+            const day2 = seasonApi.simulateOneDay(seasonId);
+            assert.equal(day2.lastProgress.command, 'ONE_DAY');
+            assert.equal(day2.currentDate, '2026-04-03');
+            assert.ok(day2.progress.worldLeagueGamesCompleted >= day1.progress.worldLeagueGamesCompleted);
+            const saveDay2 = seasonApi.serializeSeason(seasonId);
+
+            seasonApi.restoreSeason(saveDay1);
+            const day2Replay = seasonApi.simulateOneDay(seasonId);
+            const saveDay2Replay = seasonApi.serializeSeason(seasonId);
+            assert.deepEqual(fields(day2Replay), fields(day2));
+            assert.deepEqual(saveDay2Replay.levelSeasons, saveDay2.levelSeasons);
+            assert.deepEqual(saveDay2Replay.playerStates, saveDay2.playerStates);
+            assert.deepEqual(saveDay2Replay.roleStates, saveDay2.roleStates);
+            assert.deepEqual(saveDay2Replay.organizationState, saveDay2.organizationState);
+
+            seasonApi.restoreSeason(before);
+            const day1Replay = seasonApi.simulateOneDay(seasonId);
+            assert.deepEqual(fields(day1Replay), fields(day1));
+
+            writeFileSync('reports/phase3-one-day-progression.json', JSON.stringify({
+              schema: 'THE_CALL_UP_PHASE3_ONE_DAY_PROGRESSION_V1',
+              pass: true,
+              firstDate: day1.currentDate,
+              secondDate: day2.currentDate,
+              firstDayWorldGames: day1.lastProgress.worldGamesSimulated,
+              userAndAiSharedCalendar: day1.progress.worldLeagueGamesCompleted > 0,
+              saveRestore: true,
+              replayDeterministic: true
+            }, null, 2) + '\n', 'utf8');
+          });''', encoding='utf-8')
+          print('Phase 3 one-day action, progress feedback, and deterministic test installed')
+          PY_PATCH
+          node --check src/api/seasonApi.js
+          node --check src/app/seasonApp.js
+          node --check src/ui/seasonRender.js
+          node --check tests/dailyProgress.test.js
+          git diff --check
+      - name: Test one-day calendar and previous regressions
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          npm test
+          node --input-type=module <<'JS_CHECK'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const report = JSON.parse(readFileSync('reports/phase3-one-day-progression.json', 'utf8'));
+          assert.equal(report.pass, true);
+          assert.equal(report.firstDate, '2026-04-02');
+          assert.equal(report.secondDate, '2026-04-03');
+          assert.equal(report.saveRestore, true);
+          assert.equal(report.replayDeterministic, true);
+          console.log('Phase 3 one-day calendar / save replay PASS');
+          JS_CHECK
+      - name: Commit only verified one-day changes
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add src/api/seasonApi.js src/app/seasonApp.js src/ui/seasonRender.js tests/dailyProgress.test.js reports/phase3-one-day-progression.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No verified changes staged; refusing empty success commit.'
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase3: add one-day shared calendar progress and deterministic save replay'
+          git push origin HEAD:main
