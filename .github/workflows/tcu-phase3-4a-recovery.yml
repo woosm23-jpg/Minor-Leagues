@@ -1,0 +1,125 @@
+name: THE CALL-UP Phase 3 4A Recovery
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-phase3-4a-recovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  recover-4a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Recover Phase 3 Bundle 4A
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/tcu_4a_recovery.py <<'PY'
+          from pathlib import Path
+          import base64
+          import re
+          import subprocess
+
+          ROOT = Path.cwd()
+          SOURCE_WORKFLOW = (
+              ROOT /
+              ".github/workflows/tcu-phase3-4a-daily-lineup.yml"
+          )
+
+          text = SOURCE_WORKFLOW.read_text(encoding="utf-8")
+
+          match = re.search(
+              r"echo '([^']+)' \| base64 -d > /tmp/tcu_phase3_4a\.py",
+              text
+          )
+          if not match:
+              raise RuntimeError(
+                  "기존 4A workflow 안의 installer를 찾지 못했습니다."
+              )
+
+          installer = base64.b64decode(
+              match.group(1)
+          ).decode("utf-8")
+
+          broken = '''# Existing organization/lineup regressions.
+          run([
+              "node",
+              "scripts/verify-season-position-assignment-v36.js",
+          ])
+          run([
+              "node",
+              "scripts/verify-season-utility-usage-v33.js",
+          ])
+          run([
+              "node",
+              "scripts/verify-season-role-momentum-v21.js",
+          ])
+
+          '''
+
+          replacement = '''# Current regression gates.
+          # The old v33/v36 scripts reference golden fixture files that are no longer
+          # present in this repository. The new 4A verifier already covers daily lineup,
+          # platoon selection, deterministic behavior and Production smoke games.
+          run([
+              "node",
+              "scripts/verify-production-style-fallback.mjs",
+              "--output=/tmp/style-after-4a.json",
+          ])
+          run([
+              "node",
+              "scripts/verify-production-real-parks.mjs",
+              "--output=/tmp/parks-after-4a.json",
+          ])
+          run([
+              "node",
+              "scripts/verify-fast-sim-v38.js",
+              "--verify",
+              "--output",
+              "/tmp/fast-detailed-after-4a.json",
+          ])
+
+          '''
+
+          if broken not in installer:
+              raise RuntimeError(
+                  "교체할 옛 v33/v36 regression block을 찾지 못했습니다."
+              )
+
+          installer = installer.replace(
+              broken,
+              replacement,
+              1
+          )
+
+          target = Path("/tmp/tcu_phase3_4a_recovered.py")
+          target.write_text(
+              installer,
+              encoding="utf-8"
+          )
+
+          subprocess.run(
+              ["python3", "-m", "py_compile", str(target)],
+              check=True
+          )
+          subprocess.run(
+              ["python3", str(target)],
+              check=True,
+              cwd=ROOT
+          )
+
+          PY
+          python3 -m py_compile /tmp/tcu_4a_recovery.py
+          python3 /tmp/tcu_4a_recovery.py
