@@ -1,0 +1,739 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_POSTSEASON_WORKLOAD_BASELINE_4H_V1",
+  "pass": true,
+  "scope": "READ_ONLY_GAMEPLAY_BASELINE",
+  "snapshotHash": "fnv1a32:f7b34713",
+  "seed": "phase3-4h-postseason-workload-baseline",
+  "calendar": {
+    "beforePlayerStateDate": "2026-09-27",
+    "afterPlayerStateDate": "2026-09-27"
+  },
+  "observed": {
+    "seriesCount": 4,
+    "gameCount": 11,
+    "usedPitcherCount": 46,
+    "actualPostseasonPitchCount": 3321,
+    "usedPitcherStatesChanged": 0,
+    "changedPitcherIds": [],
+    "repeatedWithinSeriesPitcherAppearances": 42,
+    "pitcherWorkloadCarriedIntoSessionState": false,
+    "gapObserved": true,
+    "gameIndexRotationModulo": 5,
+    "ordinarySeasonMlbStatsUnchanged": true
+  },
+  "staticPregameReplay": {
+    "games": 11,
+    "scoreMatches": 11,
+    "pitcherStatRows": 46,
+    "exactPitcherStatRows": 46,
+    "method": "Same opening pitcher/player/role states, same gameIndex%5 and postseason seed for each game"
+  },
+  "determinism": {
+    "sameSeedRoundReplay": true,
+    "statsEqual": true,
+    "pitcherStatesEqual": true
+  },
+  "representativeSeries": {
+    "seriesId": "AL_WC_3_6",
+    "gameCount": 3,
+    "games": [
+      {
+        "gameId": "POST_2026_AL_WC_3_6_G1",
+        "date": "2026-09-29",
+        "daysSincePreviousGame": null,
+        "awayTeamId": "110",
+        "homeTeamId": "140",
+        "rotationIndex": 0,
+        "selectedStarterIds": {
+          "away": "669432",
+          "home": "669022"
+        },
+        "score": {
+          "actual": [
+            5,
+            3
+          ],
+          "staticReplay": [
+            5,
+            3
+          ],
+          "match": true
+        },
+        "pitcherAppearances": [
+          {
+            "playerId": "666974",
+            "side": "away",
+            "starter": false,
+            "pitches": 12,
+            "battersFaced": 3,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 71,
+              "lastAppearanceDate": "2026-09-25",
+              "lastPitchCount": 5,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 71,
+              "lastAppearanceDate": "2026-09-25",
+              "lastPitchCount": 5,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "669432",
+            "side": "away",
+            "starter": true,
+            "pitches": 80,
+            "battersFaced": 21,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 50.28,
+              "appearances": 33,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 81,
+              "availability": "LIMITED"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 50.28,
+              "appearances": 33,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 81,
+              "availability": "LIMITED"
+            }
+          },
+          {
+            "playerId": "676742",
+            "side": "away",
+            "starter": false,
+            "pitches": 20,
+            "battersFaced": 5,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 40,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 20,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 40,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 20,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "695380",
+            "side": "away",
+            "starter": false,
+            "pitches": 23,
+            "battersFaced": 5,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 14.850000000000001,
+              "appearances": 66,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 21,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 14.850000000000001,
+              "appearances": 66,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 21,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "596001",
+            "side": "home",
+            "starter": false,
+            "pitches": 21,
+            "battersFaced": 5,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 80,
+              "lastAppearanceDate": "2026-09-25",
+              "lastPitchCount": 25,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 80,
+              "lastAppearanceDate": "2026-09-25",
+              "lastPitchCount": 25,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "641302",
+            "side": "home",
+            "starter": false,
+            "pitches": 14,
+            "battersFaced": 5,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 5.600000000000001,
+              "appearances": 35,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 16,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 5.600000000000001,
+              "appearances": 35,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 16,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "669022",
+            "side": "home",
+            "starter": true,
+            "pitches": 87,
+            "battersFaced": 23,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 32,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 93,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 32,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 93,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "676395",
+            "side": "home",
+            "starter": false,
+            "pitches": 24,
+            "battersFaced": 5,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 18.550000000000004,
+              "appearances": 51,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 23,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 18.550000000000004,
+              "appearances": 51,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 23,
+              "availability": "READY"
+            }
+          }
+        ]
+      },
+      {
+        "gameId": "POST_2026_AL_WC_3_6_G2",
+        "date": "2026-09-30",
+        "daysSincePreviousGame": 1,
+        "awayTeamId": "110",
+        "homeTeamId": "140",
+        "rotationIndex": 1,
+        "selectedStarterIds": {
+          "away": "669358",
+          "home": "669022"
+        },
+        "score": {
+          "actual": [
+            4,
+            12
+          ],
+          "staticReplay": [
+            4,
+            12
+          ],
+          "match": true
+        },
+        "pitcherAppearances": [
+          {
+            "playerId": "664991",
+            "side": "away",
+            "starter": false,
+            "pitches": 1,
+            "battersFaced": 1,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 78,
+              "lastAppearanceDate": "2026-09-25",
+              "lastPitchCount": 25,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 78,
+              "lastAppearanceDate": "2026-09-25",
+              "lastPitchCount": 25,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "669358",
+            "side": "away",
+            "starter": true,
+            "pitches": 89,
+            "battersFaced": 23,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 32,
+              "lastAppearanceDate": "2026-09-22",
+              "lastPitchCount": 88,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 32,
+              "lastAppearanceDate": "2026-09-22",
+              "lastPitchCount": 88,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "670329",
+            "side": "away",
+            "starter": false,
+            "pitches": 20,
+            "battersFaced": 5,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 11.149999999999999,
+              "appearances": 59,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 19,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 11.149999999999999,
+              "appearances": 59,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 19,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "676742",
+            "side": "away",
+            "starter": false,
+            "pitches": 20,
+            "battersFaced": 5,
+            "priorSeriesAppearanceDate": "2026-09-29",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 40,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 20,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 40,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 20,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "689296",
+            "side": "away",
+            "starter": false,
+            "pitches": 22,
+            "battersFaced": 6,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 19.25,
+              "appearances": 79,
+              "lastAppearanceDate": "2026-09-27",
+              "lastPitchCount": 5,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 19.25,
+              "appearances": 79,
+              "lastAppearanceDate": "2026-09-27",
+              "lastPitchCount": 5,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "695380",
+            "side": "away",
+            "starter": false,
+            "pitches": 20,
+            "battersFaced": 4,
+            "priorSeriesAppearanceDate": "2026-09-29",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 14.850000000000001,
+              "appearances": 66,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 21,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 14.850000000000001,
+              "appearances": 66,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 21,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "656641",
+            "side": "home",
+            "starter": false,
+            "pitches": 21,
+            "battersFaced": 6,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 20.400000000000006,
+              "appearances": 83,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 24,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 20.400000000000006,
+              "appearances": 83,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 24,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "669022",
+            "side": "home",
+            "starter": true,
+            "pitches": 78,
+            "battersFaced": 23,
+            "priorSeriesAppearanceDate": "2026-09-29",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 32,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 93,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 32,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 93,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "674003",
+            "side": "home",
+            "starter": false,
+            "pitches": 28,
+            "battersFaced": 6,
+            "priorSeriesAppearanceDate": null,
+            "daysSincePriorSeriesAppearance": null,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 29,
+              "lastAppearanceDate": "2026-09-18",
+              "lastPitchCount": 41,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 29,
+              "lastAppearanceDate": "2026-09-18",
+              "lastPitchCount": 41,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "676395",
+            "side": "home",
+            "starter": false,
+            "pitches": 23,
+            "battersFaced": 6,
+            "priorSeriesAppearanceDate": "2026-09-29",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 18.550000000000004,
+              "appearances": 51,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 23,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 18.550000000000004,
+              "appearances": 51,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 23,
+              "availability": "READY"
+            }
+          }
+        ]
+      },
+      {
+        "gameId": "POST_2026_AL_WC_3_6_G3",
+        "date": "2026-10-01",
+        "daysSincePreviousGame": 1,
+        "awayTeamId": "110",
+        "homeTeamId": "140",
+        "rotationIndex": 2,
+        "selectedStarterIds": {
+          "away": "669358",
+          "home": "669022"
+        },
+        "score": {
+          "actual": [
+            3,
+            10
+          ],
+          "staticReplay": [
+            3,
+            10
+          ],
+          "match": true
+        },
+        "pitcherAppearances": [
+          {
+            "playerId": "664991",
+            "side": "away",
+            "starter": false,
+            "pitches": 17,
+            "battersFaced": 5,
+            "priorSeriesAppearanceDate": "2026-09-30",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 78,
+              "lastAppearanceDate": "2026-09-25",
+              "lastPitchCount": 25,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 78,
+              "lastAppearanceDate": "2026-09-25",
+              "lastPitchCount": 25,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "669358",
+            "side": "away",
+            "starter": true,
+            "pitches": 89,
+            "battersFaced": 23,
+            "priorSeriesAppearanceDate": "2026-09-30",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 32,
+              "lastAppearanceDate": "2026-09-22",
+              "lastPitchCount": 88,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 32,
+              "lastAppearanceDate": "2026-09-22",
+              "lastPitchCount": 88,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "670329",
+            "side": "away",
+            "starter": false,
+            "pitches": 19,
+            "battersFaced": 5,
+            "priorSeriesAppearanceDate": "2026-09-30",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 11.149999999999999,
+              "appearances": 59,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 19,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 11.149999999999999,
+              "appearances": 59,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 19,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "676742",
+            "side": "away",
+            "starter": false,
+            "pitches": 19,
+            "battersFaced": 6,
+            "priorSeriesAppearanceDate": "2026-09-30",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 40,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 20,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 40,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 20,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "695380",
+            "side": "away",
+            "starter": false,
+            "pitches": 21,
+            "battersFaced": 4,
+            "priorSeriesAppearanceDate": "2026-09-30",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 14.850000000000001,
+              "appearances": 66,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 21,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 14.850000000000001,
+              "appearances": 66,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 21,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "656641",
+            "side": "home",
+            "starter": false,
+            "pitches": 21,
+            "battersFaced": 6,
+            "priorSeriesAppearanceDate": "2026-09-30",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 20.400000000000006,
+              "appearances": 83,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 24,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 20.400000000000006,
+              "appearances": 83,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 24,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "669022",
+            "side": "home",
+            "starter": true,
+            "pitches": 81,
+            "battersFaced": 21,
+            "priorSeriesAppearanceDate": "2026-09-30",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 32,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 93,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 32,
+              "lastAppearanceDate": "2026-09-23",
+              "lastPitchCount": 93,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "674003",
+            "side": "home",
+            "starter": false,
+            "pitches": 19,
+            "battersFaced": 4,
+            "priorSeriesAppearanceDate": "2026-09-30",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 0,
+              "appearances": 29,
+              "lastAppearanceDate": "2026-09-18",
+              "lastPitchCount": 41,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 0,
+              "appearances": 29,
+              "lastAppearanceDate": "2026-09-18",
+              "lastPitchCount": 41,
+              "availability": "READY"
+            }
+          },
+          {
+            "playerId": "676395",
+            "side": "home",
+            "starter": false,
+            "pitches": 23,
+            "battersFaced": 6,
+            "priorSeriesAppearanceDate": "2026-09-30",
+            "daysSincePriorSeriesAppearance": 1,
+            "stateAtEachReplayStart": {
+              "fatigue": 18.550000000000004,
+              "appearances": 51,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 23,
+              "availability": "READY"
+            },
+            "stateAfterActualRound": {
+              "fatigue": 18.550000000000004,
+              "appearances": 51,
+              "lastAppearanceDate": "2026-09-26",
+              "lastPitchCount": 23,
+              "availability": "READY"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "note": "Baseline only. This report does not change pitcher recovery, rotation or injury rules."
+}
