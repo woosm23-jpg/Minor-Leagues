@@ -293,7 +293,38 @@ function chooseBullpenArm({ state, fieldingTeam, plan, lookup }) {
 }
 
 /**
- * Hook timing remains calibrated. Only the choice of reliever changes.
+ * Third-time-through overlay. An established starter gets extra protection
+ * only in a close game, from the third pass through the batting order onward,
+ * and only after meaningful pitch workload or trouble.
+ */
+function shouldTtoHook({ state, fieldingTeam, player, usage, config }) {
+  if (!usage || !player?.pitching) return false;
+  if (state.inning < 6 || state.inning > 8) return false;
+  if (Math.abs(scoreDiff(state, fieldingTeam)) > 3) return false;
+  if (Number(usage.battersFaced ?? 0) < 18) return false;
+  if (Number(usage.pitchCount ?? 0) < 78) return false;
+  if (Number(usage.outsRecorded ?? 0) >= 21) return false;
+
+  const fatigue = calculatePitcherFatigue({
+    pitchCount: usage.pitchCount,
+    stamina: player.pitching.stamina ?? 50,
+    role: "SP",
+    startedGame: true
+  }, config);
+
+  return Number(usage.runsAllowed ?? 0) >= 3 || fatigue >= 72;
+}
+
+function isFreshTtoArm(plan, pitcherId) {
+  if (!pitcherId) return false;
+  const meta = bullpenMetaFor(plan, pitcherId);
+  return String(meta.availability ?? "READY").toUpperCase() === "READY"
+    && String(meta.recoveryStatus ?? "READY").toUpperCase() === "READY"
+    && Number(meta.pregameFatigue ?? 0) < 42;
+}
+
+/**
+ * Keeps the original Phase 1 hook and adds a narrow third-time-through overlay.
  */
 function createPitcherUsageManager({
   players,
@@ -315,22 +346,36 @@ function createPitcherUsageManager({
     const usage = teamUsage[currentId];
     const startedGame = Object.keys(teamUsage)[0] === currentId;
 
-    if (!shouldHook({
+    const baseHook = shouldHook({
       state,
       player,
       usage,
       config,
       startedGame
-    })) {
-      return null;
+    });
+
+    if (!baseHook) {
+      // A third-time-through hook is a limited overlay, never an emergency
+      // reason to use an exhausted or unavailable reliever.
+      if (!startedGame || !shouldTtoHook({
+        state,
+        fieldingTeam,
+        player,
+        usage,
+        config
+      })) return null;
     }
 
-    return chooseBullpenArm({
+    const plan = pitchingPlans[fieldingTeam];
+    const nextArm = chooseBullpenArm({
       state,
       fieldingTeam,
-      plan: pitchingPlans[fieldingTeam],
+      plan,
       lookup
     });
+
+    if (!baseHook && !isFreshTtoArm(plan, nextArm)) return null;
+    return nextArm;
   };
 }
 
@@ -339,5 +384,6 @@ export {
   relieverQuality,
   classifyBullpenRoles,
   leverageTarget,
+  shouldTtoHook,
   createPitcherUsageManager
 };
