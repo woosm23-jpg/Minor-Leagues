@@ -1,0 +1,66 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_DEVELOPMENT_PROMOTION_AUDIT_4M_V1",
+  "pass": true,
+  "mode": "READ_ONLY_PRODUCTION_V3_ONE_SEASON",
+  "seed": "phase3-4h-postseason-workload-baseline",
+  "snapshotHash": "fnv1a32:f7b34713",
+  "production": {
+    "worldMode": "PRODUCTION_REAL",
+    "levelGames": {
+      "A": 1980,
+      "HIGH_A": 1980,
+      "AA": 2070,
+      "AAA": 2250,
+      "MLB": 2430
+    },
+    "worldGames": 10710,
+    "openingUserLevel": "A",
+    "closingUserLevel": "AAA",
+    "organizationPopulation": {
+      "MLB": 28,
+      "AAA": 27,
+      "AA": 28,
+      "HIGH_A": 26,
+      "A": 31
+    },
+    "uniqueOrganizationPlayers": 140
+  },
+  "development": {
+    "position": {
+      "population": 1940,
+      "developmentProcessedOnce": 1940,
+      "agingProcessedOnce": 1940
+    },
+    "pitcher": {
+      "population": 2284,
+      "developmentProcessedOnce": 2284,
+      "agingProcessedOnce": 2284
+    },
+    "progressedHitters": 1925,
+    "progressedPitchers": 2233,
+    "userTrainingFocus": "CONTACT"
+  },
+  "promotion": {
+    "automaticReviewCount": 26,
+    "retainedLatestEvaluationCount": 55,
+    "retainedTransactionEvents": 8,
+    "retainedSwapDates": 4,
+    "syntheticPromotionPairsVerified": 4,
+    "syntheticAdjacentRosterSwapsVerified": 4,
+    "note": "Observed real-world swap count may be zero; synthetic tests separately cover all four adjacent pairs."
+  },
+  "saveRestore": {
+    "openingFocusPreserved": true,
+    "finishedDevelopmentPreserved": true,
+    "finishedPromotionsPreserved": true
+  },
+  "idempotency": {
+    "completedSeasonRepeatedWithoutDoubleGrowth": true,
+    "organizationReviewsNotDuplicated": true
+  },
+  "scope": {
+    "postseasonGameplayUnchanged": true,
+    "savePayloadValidated": true,
+    "sourceFilesNotModifiedByAudit": true
+  }
+}
