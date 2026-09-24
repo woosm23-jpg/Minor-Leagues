@@ -1,0 +1,92 @@
+name: THE CALL-UP Phase 3 4D Recovery 1
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-phase3-4d-recovery1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  recover-4d:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Recover Phase 3 Bundle 4D
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/tcu_4d_recovery.py <<'PY'
+          from pathlib import Path
+          import base64
+          import re
+          import subprocess
+
+          ROOT = Path.cwd()
+          SOURCE = ROOT / ".github/workflows/tcu-phase3-4d-late-game-bench.yml"
+
+          workflow = SOURCE.read_text(encoding="utf-8")
+          match = re.search(
+              r"echo '([^']+)' \\| base64 -d > /tmp/tcu_phase3_4d\\.py",
+              workflow
+          )
+          if not match:
+              raise RuntimeError("기존 4D installer를 찾지 못했습니다.")
+
+          installer = base64.b64decode(
+              match.group(1)
+          ).decode("utf-8")
+
+          patch_code = """
+          # 4D Fix 1: protect backup catcher at role-classification stage too.
+          p = WORK / "src/engine/game/benchUsageAI.js"
+          source = p.read_text(encoding="utf-8")
+          old = base64.b64decode("ICBpZiAocm93cy5sZW5ndGggPiAwKSB7CiAgICBbLi4ucm93c10uc29ydCgoYSwgYikgPT4gYi5vZmZlbnNlIC0gYS5vZmZlbnNlIHx8IGEucGxheWVySWQubG9jYWxlQ29tcGFyZShiLnBsYXllcklkKSlbMF0ucm9sZXMucHVzaCgiUElOQ0hfQkFUIik7CiAgICBbLi4ucm93c10uc29ydCgoYSwgYikgPT4gYi5zcGVlZERlZmVuc2UgLSBhLnNwZWVkRGVmZW5zZSB8fCBhLnBsYXllcklkLmxvY2FsZUNvbXBhcmUoYi5wbGF5ZXJJZCkpWzBdLnJvbGVzLnB1c2goIlNQRUVEX0RFRkVOU0VfU1BFQ0lBTElTVCIpOwogIH0K").decode("utf-8")
+          new = base64.b64decode("ICBpZiAocm93cy5sZW5ndGggPiAwKSB7CiAgICBjb25zdCBub25DYXRjaGVyUGluY2hCYXRQb29sID0gcm93cy5maWx0ZXIoCiAgICAgIChyb3cpID0+CiAgICAgICAgIXJvdy5yb2xlcy5pbmNsdWRlcygiQkFDS1VQX0NBVENIRVIiKQogICAgKTsKICAgIGNvbnN0IHBpbmNoQmF0UG9vbCA9CiAgICAgIG5vbkNhdGNoZXJQaW5jaEJhdFBvb2wubGVuZ3RoID4gMAogICAgICAgID8gbm9uQ2F0Y2hlclBpbmNoQmF0UG9vbAogICAgICAgIDogcm93czsKCiAgICBbLi4ucGluY2hCYXRQb29sXQogICAgICAuc29ydCgKICAgICAgICAoYSwgYikgPT4KICAgICAgICAgIGIub2ZmZW5zZSAtIGEub2ZmZW5zZSB8fAogICAgICAgICAgYS5wbGF5ZXJJZC5sb2NhbGVDb21wYXJlKGIucGxheWVySWQpCiAgICAgIClbMF0KICAgICAgLnJvbGVzLnB1c2goIlBJTkNIX0JBVCIpOwoKICAgIFsuLi5yb3dzXQogICAgICAuc29ydCgKICAgICAgICAoYSwgYikgPT4KICAgICAgICAgIGIuc3BlZWREZWZlbnNlIC0gYS5zcGVlZERlZmVuc2UgfHwKICAgICAgICAgIGEucGxheWVySWQubG9jYWxlQ29tcGFyZShiLnBsYXllcklkKQogICAgICApWzBdCiAgICAgIC5yb2xlcy5wdXNoKCJTUEVFRF9ERUZFTlNFX1NQRUNJQUxJU1QiKTsKICB9Cg==").decode("utf-8")
+
+          if "const nonCatcherPinchBatPool = rows.filter(" not in source:
+              if old not in source:
+                  raise RuntimeError("PINCH_BAT classifier anchor missing")
+              source = source.replace(old, new, 1)
+              p.write_text(source, encoding="utf-8")
+
+          run(["node", "--check", "src/engine/game/benchUsageAI.js"])
+
+          """
+
+          needle = 'verifier = dec("'
+          if needle not in installer:
+              raise RuntimeError("4D verifier insertion anchor missing")
+
+          installer = installer.replace(
+              needle,
+              patch_code + needle,
+              1
+          )
+
+          target = Path("/tmp/tcu_phase3_4d_recovered.py")
+          target.write_text(installer, encoding="utf-8")
+
+          subprocess.run(
+              ["python3", "-m", "py_compile", str(target)],
+              check=True
+          )
+          subprocess.run(
+              ["python3", str(target)],
+              cwd=ROOT,
+              check=True
+          )
+
+          PY
+          python3 -m py_compile /tmp/tcu_4d_recovery.py
+          python3 /tmp/tcu_4d_recovery.py
