@@ -1,0 +1,49 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_BATTING_ORDER_4B_V1",
+  "pass": true,
+  "snapshotHash": "fnv1a32:f7b34713",
+  "policy": {
+    "selectedNinePreserved": true,
+    "hiddenPotentialUsed": false,
+    "inputs": [
+      "CONTACT_SPLIT",
+      "VISION",
+      "DISCIPLINE",
+      "RAW_POWER",
+      "POWER_UTILIZATION_SPLIT",
+      "SPEED",
+      "BASERUNNING",
+      "OPPONENT_STARTER_HAND"
+    ]
+  },
+  "synthetic": {
+    "vsRight": [
+      "lead",
+      "seven",
+      "six",
+      "cleanup",
+      "five",
+      "three",
+      "split",
+      "eight",
+      "two"
+    ],
+    "vsLeft": [
+      "lead",
+      "two",
+      "six",
+      "cleanup",
+      "five",
+      "three",
+      "eight",
+      "seven",
+      "split"
+    ]
+  },
+  "productionSmoke": {
+    "checkedGames": 160,
+    "reorderedSides": 320,
+    "rightHandedSides": 225,
+    "leftHandedSides": 94
+  }
+}

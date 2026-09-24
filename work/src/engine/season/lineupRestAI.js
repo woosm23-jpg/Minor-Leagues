@@ -1,4 +1,5 @@
 import { getSeasonEffectivePlayer } from "./playerSeasonState.js";
+import { buildBattingOrder } from "./battingOrderAI.js";
 import { rolePriority } from "./roleSystem.js";
 import {
   canUtilityCover,
@@ -887,7 +888,7 @@ function dailyBenchRows(
  * Stage 3: real daily competition using current ability, opponent hand,
  *          defensive fit, persistent role, form and fatigue.
  *
- * Batting-order optimization is intentionally deferred to the next bundle.
+ * Stage 4: optimize batting order against the opposing starter.
  */
 function buildDailyLineup(
   roster,
@@ -1351,11 +1352,25 @@ function buildDailyLineup(
       replacements
     });
 
-  const lineup =
+  const selectedPlayers =
     slots.map(
       (slot) =>
         slot.playerId
     );
+
+  const battingOrder =
+    buildBattingOrder({
+      playerIds:
+        selectedPlayers,
+      roster,
+      playerStates,
+      opposingPitcher,
+      baselineOrder:
+        roster.lineup ?? []
+    });
+
+  const lineup =
+    battingOrder.lineup;
 
   const optimized =
     optimizePositionAssignments({
@@ -1391,6 +1406,8 @@ function buildDailyLineup(
 
   return freeze({
     lineup,
+    selectedPlayers,
+    battingOrder,
     defense,
     bench,
     rested,
