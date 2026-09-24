@@ -1,0 +1,141 @@
+name: THE CALL-UP Phase 3 4O Emergency Call-up Foundation
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-phase3-4o-emergency-callup-primitives.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  emergency-callup-primitives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify 4M and 4N baseline reports
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node -e 'const fs=require("node:fs");for(const file of ["reports/phase3-development-promotion-audit-4m-v1.json","reports/phase3-injury-emergency-audit-4n-v1.json"]){const r=JSON.parse(fs.readFileSync(file,"utf8"));if(r.pass!==true||r.snapshotHash!=="fnv1a32:f7b34713")process.exit(1);}console.log("4M/4N prerequisite reports PASS");'
+      - name: Apply exact verified opt-in emergency policy and legal injured-list transaction
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          cat <<'TCU_4O_INSTALL' | base64 -d | gzip -d > /tmp/tcu-4o-install.py
+          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
+          8ylHYKN+NkP4ByL+DRvZQcaBHgAA
+          TCU_4O_INSTALL
+          python3 /tmp/tcu-4o-install.py
+          node --check src/engine/season/promotionAI.js
+          node --check src/engine/career/rosterControlState.js
+          git diff --check
+      - name: Verify emergency policy, real roster transaction, restore, and prior promotions
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          cat <<'TCU_4O_VERIFY' | base64 -d | gzip -d > scripts/verify-phase3-emergency-callup-primitives-4o.mjs
+          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
+          TCU_4O_VERIFY
+          node --check scripts/verify-phase3-emergency-callup-primitives-4o.mjs
+          node scripts/verify-phase3-emergency-callup-primitives-4o.mjs
+          node scripts/verify-season-promotion-ai-v22.js --verify --output=/tmp/tcu-4o-prior-promotion.json
+          node scripts/verify-phase3-injury-emergency-audit-4n.mjs
+          node --test tests/postseasonRotation4I.test.js tests/postseasonRoster4H.test.js
+          git diff --exit-code -- reports/phase3-injury-emergency-audit-4n-v1.json
+          git diff --check
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/phase3-emergency-callup-primitives-4o-v1.json","utf8"));if(r.pass!==true||r.gates.realProductionAffiliateSwapAndFullRestore!==true||r.gates.injuredListPreservesFortyManAndOptions!==true||r.pending.normalSeasonGameplayUsesNewPath!==false)process.exit(1);console.log("4O opt-in emergency foundation PASS; automatic scheduler explicitly pending");'
+      - name: Commit only verified 4O code, isolated regression and report
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add src/engine/season/promotionAI.js src/engine/career/rosterControlState.js scripts/verify-phase3-emergency-callup-primitives-4o.mjs reports/phase3-emergency-callup-primitives-4o-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo '4O primitives already installed.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'phase3: add explicit emergency injury callup and IL roster primitives (4O)'
+            git push origin HEAD:main
+          fi
