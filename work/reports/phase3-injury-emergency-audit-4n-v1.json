@@ -1,0 +1,47 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_INJURY_EMERGENCY_AUDIT_4N_V1",
+  "pass": true,
+  "mode": "READ_ONLY_PRODUCTION_V3_INJECTED_INJURY",
+  "snapshotHash": "fnv1a32:f7b34713",
+  "realFixture": {
+    "level": "A",
+    "gameId": "real_A_820961",
+    "gameDate": "2026-04-03",
+    "teamId": "516",
+    "side": "home",
+    "injuredHitterId": "809730",
+    "injuredStarterId": "829473",
+    "replacementStarterId": "805879",
+    "hitterReplacementKinds": [
+      "INJURY_DIRECT"
+    ],
+    "lineupSize": 9
+  },
+  "recovery": {
+    "hitterAvailable": true,
+    "pitcherNotInjured": true
+  },
+  "saveRestore": {
+    "fullSaveValid": true,
+    "bothInjuriesPersist": true,
+    "lineupAndStarterDeterministic": true,
+    "rosterUnchanged": true
+  },
+  "emergencyMlbCallupProbe": {
+    "healthyCandidateDecision": "PROMOTE",
+    "injuredIncumbentDecision": "HOLD",
+    "injuredIncumbentBlocked": true,
+    "automaticInjuryCallupVerified": false,
+    "status": "POLICY_BLOCKS_INJURED_INCUMBENT_NEEDS_FIX",
+    "note": "Forced injury replacement within a game is verified. Emergency cross-level MLB call-up is separately probed, not claimed complete."
+  },
+  "gates": {
+    "sourceGameplayUnchanged": true,
+    "productionSnapshotVerified": true,
+    "injuredPlayerExcluded": true,
+    "injuredStarterExcluded": true,
+    "injuriesPersistedAcrossRestore": true,
+    "injuryRecoveryVerified": true,
+    "emergencyCallupGapExplicitlyReported": true
+  }
+}
