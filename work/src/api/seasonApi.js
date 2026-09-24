@@ -21,6 +21,7 @@ import { createCareerEventState, appendCareerEvent, getCareerTimelinePublicView,
 import { getUtilityPathwayView } from "../engine/season/utilityUsage.js";
 import { getPositionPlayingTimeView } from "../engine/season/playingTimeReadModel.js";
 import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
+import { getTrainingCoachFeedback } from "../engine/season/coachingFeedback.js";
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
 import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
 import { createRosterControlState, normalizeRosterControlState, advanceRosterControlToDate, getRosterControlPublicView, knownFortyManCount, prepareAaaMlbEmergencyInjuryMove, prepareAaaMlbEmergencyInjuryReturn, prepareAaaMlbRosterMove } from "../engine/career/rosterControlState.js";
@@ -1654,6 +1655,10 @@ function playerDetailView(session, playerId, leaders = null) {
     utilityPathway,
     playingTime,
     roleFit,
+    coaching: isUser ? getTrainingCoachFeedback({
+      seasonLine, roleState, playingTime,
+      currentFocus: status?.development?.focus ?? "BALANCED"
+    }) : null,
     leaderRanks: playerRankSummary(leaderState, playerId, session.fixture.userPlayerId)
   };
 }

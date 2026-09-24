@@ -102,6 +102,7 @@ function trainingFocusLabel(focus) {
 
 function trainingFocusControls(currentFocus) {
   const options = [
+    ["BALANCED", "균형"],
     ["CONTACT", "컨택트"],
     ["POWER", "파워"],
     ["PLATE_DISCIPLINE", "선구안"],
@@ -112,6 +113,21 @@ function trainingFocusControls(currentFocus) {
     <div class="training-focus-head"><strong>훈련 집중</strong><span>성장 총량 유지 · 분배 조정</span></div>
     <div class="training-focus-grid">${options.map(([value, label]) => `<button type="button" data-training-focus="${value}" class="${currentFocus === value ? "active" : ""}">${label}</button>`).join("")}</div>
   </div>`;
+}
+
+function coachTrainingFeedback(coaching) {
+  if (!coaching) return "";
+  const reasons = {
+    SMALL_SAMPLE: "타석 표본이 아직 적어 여러 툴을 고르게 다듬는 편을 권합니다.",
+    GENERAL_DEVELOPMENT: "최근 성적만으로 특정 약점을 단정하기 어려워 균형 훈련을 권합니다.",
+    SECONDARY_POSITION_USAGE: "여러 포지션 출전이 늘어 수비 훈련을 권합니다.",
+    STRIKEOUT_RATE: "최근 삼진 비율을 보고 컨택트 훈련을 권합니다.",
+    WALK_RATE: "최근 볼넷 비율을 보고 선구안 훈련을 권합니다."
+  };
+  const response = coaching.aligned
+    ? "현재 훈련이 코치 제안과 일치합니다."
+    : `내 선택: ${trainingFocusLabel(coaching.selectedFocus)}. 다른 훈련을 선택해도 유지됩니다.`;
+  return `<p class="condition-note"><strong>코치 제안 · ${esc(trainingFocusLabel(coaching.recommendedFocus))}</strong> ${esc(reasons[coaching.reasonCode] ?? reasons.GENERAL_DEVELOPMENT)} ${esc(response)} 코치 제안에 따른 추가 능력치·승격 보너스는 없습니다.</p>`;
 }
 
 function conditionCard(snapshot) {
@@ -139,6 +155,7 @@ function conditionCard(snapshot) {
       }).join("")}
     </div>
     ${trainingFocusControls(dev.focus ?? "BALANCED")}
+    ${coachTrainingFeedback(snapshot.userPlayer?.coaching)}
     <p class="condition-note">Form과 피로는 일시적인 경기 컨텍스트이며, 숨은 성장률·실제 ceiling은 표시하지 않습니다.</p>
   </section>`;
 }
@@ -473,6 +490,7 @@ function playerDevelopmentView(player) {
     </div>
     <div class="development-bars full-development-bars">${developmentRows(status)}</div>
     ${trainingFocusControls(status.development?.focus ?? "BALANCED")}
+    ${coachTrainingFeedback(player.coaching)}
     <p class="condition-note">진행 바는 누적 성장 progress입니다. 훈련 집중은 성장 총량을 늘리지 않고 분배만 바꿉니다. 숨은 Development Rate와 실제 ceiling은 표시하지 않습니다.</p>
   </section>`;
 }
