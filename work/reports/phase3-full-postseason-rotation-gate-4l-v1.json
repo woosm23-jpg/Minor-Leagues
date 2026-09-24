@@ -1,0 +1,3217 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_FULL_POSTSEASON_ROTATION_GATE_4L_V1",
+  "pass": true,
+  "mode": "TEMPORARY_DIAGNOSTIC_HOOK_READ_ONLY",
+  "snapshotHash": "fnv1a32:f7b34713",
+  "seed": "phase3-4h-postseason-workload-baseline",
+  "wildCard": {
+    "seriesCount": 4,
+    "gameCount": 10,
+    "starterAssignments": 20,
+    "reasonCounts": {
+      "ROTATION_BACKUP": 19,
+      "ROTATION": 1
+    },
+    "causeCounts": {
+      "REGULAR_SEASON_SHORT_REST": 7,
+      "OTHER_APPEARANCE_SHORT_REST": 8,
+      "EARLIER_SAME_SERIES_START_SHORT_REST": 4,
+      "SCHEDULED_USED": 1
+    },
+    "decisions": [
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_3_6",
+        "seriesGame": 1,
+        "gameId": "POST_2026_AL_WC_3_6_G1",
+        "gameDate": "2026-09-29",
+        "teamId": "110",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 3,
+        "scheduledStarterId": "669432",
+        "starterId": "669358",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 8.28,
+          "gap": 3,
+          "pitchCount": 81,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "REGULAR_SEASON_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_3_6",
+        "seriesGame": 1,
+        "gameId": "POST_2026_AL_WC_3_6_G1",
+        "gameDate": "2026-09-29",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 3,
+        "scheduledStarterId": "543135",
+        "starterId": "669022",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 16.2,
+          "gap": 3,
+          "pitchCount": 90,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 93,
+          "rested": true
+        },
+        "cause": "REGULAR_SEASON_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_3_6",
+        "seriesGame": 2,
+        "gameId": "POST_2026_AL_WC_3_6_G2",
+        "gameDate": "2026-09-30",
+        "teamId": "110",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 3,
+        "scheduledStarterId": "605135",
+        "starterId": "669432",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 14.44,
+          "gap": 3,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 81,
+          "rested": true
+        },
+        "cause": "OTHER_APPEARANCE_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_3_6",
+        "seriesGame": 2,
+        "gameId": "POST_2026_AL_WC_3_6_G2",
+        "gameDate": "2026-09-30",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 3,
+        "scheduledStarterId": "594798",
+        "starterId": "543135",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 31.16,
+          "gap": 3,
+          "pitchCount": 107,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 90,
+          "rested": true
+        },
+        "cause": "OTHER_APPEARANCE_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_3_6",
+        "seriesGame": 3,
+        "gameId": "POST_2026_AL_WC_3_6_G3",
+        "gameDate": "2026-10-01",
+        "teamId": "110",
+        "side": "away",
+        "gameIndex": 2,
+        "rotationSize": 3,
+        "scheduledStarterId": "669358",
+        "starterId": "605135",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-29",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 6.4,
+          "gap": 2,
+          "pitchCount": 55,
+          "minGap": 3,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_WC_3_6_G1",
+          "date": "2026-09-29",
+          "seriesId": "AL_WC_3_6"
+        }
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_3_6",
+        "seriesGame": 3,
+        "gameId": "POST_2026_AL_WC_3_6_G3",
+        "gameDate": "2026-10-01",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 2,
+        "rotationSize": 3,
+        "scheduledStarterId": "669022",
+        "starterId": "594798",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-29",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 36.32,
+          "gap": 2,
+          "pitchCount": 89,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 10.16,
+          "gap": 4,
+          "pitchCount": 107,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_WC_3_6_G1",
+          "date": "2026-09-29",
+          "seriesId": "AL_WC_3_6"
+        }
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_4_5",
+        "seriesGame": 1,
+        "gameId": "POST_2026_AL_WC_4_5_G1",
+        "gameDate": "2026-09-29",
+        "teamId": "142",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 3,
+        "scheduledStarterId": "657746",
+        "starterId": "641927",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 15.32,
+          "gap": 3,
+          "pitchCount": 89,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "REGULAR_SEASON_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_4_5",
+        "seriesGame": 1,
+        "gameId": "POST_2026_AL_WC_4_5_G1",
+        "gameDate": "2026-09-29",
+        "teamId": "118",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 3,
+        "scheduledStarterId": "608379",
+        "starterId": "677976",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 32.92,
+          "gap": 3,
+          "pitchCount": 109,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "REGULAR_SEASON_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_4_5",
+        "seriesGame": 2,
+        "gameId": "POST_2026_AL_WC_4_5_G2",
+        "gameDate": "2026-09-30",
+        "teamId": "142",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 3,
+        "scheduledStarterId": "671737",
+        "starterId": "657746",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 11.8,
+          "gap": 3,
+          "pitchCount": 85,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 89,
+          "rested": true
+        },
+        "cause": "OTHER_APPEARANCE_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_4_5",
+        "seriesGame": 2,
+        "gameId": "POST_2026_AL_WC_4_5_G2",
+        "gameDate": "2026-09-30",
+        "teamId": "118",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 3,
+        "scheduledStarterId": "607625",
+        "starterId": "608379",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 33.8,
+          "gap": 3,
+          "pitchCount": 110,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 11.92,
+          "gap": 4,
+          "pitchCount": 109,
+          "rested": true
+        },
+        "cause": "OTHER_APPEARANCE_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_4_5",
+        "seriesGame": 3,
+        "gameId": "POST_2026_AL_WC_4_5_G3",
+        "gameDate": "2026-10-01",
+        "teamId": "142",
+        "side": "away",
+        "gameIndex": 2,
+        "rotationSize": 3,
+        "scheduledStarterId": "641927",
+        "starterId": "671737",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-29",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 32.8,
+          "gap": 2,
+          "pitchCount": 85,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_WC_4_5_G1",
+          "date": "2026-09-29",
+          "seriesId": "AL_WC_4_5"
+        }
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "AL_WC_4_5",
+        "seriesGame": 3,
+        "gameId": "POST_2026_AL_WC_4_5_G3",
+        "gameDate": "2026-10-01",
+        "teamId": "118",
+        "side": "home",
+        "gameIndex": 2,
+        "rotationSize": 3,
+        "scheduledStarterId": "677976",
+        "starterId": "607625",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-29",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 31.04,
+          "gap": 2,
+          "pitchCount": 83,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 12.8,
+          "gap": 4,
+          "pitchCount": 110,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_WC_4_5_G1",
+          "date": "2026-09-29",
+          "seriesId": "AL_WC_4_5"
+        }
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "NL_WC_3_6",
+        "seriesGame": 1,
+        "gameId": "POST_2026_NL_WC_3_6_G1",
+        "gameDate": "2026-09-29",
+        "teamId": "121",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 3,
+        "scheduledStarterId": "640455",
+        "starterId": "673540",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 15.32,
+          "gap": 3,
+          "pitchCount": 89,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 83,
+          "rested": true
+        },
+        "cause": "REGULAR_SEASON_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "NL_WC_3_6",
+        "seriesGame": 1,
+        "gameId": "POST_2026_NL_WC_3_6_G1",
+        "gameDate": "2026-09-29",
+        "teamId": "119",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 3,
+        "scheduledStarterId": "669373",
+        "starterId": "669373",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 3,
+          "pitchCount": 57,
+          "minGap": 3,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 3,
+          "pitchCount": 57,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "NL_WC_3_6",
+        "seriesGame": 2,
+        "gameId": "POST_2026_NL_WC_3_6_G2",
+        "gameDate": "2026-09-30",
+        "teamId": "121",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 3,
+        "scheduledStarterId": "690997",
+        "starterId": "640455",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 14.44,
+          "gap": 3,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 89,
+          "rested": true
+        },
+        "cause": "OTHER_APPEARANCE_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "NL_WC_3_6",
+        "seriesGame": 2,
+        "gameId": "POST_2026_NL_WC_3_6_G2",
+        "gameDate": "2026-09-30",
+        "teamId": "119",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 3,
+        "scheduledStarterId": "808967",
+        "starterId": "680736",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 17.08,
+          "gap": 3,
+          "pitchCount": 91,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 91,
+          "rested": true
+        },
+        "cause": "OTHER_APPEARANCE_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "NL_WC_4_5",
+        "seriesGame": 1,
+        "gameId": "POST_2026_NL_WC_4_5_G1",
+        "gameDate": "2026-09-29",
+        "teamId": "144",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 3,
+        "scheduledStarterId": "519242",
+        "starterId": "641816",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 10.92,
+          "gap": 3,
+          "pitchCount": 84,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "REGULAR_SEASON_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "NL_WC_4_5",
+        "seriesGame": 1,
+        "gameId": "POST_2026_NL_WC_4_5_G1",
+        "gameDate": "2026-09-29",
+        "teamId": "112",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 3,
+        "scheduledStarterId": "592332",
+        "starterId": "607067",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 15.32,
+          "gap": 3,
+          "pitchCount": 89,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 94,
+          "rested": true
+        },
+        "cause": "REGULAR_SEASON_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "NL_WC_4_5",
+        "seriesGame": 2,
+        "gameId": "POST_2026_NL_WC_4_5_G2",
+        "gameDate": "2026-09-30",
+        "teamId": "144",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 3,
+        "scheduledStarterId": "656550",
+        "starterId": "519242",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 16.2,
+          "gap": 3,
+          "pitchCount": 90,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 84,
+          "rested": true
+        },
+        "cause": "OTHER_APPEARANCE_SHORT_REST"
+      },
+      {
+        "round": "WILD_CARD",
+        "seriesId": "NL_WC_4_5",
+        "seriesGame": 2,
+        "gameId": "POST_2026_NL_WC_4_5_G2",
+        "gameDate": "2026-09-30",
+        "teamId": "112",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 3,
+        "scheduledStarterId": "684007",
+        "starterId": "592332",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 16.2,
+          "gap": 3,
+          "pitchCount": 90,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 89,
+          "rested": true
+        },
+        "cause": "OTHER_APPEARANCE_SHORT_REST"
+      }
+    ]
+  },
+  "divisionSeries": {
+    "seriesCount": 4,
+    "gameCount": 18,
+    "starterAssignments": 36,
+    "reasonCounts": {
+      "ROTATION_BACKUP": 7,
+      "ROTATION": 29
+    },
+    "causeCounts": {
+      "EARLIER_POSTSEASON_START_SHORT_REST": 3,
+      "SCHEDULED_USED": 29,
+      "SCHEDULED_FATIGUE_CAP": 1,
+      "EARLIER_SAME_SERIES_START_SHORT_REST": 3
+    },
+    "decisions": [
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_1",
+        "seriesGame": 1,
+        "gameId": "POST_2026_AL_DS_1_G1",
+        "gameDate": "2026-10-03",
+        "teamId": "142",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "657746",
+        "starterId": "641927",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-30",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 14.44,
+          "gap": 3,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "EARLIER_POSTSEASON_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_WC_4_5_G2",
+          "date": "2026-09-30",
+          "seriesId": "AL_WC_4_5"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_1",
+        "seriesGame": 1,
+        "gameId": "POST_2026_AL_DS_1_G1",
+        "gameDate": "2026-10-03",
+        "teamId": "139",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "656876",
+        "starterId": "656876",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_1",
+        "seriesGame": 2,
+        "gameId": "POST_2026_AL_DS_1_G2",
+        "gameDate": "2026-10-05",
+        "teamId": "142",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "671737",
+        "starterId": "671737",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-01",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_WC_4_5_G3",
+          "date": "2026-10-01",
+          "seriesId": "AL_WC_4_5"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_1",
+        "seriesGame": 2,
+        "gameId": "POST_2026_AL_DS_1_G2",
+        "gameDate": "2026-10-05",
+        "teamId": "139",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "607259",
+        "starterId": "607259",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 92,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 92,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_1",
+        "seriesGame": 3,
+        "gameId": "POST_2026_AL_DS_1_G3",
+        "gameDate": "2026-10-07",
+        "teamId": "139",
+        "side": "away",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "693855",
+        "starterId": "693855",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-23",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 14,
+          "pitchCount": 63,
+          "minGap": 3,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 14,
+          "pitchCount": 63,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_1",
+        "seriesGame": 3,
+        "gameId": "POST_2026_AL_DS_1_G3",
+        "gameDate": "2026-10-07",
+        "teamId": "142",
+        "side": "home",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "641927",
+        "starterId": "641927",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-03",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 60,
+          "minGap": 3,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 60,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_DS_1_G1",
+          "date": "2026-10-03",
+          "seriesId": "AL_DS_1"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_1",
+        "seriesGame": 4,
+        "gameId": "POST_2026_AL_DS_1_G4",
+        "gameDate": "2026-10-08",
+        "teamId": "139",
+        "side": "away",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "642547",
+        "starterId": "642547",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-24",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 14,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 14,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_1",
+        "seriesGame": 4,
+        "gameId": "POST_2026_AL_DS_1_G4",
+        "gameDate": "2026-10-08",
+        "teamId": "142",
+        "side": "home",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "805673",
+        "starterId": "805673",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-23",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 15,
+          "pitchCount": 84,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 15,
+          "pitchCount": 84,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_2",
+        "seriesGame": 1,
+        "gameId": "POST_2026_AL_DS_2_G1",
+        "gameDate": "2026-10-03",
+        "teamId": "140",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "543135",
+        "starterId": "669022",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-30",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 15.32,
+          "gap": 3,
+          "pitchCount": 89,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 89,
+          "rested": true
+        },
+        "cause": "EARLIER_POSTSEASON_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_WC_3_6_G2",
+          "date": "2026-09-30",
+          "seriesId": "AL_WC_3_6"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_2",
+        "seriesGame": 1,
+        "gameId": "POST_2026_AL_DS_2_G1",
+        "gameDate": "2026-10-03",
+        "teamId": "114",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "676440",
+        "starterId": "676440",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 93,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 93,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_2",
+        "seriesGame": 2,
+        "gameId": "POST_2026_AL_DS_2_G2",
+        "gameDate": "2026-10-05",
+        "teamId": "140",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "594798",
+        "starterId": "594798",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-01",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 78,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 78,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_WC_3_6_G3",
+          "date": "2026-10-01",
+          "seriesId": "AL_WC_3_6"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_2",
+        "seriesGame": 2,
+        "gameId": "POST_2026_AL_DS_2_G2",
+        "gameDate": "2026-10-05",
+        "teamId": "114",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "656492",
+        "starterId": "656492",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_2",
+        "seriesGame": 3,
+        "gameId": "POST_2026_AL_DS_2_G3",
+        "gameDate": "2026-10-07",
+        "teamId": "114",
+        "side": "away",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "668909",
+        "starterId": "668909",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-23",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 14,
+          "pitchCount": 86,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 14,
+          "pitchCount": 86,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_2",
+        "seriesGame": 3,
+        "gameId": "POST_2026_AL_DS_2_G3",
+        "gameDate": "2026-10-07",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "669022",
+        "starterId": "669022",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-03",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 86,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 86,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_DS_2_G1",
+          "date": "2026-10-03",
+          "seriesId": "AL_DS_2"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_2",
+        "seriesGame": 4,
+        "gameId": "POST_2026_AL_DS_2_G4",
+        "gameDate": "2026-10-08",
+        "teamId": "114",
+        "side": "away",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "677944",
+        "starterId": "677944",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-24",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 14,
+          "pitchCount": 82,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 14,
+          "pitchCount": 82,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_2",
+        "seriesGame": 4,
+        "gameId": "POST_2026_AL_DS_2_G4",
+        "gameDate": "2026-10-08",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "677958",
+        "starterId": "677958",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-24",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 14,
+          "pitchCount": 84,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 14,
+          "pitchCount": 84,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_2",
+        "seriesGame": 5,
+        "gameId": "POST_2026_AL_DS_2_G5",
+        "gameDate": "2026-10-10",
+        "teamId": "140",
+        "side": "away",
+        "gameIndex": 4,
+        "rotationSize": 4,
+        "scheduledStarterId": "543135",
+        "starterId": "543135",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-30",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 10,
+          "pitchCount": 89,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 10,
+          "pitchCount": 89,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_WC_3_6_G2",
+          "date": "2026-09-30",
+          "seriesId": "AL_WC_3_6"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "AL_DS_2",
+        "seriesGame": 5,
+        "gameId": "POST_2026_AL_DS_2_G5",
+        "gameDate": "2026-10-10",
+        "teamId": "114",
+        "side": "home",
+        "gameIndex": 4,
+        "rotationSize": 4,
+        "scheduledStarterId": "676440",
+        "starterId": "676440",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-03",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 91,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 91,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_DS_2_G1",
+          "date": "2026-10-03",
+          "seriesId": "AL_DS_2"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_1",
+        "seriesGame": 1,
+        "gameId": "POST_2026_NL_DS_1_G1",
+        "gameDate": "2026-10-03",
+        "teamId": "112",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "592332",
+        "starterId": "684007",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-09-30",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 13.56,
+          "gap": 3,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 90,
+          "rested": true
+        },
+        "cause": "EARLIER_POSTSEASON_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_WC_4_5_G2",
+          "date": "2026-09-30",
+          "seriesId": "NL_WC_4_5"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_1",
+        "seriesGame": 1,
+        "gameId": "POST_2026_NL_DS_1_G1",
+        "gameDate": "2026-10-03",
+        "teamId": "143",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "650911",
+        "starterId": "650911",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_1",
+        "seriesGame": 2,
+        "gameId": "POST_2026_NL_DS_1_G2",
+        "gameDate": "2026-10-04",
+        "teamId": "112",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "684007",
+        "starterId": "607067",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-03",
+        "scheduledView": {
+          "availability": "LIMITED",
+          "fatigue": 59.08,
+          "gap": 1,
+          "pitchCount": 91,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 89,
+          "rested": true
+        },
+        "cause": "SCHEDULED_FATIGUE_CAP",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_1_G1",
+          "date": "2026-10-03",
+          "seriesId": "NL_DS_1"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_1",
+        "seriesGame": 2,
+        "gameId": "POST_2026_NL_DS_1_G2",
+        "gameDate": "2026-10-04",
+        "teamId": "143",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "554430",
+        "starterId": "554430",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 83,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 83,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_1",
+        "seriesGame": 3,
+        "gameId": "POST_2026_NL_DS_1_G3",
+        "gameDate": "2026-10-06",
+        "teamId": "143",
+        "side": "away",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "605400",
+        "starterId": "605400",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-23",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 13,
+          "pitchCount": 79,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 13,
+          "pitchCount": 79,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_1",
+        "seriesGame": 3,
+        "gameId": "POST_2026_NL_DS_1_G3",
+        "gameDate": "2026-10-06",
+        "teamId": "112",
+        "side": "home",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "607067",
+        "starterId": "571510",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-04",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 28.4,
+          "gap": 2,
+          "pitchCount": 80,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 12,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_1_G2",
+          "date": "2026-10-04",
+          "seriesId": "NL_DS_1"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_1",
+        "seriesGame": 4,
+        "gameId": "POST_2026_NL_DS_1_G4",
+        "gameDate": "2026-10-07",
+        "teamId": "143",
+        "side": "away",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "664353",
+        "starterId": "664353",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-24",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 13,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 13,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_1",
+        "seriesGame": 4,
+        "gameId": "POST_2026_NL_DS_1_G4",
+        "gameDate": "2026-10-07",
+        "teamId": "112",
+        "side": "home",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "571510",
+        "starterId": "592332",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-06",
+        "scheduledView": {
+          "availability": "LIMITED",
+          "fatigue": 50.28,
+          "gap": 1,
+          "pitchCount": 81,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_1_G3",
+          "date": "2026-10-06",
+          "seriesId": "NL_DS_1"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_1",
+        "seriesGame": 5,
+        "gameId": "POST_2026_NL_DS_1_G5",
+        "gameDate": "2026-10-09",
+        "teamId": "112",
+        "side": "away",
+        "gameIndex": 4,
+        "rotationSize": 4,
+        "scheduledStarterId": "592332",
+        "starterId": "684007",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-07",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 35.44,
+          "gap": 2,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 91,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_1_G4",
+          "date": "2026-10-07",
+          "seriesId": "NL_DS_1"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_1",
+        "seriesGame": 5,
+        "gameId": "POST_2026_NL_DS_1_G5",
+        "gameDate": "2026-10-09",
+        "teamId": "143",
+        "side": "home",
+        "gameIndex": 4,
+        "rotationSize": 4,
+        "scheduledStarterId": "650911",
+        "starterId": "650911",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-03",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 90,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 90,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_1_G1",
+          "date": "2026-10-03",
+          "seriesId": "NL_DS_1"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_2",
+        "seriesGame": 1,
+        "gameId": "POST_2026_NL_DS_2_G1",
+        "gameDate": "2026-10-03",
+        "teamId": "119",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "669373",
+        "starterId": "669373",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-29",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 89,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 89,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_WC_3_6_G1",
+          "date": "2026-09-29",
+          "seriesId": "NL_WC_3_6"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_2",
+        "seriesGame": 1,
+        "gameId": "POST_2026_NL_DS_2_G1",
+        "gameDate": "2026-10-03",
+        "teamId": "158",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "694819",
+        "starterId": "694819",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-26",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 79,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 79,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_2",
+        "seriesGame": 2,
+        "gameId": "POST_2026_NL_DS_2_G2",
+        "gameDate": "2026-10-04",
+        "teamId": "119",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "808967",
+        "starterId": "808967",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 91,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 91,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_2",
+        "seriesGame": 2,
+        "gameId": "POST_2026_NL_DS_2_G2",
+        "gameDate": "2026-10-04",
+        "teamId": "158",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "669160",
+        "starterId": "669160",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-27",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_2",
+        "seriesGame": 3,
+        "gameId": "POST_2026_NL_DS_2_G3",
+        "gameDate": "2026-10-06",
+        "teamId": "158",
+        "side": "away",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "690986",
+        "starterId": "690986",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-23",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 13,
+          "pitchCount": 83,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 13,
+          "pitchCount": 83,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_2",
+        "seriesGame": 3,
+        "gameId": "POST_2026_NL_DS_2_G3",
+        "gameDate": "2026-10-06",
+        "teamId": "119",
+        "side": "home",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "680736",
+        "starterId": "680736",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-30",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_WC_3_6_G2",
+          "date": "2026-09-30",
+          "seriesId": "NL_WC_3_6"
+        }
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_2",
+        "seriesGame": 4,
+        "gameId": "POST_2026_NL_DS_2_G4",
+        "gameDate": "2026-10-07",
+        "teamId": "158",
+        "side": "away",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "701656",
+        "starterId": "701656",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-24",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 13,
+          "pitchCount": 85,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 13,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      },
+      {
+        "round": "DIVISION_SERIES",
+        "seriesId": "NL_DS_2",
+        "seriesGame": 4,
+        "gameId": "POST_2026_NL_DS_2_G4",
+        "gameDate": "2026-10-07",
+        "teamId": "119",
+        "side": "home",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "663460",
+        "starterId": "663460",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-24",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 13,
+          "pitchCount": 84,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 13,
+          "pitchCount": 84,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED"
+      }
+    ]
+  },
+  "lcs": {
+    "seriesCount": 2,
+    "gameCount": 13,
+    "starterAssignments": 26,
+    "reasonCounts": {
+      "ROTATION": 14,
+      "ROTATION_BACKUP": 12
+    },
+    "causeCounts": {
+      "SCHEDULED_USED": 14,
+      "EARLIER_POSTSEASON_START_SHORT_REST": 2,
+      "EARLIER_SAME_SERIES_START_SHORT_REST": 10
+    },
+    "decisions": [
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 1,
+        "gameId": "POST_2026_AL_LCS_G1",
+        "gameDate": "2026-10-12",
+        "teamId": "142",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "657746",
+        "starterId": "657746",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-09-30",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 12,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 12,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_WC_4_5_G2",
+          "date": "2026-09-30",
+          "seriesId": "AL_WC_4_5"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 1,
+        "gameId": "POST_2026_AL_LCS_G1",
+        "gameDate": "2026-10-12",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "543135",
+        "starterId": "594798",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-10",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 34.56,
+          "gap": 2,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 82,
+          "rested": true
+        },
+        "cause": "EARLIER_POSTSEASON_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_DS_2_G5",
+          "date": "2026-10-10",
+          "seriesId": "AL_DS_2"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 2,
+        "gameId": "POST_2026_AL_LCS_G2",
+        "gameDate": "2026-10-13",
+        "teamId": "142",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "671737",
+        "starterId": "671737",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-05",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_DS_1_G2",
+          "date": "2026-10-05",
+          "seriesId": "AL_DS_1"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 2,
+        "gameId": "POST_2026_AL_LCS_G2",
+        "gameDate": "2026-10-13",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "594798",
+        "starterId": "669022",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-12",
+        "scheduledView": {
+          "availability": "LIMITED",
+          "fatigue": 50.28,
+          "gap": 1,
+          "pitchCount": 81,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 81,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G1",
+          "date": "2026-10-12",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 3,
+        "gameId": "POST_2026_AL_LCS_G3",
+        "gameDate": "2026-10-15",
+        "teamId": "140",
+        "side": "away",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "669022",
+        "starterId": "677958",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-13",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 35.44,
+          "gap": 2,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G2",
+          "date": "2026-10-13",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 3,
+        "gameId": "POST_2026_AL_LCS_G3",
+        "gameDate": "2026-10-15",
+        "teamId": "142",
+        "side": "home",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "641927",
+        "starterId": "641927",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-07",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 85,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_DS_1_G3",
+          "date": "2026-10-07",
+          "seriesId": "AL_DS_1"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 4,
+        "gameId": "POST_2026_AL_LCS_G4",
+        "gameDate": "2026-10-16",
+        "teamId": "140",
+        "side": "away",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "677958",
+        "starterId": "543135",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-15",
+        "scheduledView": {
+          "availability": "LIMITED",
+          "fatigue": 52.92,
+          "gap": 1,
+          "pitchCount": 84,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G3",
+          "date": "2026-10-15",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 4,
+        "gameId": "POST_2026_AL_LCS_G4",
+        "gameDate": "2026-10-16",
+        "teamId": "142",
+        "side": "home",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "805673",
+        "starterId": "805673",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-08",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 85,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_DS_1_G4",
+          "date": "2026-10-08",
+          "seriesId": "AL_DS_1"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 5,
+        "gameId": "POST_2026_AL_LCS_G5",
+        "gameDate": "2026-10-17",
+        "teamId": "140",
+        "side": "away",
+        "gameIndex": 4,
+        "rotationSize": 4,
+        "scheduledStarterId": "543135",
+        "starterId": "594798",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-16",
+        "scheduledView": {
+          "availability": "LIMITED",
+          "fatigue": 50.28,
+          "gap": 1,
+          "pitchCount": 81,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 81,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G4",
+          "date": "2026-10-16",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 5,
+        "gameId": "POST_2026_AL_LCS_G5",
+        "gameDate": "2026-10-17",
+        "teamId": "142",
+        "side": "home",
+        "gameIndex": 4,
+        "rotationSize": 4,
+        "scheduledStarterId": "657746",
+        "starterId": "657746",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-12",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G1",
+          "date": "2026-10-12",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 6,
+        "gameId": "POST_2026_AL_LCS_G6",
+        "gameDate": "2026-10-19",
+        "teamId": "142",
+        "side": "away",
+        "gameIndex": 5,
+        "rotationSize": 4,
+        "scheduledStarterId": "671737",
+        "starterId": "671737",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-13",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G2",
+          "date": "2026-10-13",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "AL_LCS",
+        "seriesGame": 6,
+        "gameId": "POST_2026_AL_LCS_G6",
+        "gameDate": "2026-10-19",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 5,
+        "rotationSize": 4,
+        "scheduledStarterId": "594798",
+        "starterId": "669022",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-17",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 33.68,
+          "gap": 2,
+          "pitchCount": 86,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G5",
+          "date": "2026-10-17",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 1,
+        "gameId": "POST_2026_NL_LCS_G1",
+        "gameDate": "2026-10-11",
+        "teamId": "112",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "592332",
+        "starterId": "592332",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-07",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_1_G4",
+          "date": "2026-10-07",
+          "seriesId": "NL_DS_1"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 1,
+        "gameId": "POST_2026_NL_LCS_G1",
+        "gameDate": "2026-10-11",
+        "teamId": "158",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "694819",
+        "starterId": "694819",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-03",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_2_G1",
+          "date": "2026-10-03",
+          "seriesId": "NL_DS_2"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 2,
+        "gameId": "POST_2026_NL_LCS_G2",
+        "gameDate": "2026-10-12",
+        "teamId": "112",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "684007",
+        "starterId": "607067",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-09",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 31.16,
+          "gap": 3,
+          "pitchCount": 107,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 80,
+          "rested": true
+        },
+        "cause": "EARLIER_POSTSEASON_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_1_G5",
+          "date": "2026-10-09",
+          "seriesId": "NL_DS_1"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 2,
+        "gameId": "POST_2026_NL_LCS_G2",
+        "gameDate": "2026-10-12",
+        "teamId": "158",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "669160",
+        "starterId": "669160",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-04",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 85,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_2_G2",
+          "date": "2026-10-04",
+          "seriesId": "NL_DS_2"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 3,
+        "gameId": "POST_2026_NL_LCS_G3",
+        "gameDate": "2026-10-14",
+        "teamId": "158",
+        "side": "away",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "690986",
+        "starterId": "690986",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-06",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 78,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 78,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_2_G3",
+          "date": "2026-10-06",
+          "seriesId": "NL_DS_2"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 3,
+        "gameId": "POST_2026_NL_LCS_G3",
+        "gameDate": "2026-10-14",
+        "teamId": "112",
+        "side": "home",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "607067",
+        "starterId": "571510",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-12",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 35.44,
+          "gap": 2,
+          "pitchCount": 88,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 81,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G2",
+          "date": "2026-10-12",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 4,
+        "gameId": "POST_2026_NL_LCS_G4",
+        "gameDate": "2026-10-15",
+        "teamId": "158",
+        "side": "away",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "701656",
+        "starterId": "701656",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-07",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 82,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 8,
+          "pitchCount": 82,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_DS_2_G4",
+          "date": "2026-10-07",
+          "seriesId": "NL_DS_2"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 4,
+        "gameId": "POST_2026_NL_LCS_G4",
+        "gameDate": "2026-10-15",
+        "teamId": "112",
+        "side": "home",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "571510",
+        "starterId": "592332",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-14",
+        "scheduledView": {
+          "availability": "LIMITED",
+          "fatigue": 50.28,
+          "gap": 1,
+          "pitchCount": 81,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 4,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G3",
+          "date": "2026-10-14",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 5,
+        "gameId": "POST_2026_NL_LCS_G5",
+        "gameDate": "2026-10-16",
+        "teamId": "158",
+        "side": "away",
+        "gameIndex": 4,
+        "rotationSize": 4,
+        "scheduledStarterId": "694819",
+        "starterId": "694819",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-11",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 70,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 70,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G1",
+          "date": "2026-10-11",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 5,
+        "gameId": "POST_2026_NL_LCS_G5",
+        "gameDate": "2026-10-16",
+        "teamId": "112",
+        "side": "home",
+        "gameIndex": 4,
+        "rotationSize": 4,
+        "scheduledStarterId": "592332",
+        "starterId": "684007",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-15",
+        "scheduledView": {
+          "availability": "LIMITED",
+          "fatigue": 54.68,
+          "gap": 1,
+          "pitchCount": 86,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 107,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G4",
+          "date": "2026-10-15",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 6,
+        "gameId": "POST_2026_NL_LCS_G6",
+        "gameDate": "2026-10-18",
+        "teamId": "112",
+        "side": "away",
+        "gameIndex": 5,
+        "rotationSize": 4,
+        "scheduledStarterId": "684007",
+        "starterId": "607067",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-16",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 33.68,
+          "gap": 2,
+          "pitchCount": 86,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 88,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G5",
+          "date": "2026-10-16",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 6,
+        "gameId": "POST_2026_NL_LCS_G6",
+        "gameDate": "2026-10-18",
+        "teamId": "158",
+        "side": "home",
+        "gameIndex": 5,
+        "rotationSize": 4,
+        "scheduledStarterId": "669160",
+        "starterId": "669160",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-12",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 90,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 90,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G2",
+          "date": "2026-10-12",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 7,
+        "gameId": "POST_2026_NL_LCS_G7",
+        "gameDate": "2026-10-19",
+        "teamId": "112",
+        "side": "away",
+        "gameIndex": 6,
+        "rotationSize": 4,
+        "scheduledStarterId": "607067",
+        "starterId": "571510",
+        "reason": "ROTATION_BACKUP",
+        "scheduledLastAppearanceDate": "2026-10-18",
+        "scheduledView": {
+          "availability": "LIMITED",
+          "fatigue": 49.4,
+          "gap": 1,
+          "pitchCount": 80,
+          "minGap": 4,
+          "rested": false
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 81,
+          "rested": true
+        },
+        "cause": "EARLIER_SAME_SERIES_START_SHORT_REST",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G6",
+          "date": "2026-10-18",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "LCS",
+        "seriesId": "NL_LCS",
+        "seriesGame": 7,
+        "gameId": "POST_2026_NL_LCS_G7",
+        "gameDate": "2026-10-19",
+        "teamId": "158",
+        "side": "home",
+        "gameIndex": 6,
+        "rotationSize": 4,
+        "scheduledStarterId": "690986",
+        "starterId": "690986",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-14",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 82,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 82,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G3",
+          "date": "2026-10-14",
+          "seriesId": "NL_LCS"
+        }
+      }
+    ]
+  },
+  "worldSeries": {
+    "seriesCount": 1,
+    "gameCount": 5,
+    "starterAssignments": 10,
+    "reasonCounts": {
+      "ROTATION": 10
+    },
+    "causeCounts": {
+      "SCHEDULED_USED": 10
+    },
+    "decisions": [
+      {
+        "round": "WORLD_SERIES",
+        "seriesId": "WORLD_SERIES",
+        "seriesGame": 1,
+        "gameId": "POST_2026_WORLD_SERIES_G1",
+        "gameDate": "2026-10-23",
+        "teamId": "140",
+        "side": "away",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "543135",
+        "starterId": "543135",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-16",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 81,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 81,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G4",
+          "date": "2026-10-16",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "WORLD_SERIES",
+        "seriesId": "WORLD_SERIES",
+        "seriesGame": 1,
+        "gameId": "POST_2026_WORLD_SERIES_G1",
+        "gameDate": "2026-10-23",
+        "teamId": "158",
+        "side": "home",
+        "gameIndex": 0,
+        "rotationSize": 4,
+        "scheduledStarterId": "694819",
+        "starterId": "694819",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-16",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 86,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 86,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G5",
+          "date": "2026-10-16",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "WORLD_SERIES",
+        "seriesId": "WORLD_SERIES",
+        "seriesGame": 2,
+        "gameId": "POST_2026_WORLD_SERIES_G2",
+        "gameDate": "2026-10-24",
+        "teamId": "140",
+        "side": "away",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "594798",
+        "starterId": "594798",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-17",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 86,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 86,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G5",
+          "date": "2026-10-17",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "WORLD_SERIES",
+        "seriesId": "WORLD_SERIES",
+        "seriesGame": 2,
+        "gameId": "POST_2026_WORLD_SERIES_G2",
+        "gameDate": "2026-10-24",
+        "teamId": "158",
+        "side": "home",
+        "gameIndex": 1,
+        "rotationSize": 4,
+        "scheduledStarterId": "669160",
+        "starterId": "669160",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-18",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 85,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 6,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G6",
+          "date": "2026-10-18",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "WORLD_SERIES",
+        "seriesId": "WORLD_SERIES",
+        "seriesGame": 3,
+        "gameId": "POST_2026_WORLD_SERIES_G3",
+        "gameDate": "2026-10-26",
+        "teamId": "158",
+        "side": "away",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "690986",
+        "starterId": "690986",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-19",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 82,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 82,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G7",
+          "date": "2026-10-19",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "WORLD_SERIES",
+        "seriesId": "WORLD_SERIES",
+        "seriesGame": 3,
+        "gameId": "POST_2026_WORLD_SERIES_G3",
+        "gameDate": "2026-10-26",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 2,
+        "rotationSize": 4,
+        "scheduledStarterId": "669022",
+        "starterId": "669022",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-19",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 87,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 7,
+          "pitchCount": 87,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G6",
+          "date": "2026-10-19",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "WORLD_SERIES",
+        "seriesId": "WORLD_SERIES",
+        "seriesGame": 4,
+        "gameId": "POST_2026_WORLD_SERIES_G4",
+        "gameDate": "2026-10-27",
+        "teamId": "158",
+        "side": "away",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "701656",
+        "starterId": "701656",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-15",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 12,
+          "pitchCount": 82,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 12,
+          "pitchCount": 82,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_NL_LCS_G4",
+          "date": "2026-10-15",
+          "seriesId": "NL_LCS"
+        }
+      },
+      {
+        "round": "WORLD_SERIES",
+        "seriesId": "WORLD_SERIES",
+        "seriesGame": 4,
+        "gameId": "POST_2026_WORLD_SERIES_G4",
+        "gameDate": "2026-10-27",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 3,
+        "rotationSize": 4,
+        "scheduledStarterId": "677958",
+        "starterId": "677958",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-15",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 12,
+          "pitchCount": 84,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 12,
+          "pitchCount": 84,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_AL_LCS_G3",
+          "date": "2026-10-15",
+          "seriesId": "AL_LCS"
+        }
+      },
+      {
+        "round": "WORLD_SERIES",
+        "seriesId": "WORLD_SERIES",
+        "seriesGame": 5,
+        "gameId": "POST_2026_WORLD_SERIES_G5",
+        "gameDate": "2026-10-28",
+        "teamId": "158",
+        "side": "away",
+        "gameIndex": 4,
+        "rotationSize": 4,
+        "scheduledStarterId": "694819",
+        "starterId": "694819",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-23",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 85,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 85,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_WORLD_SERIES_G1",
+          "date": "2026-10-23",
+          "seriesId": "WORLD_SERIES"
+        }
+      },
+      {
+        "round": "WORLD_SERIES",
+        "seriesId": "WORLD_SERIES",
+        "seriesGame": 5,
+        "gameId": "POST_2026_WORLD_SERIES_G5",
+        "gameDate": "2026-10-28",
+        "teamId": "140",
+        "side": "home",
+        "gameIndex": 4,
+        "rotationSize": 4,
+        "scheduledStarterId": "543135",
+        "starterId": "543135",
+        "reason": "ROTATION",
+        "scheduledLastAppearanceDate": "2026-10-23",
+        "scheduledView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 84,
+          "minGap": 4,
+          "rested": true
+        },
+        "selectedView": {
+          "availability": "READY",
+          "fatigue": 0,
+          "gap": 5,
+          "pitchCount": 84,
+          "rested": true
+        },
+        "cause": "SCHEDULED_USED",
+        "previousScheduledPostseasonStart": {
+          "gameId": "POST_2026_WORLD_SERIES_G1",
+          "date": "2026-10-23",
+          "seriesId": "WORLD_SERIES"
+        }
+      }
+    ]
+  },
+  "gates": {
+    "allPregameSelectionsReplayed": 92,
+    "prior4iReasonCountsUnchanged": true,
+    "prior4kReasonsAndCausesUnchanged": true,
+    "fullPostseasonCompleted": true,
+    "lcsSaveRestore": true,
+    "worldSeriesReplayIdentical": true,
+    "championArchived": true,
+    "prior4jOpeningCausesUnchanged": true,
+    "nonEmergencyUnrestedStarts": 0,
+    "regularSeasonStatsUnchanged": true,
+    "fullSaveValid": true,
+    "diagnosticHookDoesNotChangeOutcomesOrPitcherWorkload": true
+  },
+  "note": "Read-only full four-round postseason starter audit. Actual LCS/World Series pregame choices replayed; mid-postseason save restored and World Series champion/history rechecked. No gameplay or save schema changes."
+}
