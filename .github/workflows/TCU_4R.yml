@@ -1,0 +1,124 @@
+name: THE CALL-UP Phase 3 4R Integrated Regression
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_4R.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  integrated-phase3-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify 4A-4Q report prerequisites and production snapshot
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          test -f reports/phase3-scouting-position-audit-4q-v1.json
+          test -f reports/phase3-automatic-injury-callup-4p-v1.json
+          git diff --exit-code -- src
+          node --test tests/benchCurrentPitcherGuard4H.test.js tests/postseasonRoster4H.test.js tests/postseasonRotation4I.test.js
+
+      - name: Re-test injury call-ups and scouting against current game source
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase3-automatic-injury-callup-4p.mjs
+          node scripts/verify-phase3-scouting-position-4q.mjs
+          git diff --exit-code -- src
+          git diff --exit-code -- reports/phase3-automatic-injury-callup-4p-v1.json reports/phase3-scouting-position-audit-4q-v1.json
+
+      - name: Install standalone 4R integration verifier
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat <<'TCU_4R_SCRIPT' | base64 -d | gzip -d > scripts/verify-phase3-integration-4r.mjs
+          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
+          uUvvWdqG8NA8Otk8+R8f3QImoy0AAA==
+          TCU_4R_SCRIPT
+          node --check scripts/verify-phase3-integration-4r.mjs
+          git diff --exit-code -- src
+
+      - name: Replay detailed save and simulate full 2026 production postseason
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase3-integration-4r.mjs
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/phase3-integrated-regression-4r-v1.json"));if(!r.pass||r.regularSeason.worldGames!==10710||!Object.values(r.gates).every(Boolean)||!r.postseason.championTeamId)process.exit(1);console.log("4R Phase 3 integrated regression PASS");'
+          git diff --exit-code -- src
+          git diff --check
+
+      - name: Commit only verified 4R verifier and result
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add scripts/verify-phase3-integration-4r.mjs reports/phase3-integrated-regression-4r-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo '4R already committed.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'phase3: integrated detailed-save, real-season and postseason gate (4R)'
+            git push origin HEAD:main
+          fi
