@@ -1,0 +1,104 @@
+name: THE CALL-UP Phase 3 4M Development and Promotion Audit
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-phase3-4m-development-promotion-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  development-promotion-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check 4L baseline and legacy promotion evaluator
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/phase3-full-postseason-rotation-gate-4l-v1.json","utf8"));if(r.pass!==true||r.gates.fullPostseasonCompleted!==true||r.snapshotHash!=="fnv1a32:f7b34713")process.exit(1);console.log("4L full postseason baseline PASS");'
+          node scripts/verify-season-promotion-ai-v22.js --verify --output=reports/.phase3-4m-promotion-v50.json
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/.phase3-4m-promotion-v50.json","utf8"));if(!r.pass||!r.verified||r.evaluatorRows.length!==4||r.movementRows.length!==4)process.exit(1);console.log("Four adjacent-level promotion/swap checks PASS");'
+      - name: Audit real Production v3 development and periodic roster reviews
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          cat <<'TCU_4M_SCRIPT' | base64 -d | gzip -d > scripts/verify-phase3-development-promotion-4m.mjs
+          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
+          ebZ/8H18UFHFAtAAA=
+          TCU_4M_SCRIPT
+          node --check scripts/verify-phase3-development-promotion-4m.mjs
+          node scripts/verify-phase3-development-promotion-4m.mjs
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/phase3-development-promotion-audit-4m-v1.json","utf8"));if(r.pass!==true||r.production.worldGames<10000||r.promotion.automaticReviewCount<1||r.promotion.syntheticAdjacentRosterSwapsVerified!==4||r.idempotency.completedSeasonRepeatedWithoutDoubleGrowth!==true)process.exit(1);console.log("4M real-season development/promotion gate PASS");'
+          rm -f reports/.phase3-4m-promotion-v50.json
+          git diff --exit-code -- src
+          git diff --check
+      - name: Commit verified audit script and report only
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add scripts/verify-phase3-development-promotion-4m.mjs reports/phase3-development-promotion-audit-4m-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo '4M audit already committed.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'phase3: audit real player development and promotion (4M)'
+            git push origin HEAD:main
+          fi
