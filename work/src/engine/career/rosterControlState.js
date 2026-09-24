@@ -384,6 +384,10 @@ function prepareAaaMlbEmergencyInjuryMove({ states, candidateId, incumbentId, da
   const next = clone(original);
   const candidate = next[candidateId], incumbent = next[incumbentId];
   if (!candidate || !incumbent) return { allowed:false, states:original, blockCode:'ROSTER_STATE_MISSING', candidateReasonCodes:[], incumbentReasonCodes:[] };
+  if (candidate?.assignmentStatus==='MLB_INJURED_LIST') return {
+    allowed:false, states:original, blockCode:'CANDIDATE_ON_INJURED_LIST',
+    candidateReasonCodes:['CANDIDATE_ON_INJURED_LIST'], incumbentReasonCodes:['CANDIDATE_ON_INJURED_LIST']
+  };
   try {
     // The 10-/15-day injured list does not free a 40-man spot. No 60-day-IL
     // exception or unknown option year is invented by this transaction.

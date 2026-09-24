@@ -2006,7 +2006,10 @@ function coverMlbInjuries(session,date) {
     if(healthAvailability(state?.health)!=='INJURED' ||
        session.rosterControlStates?.[id]?.assignmentStatus!=='MLB_ACTIVE') continue;
     const options=rosterCandidatesForPosition(aaa,target.position)
-      .filter(candidateId=>candidateId!==id && aaa.players?.[candidateId]);
+      .filter(candidateId=>candidateId!==id && aaa.players?.[candidateId]
+        && !emergencyMoveEntries(session).some(row=>row.status==='ACTIVE'
+          && (row.injuredPlayerId===candidateId || row.replacementId===candidateId))
+        && session.rosterControlStates?.[candidateId]?.assignmentStatus!=='MLB_INJURED_LIST');
     const incumbent=target.pitcher
       ? pitcherMovementInput(session,'MLB',target.position,id)
       : promotionCandidateInput(session,'MLB',target.position,id);

@@ -1,0 +1,86 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_INTEGRATION_GATE_4R_V1",
+  "pass": true,
+  "seed": "phase3-4r-integration-2026",
+  "snapshotHash": "fnv1a32:f7b34713",
+  "mode": "DEMO_DETAILED_CHECKPOINT_PLUS_PRODUCTION_V3_FULL_SEASON_AND_POSTSEASON",
+  "priorVerifiedReports": {
+    "4a": "THE_CALL_UP_PHASE3_DAILY_LINEUP_4A_V1",
+    "4b": "THE_CALL_UP_PHASE3_BATTING_ORDER_4B_V1",
+    "4c": "THE_CALL_UP_PHASE3_REST_POLICY_4C_V1",
+    "4d": "THE_CALL_UP_PHASE3_LATE_GAME_BENCH_4D_V2_FINAL",
+    "4e": "THE_CALL_UP_PHASE3_BULLPEN_LEVERAGE_4E_V1",
+    "4f": "THE_CALL_UP_PHASE3_BULLPEN_RECOVERY_4F_V1",
+    "4g": "THE_CALL_UP_PHASE3_STARTER_TTO_4G_V1",
+    "4h": "THE_CALL_UP_PHASE3_POSTSEASON_WORKLOAD_FIX_4H_V1",
+    "4l": "THE_CALL_UP_PHASE3_FULL_POSTSEASON_ROTATION_GATE_4L_V1",
+    "4m": "THE_CALL_UP_PHASE3_DEVELOPMENT_PROMOTION_AUDIT_4M_V1",
+    "4n": "THE_CALL_UP_PHASE3_INJURY_EMERGENCY_AUDIT_4N_V1",
+    "4o": "THE_CALL_UP_PHASE3_EMERGENCY_CALLOUT_PRIMITIVES_4O_V1",
+    "4p": "THE_CALL_UP_PHASE3_AUTOMATIC_INJURY_CALLOUT_4P_V1",
+    "4q": "THE_CALL_UP_PHASE3_SCOUTING_POSITION_AUDIT_4Q_V1"
+  },
+  "detailed": {
+    "gameId": "g_20260401_BLU_JET",
+    "worldGamesBefore": 0,
+    "worldGamesAfter": 20,
+    "fullSaveRestore": true,
+    "fastAndDetailedSharedStateDeterministic": true
+  },
+  "regularSeason": {
+    "worldGames": 10710,
+    "levelGames": {
+      "A": 1980,
+      "HIGH_A": 1980,
+      "AA": 2070,
+      "AAA": 2250,
+      "MLB": 2430
+    },
+    "automaticOrganizationReviews": 26,
+    "retainedEvaluations": 55,
+    "initialRosters": {
+      "players": 140,
+      "perLevel": {
+        "MLB": 28,
+        "AAA": 27,
+        "AA": 28,
+        "HIGH_A": 26,
+        "A": 31
+      },
+      "emergencyMoves": 0,
+      "activeInjuredList": 0,
+      "returnedFromInjuredList": 0
+    },
+    "finalRosters": {
+      "players": 140,
+      "perLevel": {
+        "MLB": 28,
+        "AAA": 27,
+        "AA": 28,
+        "HIGH_A": 26,
+        "A": 31
+      },
+      "emergencyMoves": 7,
+      "activeInjuredList": 0,
+      "returnedFromInjuredList": 7
+    }
+  },
+  "postseason": {
+    "rounds": 4,
+    "championTeamId": "136",
+    "regularMlbStatsPreserved": true,
+    "historyArchived": true,
+    "fullSaveRestored": true
+  },
+  "gates": {
+    "detailedCheckpointReplay": true,
+    "realWorldFastSeasonComplete": true,
+    "productionRosterUniqueAndMirrored": true,
+    "injuryListStateValid": true,
+    "regularSeasonRestoredExactly": true,
+    "seasonEndIdempotent": true,
+    "postseasonCompleteAndArchived": true,
+    "postseasonRestoredExactly": true,
+    "olderTargetedGatesPassed": true
+  }
+}
