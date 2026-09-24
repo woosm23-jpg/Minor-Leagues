@@ -1,0 +1,104 @@
+name: THE CALL-UP Phase 3 4K Full Postseason Starter Trace
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tcu-phase3-4k-postseason-starter-trace.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  postseason-starter-trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Trace every real postseason pregame starter without changing gameplay
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node -e 'const fs=require("node:fs");const a=JSON.parse(fs.readFileSync("reports/phase3-postseason-short-rotation-4i-v1.json","utf8"));const b=JSON.parse(fs.readFileSync("reports/phase3-postseason-rotation-audit-4j-v1.json","utf8"));if(a.pass!==true||b.pass!==true||a.snapshotHash!=="fnv1a32:f7b34713"||b.snapshotHash!==a.snapshotHash)process.exit(1);console.log("4I/4J verified prerequisites PASS");'
+          mkdir -p scripts reports
+          cat <<'TCU_4K_TRACE' | base64 -d | gzip -d > scripts/verify-phase3-postseason-rotation-trace-4k.mjs
+          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
+          TCU_4K_TRACE
+          node --check scripts/verify-phase3-postseason-rotation-trace-4k.mjs
+          node --test tests/postseasonRotation4I.test.js tests/postseasonRoster4H.test.js
+          node scripts/verify-phase3-postseason-rotation-trace-4k.mjs
+          git diff --exit-code -- src/api/seasonApi.js src/engine/career/postseasonRotationPolicy.js src/services/demoSeasonFactory.js
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync("reports/phase3-postseason-rotation-trace-4k-v1.json","utf8"));if(r.pass!==true||r.wildCard.starterAssignments!==20||r.divisionSeries.starterAssignments!==36||r.wildCard.decisions.length!==20||r.divisionSeries.decisions.length!==36||r.gates.allPregameSelectionsReplayed!==56||r.gates.nonEmergencyUnrestedStarts!==0||r.gates.diagnosticHookDoesNotChangeOutcomesOrPitcherWorkload!==true)process.exit(1);console.log("4K full pregame starter trace PASS");'
+          git diff --check
+      - name: Commit only the verified audit script and report
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add scripts/verify-phase3-postseason-rotation-trace-4k.mjs reports/phase3-postseason-rotation-trace-4k-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo '4K audit already verified; nothing to commit.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'phase3: trace all postseason starter decisions without gameplay changes (4K)'
+            git push origin HEAD:main
+          fi
