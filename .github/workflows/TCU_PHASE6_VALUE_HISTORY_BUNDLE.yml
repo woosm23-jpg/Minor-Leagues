@@ -1,0 +1,200 @@
+name: THE CALL-UP Phase 6 Transparent Value and History Bundle
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE6_VALUE_HISTORY_BUNDLE.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  phase6-value-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 105
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install read-only value and archival integrity bundle
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+          test -f data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          test -f scripts/verify-v56-postseason-awards-history.mjs
+          test -f scripts/verify-v58-retirement-hof.mjs
+          test -f scripts/verify-phase3-integration-4r.mjs
+          mkdir -p "$(dirname 'src/engine/season/seasonValueReadModel.js')"
+          cat <<'TCU_PHASE6_ASSET_1' | base64 -d | gzip -d > 'src/engine/season/seasonValueReadModel.js'
+          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
+          TCU_PHASE6_ASSET_1
+          mkdir -p "$(dirname 'src/engine/career/seasonHistoryAudit.js')"
+          cat <<'TCU_PHASE6_ASSET_2' | base64 -d | gzip -d > 'src/engine/career/seasonHistoryAudit.js'
+          H4sIAAAAAAAC/61WbW8TRxD+zq+YSAjbUmT62TSNInwES2CnvkAVIeRsfBv72svdaW8vqRMsheKiyKEiVbGSpgkNUqBQpappQjEq/cLP8a3/A7u3
+          92I7TuiHSn6525mdneeZ2Zm5fBluI0PXEMWASLmqLyMDdHMZER2Z1IEVnVYtlwIyKCa6WQEHLWMNqrpDLVIDiwBaQUQTEpvoq9hJX1h0zTLVLROQ
+          q+lUxcixzOtSXzEpqSWx+E3B2gUAfRGSY/473LsHY3l3aQGTtO7kTIormEjVtOPbmMOIpHw1ueof7PQtuA4m0iwArRJrBUy8ArM1GyuEWCSZYJt7
+          7MUjYNt/sO+OoNve4n9se4svtL3HjQ9v2cYOe3Cf//Pl3Vfs6RZ0O23v2T7bP4Feq8F2n/Rar7zNDW/zMJ1IXeEH1fm3bJkOBQOjiosdmIDCwte4
+          TNOcSP6e7Pc1HSpNTsJa3TcgN/vinCZ2C5dVTJP9Uk3jgqSBFrAxziNimgLnxBcBVJ/DcJVg6hLzSiSgHL21GGxK2waqYZLTYGxiAhIOFRFN+AwO
+          KaT6CCwisxIwOC8ZAtY44E+Qy4K30fD2/83AxTXfvfp8Sp4tPf8G17jn86Ewc3Ft6Jz6fOxqSEK6ipwk35n6lBOHP3rHb8TRXDk6OLLCWfOt+GES
+          P4s8WZPSrzsyEDltPIjbXeAkBYETEdPPj1yYZeIMgS6wVs/cvD0zH9pMLy3boVPDelfnSnOFW/npWLlcm7NcszJAn205urhJp/JiAIykVAAITDm6
+          sYyJargVfoWEx3fuhg5LpiO7PtVhSILFs2nfPPT+arDmkffrUfd1G3qPj9hv6+z7nb5IxAjjUAd2owhBjMsP0vD5odYp0lR1lNXoRsh99SifAjYq
+          lqFNG9YynuRBNCu0CpcuwUBslzCvcZplWJXaZKwOE+KOZJVrSrGoZEvXcsqNbC4/XVJuK/nZ0mxhduqGWioqX97KcXEiJngkeQmes967RlBPwPuz
+          0/u5xfY7IEsSL0Je8wl0j196P+11O+ucYa/zyHv+HtiDfdZ43WsdgLhwbPsha74ZqEASsfgKvhJfFYo3siVVKeYUtcSzMTE+iHXFIoamYpHgN4P0
+          FFydoyPoUv1KcZ5WmmK0JOqGqCwD6uUqWrJ5pGalwukCPUDTL084A5wU78URe7EBHEG3vQ5st82a73qP1v1q/fCHXmuHpx6wVnOYjrggi27A703c
+          GkKsY3cS+UJe4cwkCsXp0tXrUzdncoV8KV8oFQvqrFIUEvkUCRN307pZNlyN1wVhK0LlVHVbpYi6zqeQRT1FggHeVLyD59B9c+T93RAdhj3d8X7/
+          x9vaYdsbo2AJ3884W+bqsM8icskxfwu/LlR20SJ/4sTwmi+bbXJIPmXbvM8isyyL3Wcp+HyC/54PTpSC5mGv2YnSmSf2ITvYA9bu8AD2xWt/Pege
+          fnbLp82XASls7733bC+4JeckfUiHBEdwxTUQkZOG382GMIm1EZqCtCHNT8TwoNV9u/fh7RDcaEpY5zPFff4B77jBBwoBxTs+Yc9Oeq0T1noPo6YH
+          ASOs7b4zwVgjyzav5avYv1OjhLKe/ee886s0yO4pE25knskRIuyGiwTjVZxcg3gIy8DwWDYONnKcDFDi4rCjOVNi/MNaJnwP3B2P27QiO20mbtoC
+          7jgEYZoytZkoMiq2eVpSHB5iWlnXNvQyX5oSu2fCnhIoyDbad1NmEKF6WbeR0MryeZSXKFd3qsLDeEdU/rN4ERMihP97rwAx+tUv4G9ti1BYO2tO
+          FlPLRwpw04qfCwAA
+          TCU_PHASE6_ASSET_2
+          mkdir -p "$(dirname 'tests/phase6ValueHistory.test.js')"
+          cat <<'TCU_PHASE6_ASSET_3' | base64 -d | gzip -d > 'tests/phase6ValueHistory.test.js'
+          H4sIAAAAAAAC/7VXT2/jRBS/76eYA5Idaeq4/5atlyC527SN6G5LUrZaVVWZ2pNkdh2PmRmnlCjSSnBAwAXBSgiBQIIDSBxWIGCROPFxtuU78GZs
+          J06alO4KDpHjmXnv/d6/3xuzXsKFQkRKCo+24D1kxTykXrZSlUqwQFm3b7DsoKJy4ph+H+8OELyyHlF0mylFRYsSyeP7JEopHm3tMRV0p/YiSjop
+          XSdKsbhTj/tM8LhHY4WGuTHHqUoRVGncYTGtSiObP4yKJiXhXQAUOQ9lGQ9JQ6YyU9tMKi7O6rESZ3P0BkRQKnK9+Xlfa5jSmh3wEzathySsOtqc
+          EhI0Dgu3p+XSQqxpDmWSNwIeQ7RPiKrZvDYYVmqv2wO053voputi5K97aHUJ/mx7aHEVniFPTyIqPbS0ihHkLTEvK3CgCSdu4RsIra9rYVhZ3/PQ
+          LYxam9ljXavA6E7LnHcch6Nh5XYOIEtOzQb7uycPaaAcjV3HkVFp+0KQM7NiDyKIo+p6S6tDbB9jBgKHb3dfGbDh2xi8APDb3uKyawAtroCFowoY
+          uaFryLb6Oo1FkTAIUSqphKAFXIQ01FHQtVEVaRzDE0lFlMQo4ZLp0yRCAFbRd6GW4zCHjOi4kjCKaZ8KtHu/aWHtygDCkfsHqZe1TMQGQMV6h/Ow
+          NregwVuQ87RfFZwJ72hFnlGHC2Ce1WpZsN+nkWf5vm8NSxYSzsW1LAy2vbVbGMK2giFXSxgStTZ8CbNZVzv0nZREtvbP0XFMJbaadX/jgTXnEG+3
+          WcBIdEAEbpNI0jnn2oxGIWSnEQdRClm78nBCxCM/fJhKNesgfzQ6pbRlFsvXdbjKC6VI8v6/B3IAdZ2lC057a2sQLAWVAcrgZfjSwQwpTerGLVCL
+          NegSrrD7H1TQxvZ866M4jRqhmUKowu7USglTl3W6sAQ0W5vRz/kSzV8NlorTI4ltH7IQC356pPsa/up4wiuGpl5zdXEurw5NR5fBvbj3Y3iTCRhW
+          nJwEtD+vGa9LC5er7FqNBXTqYqBScAB+BYW6uOBP45iL180JYE0XA2e6s3oP8BXN1LjXemtzs3GnUb+3f9zy7+7t1Ge01ryhV8R8z8fA665bllRd
+          iLi0NYFdkzeWtQOvzgaMqxdPPvz7/cdVMDEcU3GSTWjDqIKdpIaOBe0R6DkU0jaNJevTBZkmerQtkFMYm4Z2Qw6UHXOFWNzX07vgDXTgX2Jd7Uft
+          evNksTxPkmyeDHiqZDOfDt4KzD/wclR/Mwj88rWjoIUJTasrWtPqquGIpZVJWtCYy/x9Ql5S/+Kim5PQPAP/M1NnWaQNuG0k+soBA/JaFAweX2Lg
+          mU13zXDoYLizYvBvvVQqVyKCLtRjdtfTdwNBdVVJ1CYncHsFMCHSNRrCfSFMk8gsjW4O6JTFMRXSFHAaUyJiOC+KO0YqpwvXqKrZSUTOqGiEWFHS
+          a4Q1K+iSXmKZS9rUXrlkcrC1QXbfewD2vCV36SY24oBn34h4uTqcAfcGPaq6POQR75x5gw6Pwq2I9ynMhvpmvdmsbxxvNuo7G417W8f1+zpS+7v7
+          /k7ruFl/860GbFtFjEGVvwPq+olnVEP4rAoOzh7wNO4US+AGliyC+1IrSjsdKrxDTfb57gnsTjLz0XCIT7mIwhbVPXx3rPxUWpUhhquc8AaCdtKI
+          5CXhaeZdcSH3oErJ8dryxFIT/oGsEvCVMF71kwTiRuIA3FkeRU52WdIyKfOs5m5rv948vrMNBdPYvTeK4yFAvVSzcz4S7DxXFah4KbHGMNX78HWU
+          BioVNLwT8ZiOBG7rNsksOnnYHX/HmQipk6Sya5fCGlwK6xzinwcXjGpG//7T819+rZaQtskjOh+q3nV0gpyZ8a25LwZCq9Monj57/vTxNIqtratx
+          bG3NiNqo2GuH44o9enFUW1uA6/kvP5x/9tXzZ4/Pv/np/Nkn0wAP5NUAD2QBcLLcnYIEIg6QrBcHdyB10L58evHRH39/Mj2Pg1QIPU6z5CD6LmQK
+          Bi0BoiPhAo+jM/QGh/8xyj6iEhLTCHgNGCNVqJdCTxg6y8Ql6dNLpNZmQqra+NM1AHWKbtAezwDbwFdA11bSJZLeXDB2FlJmYeBIoTbgrGdpGltw
+          VxbcxYmPHBbWjHYn094ISz1E24C7ZBZCBpOFvUdzqyy8PGEyZbpi9wzNOgZMPZ87cyZgcefgqjYwfL+9f3fHsyz8TkrFWYtGMDC48KPI03E5PJpc
+          N4txGkWGO8of8rZWiQ0kPBhia2/Hf1CHu04+AlognrXzvr8/1dGANugaeWeESBfor89//vGv3y+++/P8ux8QNNHFH1+gi98+v/j2SfVa4hcff63v
+          W+jiyQfnH39Rnf2pcmXIcZYXbOn60pVD4NYnoAnCvMB68NFm7nkkAnaGwQuVJpguMxjDpjOsctSpLvZymvOV3OJ0x2XWK7OB56Jz84+vLo+8sf4B
+          W+YQ2PcSAAA=
+          TCU_PHASE6_ASSET_3
+          mkdir -p "$(dirname 'scripts/verify-phase6-value-history.mjs')"
+          cat <<'TCU_PHASE6_ASSET_4' | base64 -d | gzip -d > 'scripts/verify-phase6-value-history.mjs'
+          H4sIAAAAAAAC/5VWW2/iOBR+76/Iw0oJ2iRAO9sdUbESbWGZFQsIetFKKzFufALuBDtrO6mYqv99j+PcOqKt5okQf+fq830nbJ8KqR2iFOBPLMXe
+          cbmgMLBvukpLFmn34oRZ4LMEQicsgfWBR/6TZBqqfy9t81i1bBQQJfgoZRUkDLtKRl2Ssm59Fj62TUhGmV4XZ1OmtJCHMdfy8IMD4FvGoRsRCSBL
+          VyV8ZBy89glKsz3RMGVag7TO70iSgV+dLJmOdq+Ojge0kcqfArfCtvyNhSc2ZCS40k4iCB16nOyhM/zjr/ViHqZEKvDaPfS+SjDpqe4vzwb58tV3
+          Mx1/djudyk0qlLahhsaj5+a/nQfNy4A8EUlVsLOFB1ssBLMQ3K09SNBMwh64rj18DpqXwU7Ex8zysxKe7oiCs4BxDVuJOIrGWwlKMQz/SQZ5v7a0
+          cxPCfxlJvCZJrFwpX8sM3sM0j+g/S4hca6LVRIrvwH/CuHks7NeAbcesP/Jg+xhuRUL/TEQO1xCDlECP2jXde7u0Fqb1mCFiDjnIiZAR0MvDim8/
+          MrcTPgO6BRkqkuO8mcs+XlJ+9nZKeFa11hb9JCSWi4On/H7v936vMRDfCk9Nf6Id2ad44zdA9l/oK+Di4REiHeaGCsqYmWlSndCUefAuhUiA8Gai
+          GWeakWTYkD9CTmjs+F7YvDwUDaADO3nn9eSZeVM7pIvrK02kvkajgXvaOz0Pep+CXt99qWM8QIwNaoXAXDEm+w5lhDKJ0CLaBdlWVefmvpYJOWDn
+          i/rGpViEIo5ZhIh7Iv2YJKrVbAqQjgsvPxHftym3WFvcMW3VUL4qPaA4Z5HOEHKVCA5eaX8sjcrXm9X4H5XbSsvo1fBZoVTuycC9mY43V6PZbHO7
+          3Cyno/X4fHM3mt2ON9Mv65vF6p/N5e38ejbe3PVd38zlwMylf+I4FBuSA7VyXKjoXCxyac/Lw1KRfzzlYtE0/yohbF975WJCHnBpGZmaMEgo49uF
+          XBL5bUQfM6UNnyy4JMKI02UjGKVW0NofkdHOZDIq1AHBVyUN1I6lxZapwKZzq5qzc6EtwWtPhre3HFnEtwXtq5VhAS1WryDFC6jtUiko3jOGvDu7
+          r+lqhn5QUNZvA5pSqjwH77G4yEtkmKelUSuYk586VhK7jRI5KgJOJBPqwokyVEdu1oRTqIhjSH/hYAPNIDlWDLB/4MwXN07FFud+tHJfLk5efTt4
+          brUFS8IXxvVKe8g4Tcrt5BeL1HyX4C6OD5419HmWJP5p51f333qBoeiEidh67xog9n9ve6Q+BAkAAA==
+          TCU_PHASE6_ASSET_4
+          python3 - <<'TCU_PHASE6_PATCH'
+          from pathlib import Path
+
+          def once(name, needle, replacement):
+              path=Path(name)
+              s=path.read_text(encoding='utf8')
+              count=s.count(needle)
+              if count != 1:
+                  raise RuntimeError(f'Phase 6 patch guard: {name} anchor count {count}, expected exactly 1: {needle[:80]}')
+              path.write_text(s.replace(needle,replacement,1),encoding='utf8')
+
+          p='src/api/seasonApi.js'
+          needle='import { createRetirementHallState, normalizeRetirementHallState, recordMlbSeason, archiveRetiredPlayers, announceUserFinalSeason, retireUserPlayer, processHallOfFameYear, getRetirementHallPublicView } from "../engine/career/retirementHallOfFame.js";'
+          once(p,needle,needle+'\nimport { estimateHitterSeasonValue } from "../engine/season/seasonValueReadModel.js";')
+          needle='    seasonLine,\n    seasonLinesByLevel,'
+          once(p,needle,'    seasonLine,\n    valueEstimate: estimateHitterSeasonValue({ line: seasonLine, leagueLines: stateForLevel(session, detailLevel).playerBatting, position: identity.primaryPosition ?? "DH", level: detailLevel }),\n    seasonLinesByLevel,')
+
+          p='src/ui/seasonRender.js'
+          needle='function playerStatsView(player, leaders) {'
+          # use standard triple-quoted template to keep JS interpolation literal
+          helper="""function estimatedValueCard(value) {
+            if (!value) return "";
+            const note = "공식 WAR 아님 · 수비 기여·구장 보정 미포함 · 정규시즌 기록 기반";
+            if (value.status !== "READY") return `<div class="player-value-wrap"><p class="player-section-label">공격·주루 가치 추정</p><p class="condition-note">표본 축적 중 · ${esc(note)}</p></div>`;
+            return `<div class="player-value-wrap"><p class="player-section-label">공격·주루 가치 추정</p><div class="player-rank-grid"><div><span>참고 승수</span><b>${Number(value.partialWins).toFixed(2)}</b><small>${esc(value.level)} · ${value.PA} PA</small></div><div><span>타격 기여</span><b>${Number(value.battingRuns).toFixed(1)} R</b><small>리그 공격 환경 대비</small></div><div><span>주루 기여</span><b>${Number(value.runningRuns).toFixed(1)} R</b><small>도루·도루실패 기반</small></div><div><span>포지션/대체수준</span><b>${Number(value.positionalRuns+value.replacementRuns).toFixed(1)} R</b><small>수비 실적 미포함</small></div></div><p class="condition-note">${esc(note)}. 실제 기용·승격·수상·트레이드 평가에는 사용하지 않습니다.</p></div>`;
+          }
+          """
+          once(p,needle,helper+'\n'+needle)
+          needle='    <p class="condition-note">현재 레벨 리그 순위와 레벨별 정규시즌 기록을 분리해 표시합니다. AVG/OBP/SLG/OPS 순위는 규정 타석을 충족한 선수만 집계합니다.</p>'
+          once(p,needle,'    ${estimatedValueCard(player.valueEstimate)}\n'+needle)
+
+          p='scripts/verify-v56-postseason-awards-history.mjs'
+          needle='import { POSTSEASON_RULESET_2026, POSTSEASON_ROUND_ORDER } from "../src/engine/career/postseasonHistory.js";'
+          once(p,needle,needle+'\nimport { auditSeasonHistoryEntry } from "../src/engine/career/seasonHistoryAudit.js";')
+          needle='const archive=afterPayload.historyState.seasons[0];'
+          once(p,needle,needle+'\nconst audited=auditSeasonHistoryEntry(archive);\nassert.equal(audited.pass,true);\nassert.equal(audited.leaguesAudited,2);\nassert.equal(audited.regularAndPostseasonSeparate,true);')
+          print('Phase 6 read-only value and authoritative archive checks patched')
+          TCU_PHASE6_PATCH
+          node --check src/engine/season/seasonValueReadModel.js
+          node --check src/engine/career/seasonHistoryAudit.js
+          node --check src/api/seasonApi.js
+          node --check src/ui/seasonRender.js
+          node --check scripts/verify-v56-postseason-awards-history.mjs
+          node --check tests/phase6ValueHistory.test.js
+          node --check scripts/verify-phase6-value-history.mjs
+          git diff --check
+      - name: Run full tests, 2026 awards, retirement and production v3 world gate
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
+          node scripts/verify-v56-postseason-awards-history.mjs
+          node scripts/verify-v58-retirement-hof.mjs
+          node scripts/verify-phase3-integration-4r.mjs
+          node scripts/verify-phase6-value-history.mjs
+          node --input-type=module <<'TCU_PHASE6_FINAL_GATE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const read=name=>JSON.parse(readFileSync(`reports/${name}`,'utf8'));
+          const v=read('phase6-value-history-bundle.json');
+          assert.equal(v.pass,true);
+          assert.equal(v.productionV3WorldGames2026,10710);
+          assert.equal(v.noOfficialWarClaim,true);
+          assert.equal(v.regularAndPostseasonSeparated,true);
+          assert.equal(v.saveUnchangedByReadModel,true);
+          console.log('Phase 6 value + awards + retirement + current v3 world PASS');
+          TCU_PHASE6_FINAL_GATE
+          git diff --check
+      - name: Commit only after all Phase 6 gates pass
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add src/engine/season/seasonValueReadModel.js src/engine/career/seasonHistoryAudit.js src/api/seasonApi.js src/ui/seasonRender.js tests/phase6ValueHistory.test.js scripts/verify-phase6-value-history.mjs scripts/verify-v56-postseason-awards-history.mjs reports/phase6-value-history-bundle.json reports/v56-postseason-awards-history-gate.json reports/v58-retirement-hof-gate.json reports/phase3-integrated-regression-4r-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No verified Phase 6 files to commit; stopping.' >&2
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase6: transparent read-only value estimates and verified career history'
+          git push origin HEAD:main
