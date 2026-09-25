@@ -22,6 +22,7 @@ import { getUtilityPathwayView } from "../engine/season/utilityUsage.js";
 import { getPositionPlayingTimeView } from "../engine/season/playingTimeReadModel.js";
 import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
 import { getTrainingCoachFeedback } from "../engine/season/coachingFeedback.js";
+import { setSecondaryPositionTraining as chooseSecondaryPositionTraining, advanceSecondaryPositionTraining } from "../engine/season/secondaryPositionTraining.js";
 import { createPlayerRestRequest, settlePlayerRestRequest, getPlayerRestRequestPublicView } from "../engine/season/playerRestRequest.js";
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
 import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
@@ -421,7 +422,12 @@ function recoverAllPlayersToDate(session, date) {
   if (days > 0) {
     advanceCurrentMlbContractStates(session, date);
     advanceCurrentOrganizationRosterControlStates(session, date);
-    session.playerStates = Object.fromEntries(Object.entries(session.playerStates).map(([id, state]) => [id, recoverPositionPlayer(state, days)]));
+    session.playerStates = Object.fromEntries(Object.entries(session.playerStates).map(([id, state]) => {
+      const trained = id === session.fixture.userPlayerId
+        ? advanceSecondaryPositionTraining(state, findPlayer(session, id), { days, date })
+        : state;
+      return [id, recoverPositionPlayer(trained, days)];
+    }));
     session.pitcherStates = Object.fromEntries(Object.entries(session.pitcherStates).map(([id, state]) => {
       const player = findPlayer(session, id);
       return [id, recoverPitcherSeasonState(state, player, days)];
@@ -2578,6 +2584,13 @@ const seasonApi = Object.freeze({
     const session = assertSession(seasonId);
     const playerId = session.fixture.userPlayerId;
     session.playerStates = { ...session.playerStates, [playerId]: setPositionPlayerTrainingFocus(session.playerStates[playerId], focus) };
+    return snapshot(session);
+  },
+  setSecondaryPositionTraining(seasonId, position) {
+    const session = assertSession(seasonId);
+    const playerId = session.fixture.userPlayerId;
+    session.playerStates = { ...session.playerStates,
+      [playerId]: chooseSecondaryPositionTraining(session.playerStates[playerId], findPlayer(session, playerId), position) };
     return snapshot(session);
   },
   requestNextGameRest(seasonId) {

@@ -383,6 +383,11 @@ function startSeasonApp(root) {
         renderHome();
         void queueAutosave();
       },
+      async onSecondaryPositionTraining(position) {
+        snapshot = seasonApi.setSecondaryPositionTraining(snapshot.seasonId, position);
+        renderHome();
+        void queueAutosave();
+      },
       async onImportFile(file) {
         try {
           saveMessage = ".tcu 검증 중...";

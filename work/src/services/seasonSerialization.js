@@ -9,6 +9,7 @@ import { validateAmateurAcquisitionState } from "../engine/career/amateurAcquisi
 import { validateRetirementHallState } from "../engine/career/retirementHallOfFame.js";
 import { CAREER_EVENT_TYPES } from "../engine/career/careerEvents.js";
 import { validatePlayerRestRequest } from "../engine/season/playerRestRequest.js";
+import { validateSecondaryPositionTraining } from "../engine/season/secondaryPositionTraining.js";
 
 const SAVE_FORMAT = "THE_CALL_UP_SEASON_SAVE";
 const SAVE_SCHEMA_VERSION = 2;
@@ -136,6 +137,14 @@ function validateCommon(payload) {
   assertObject(payload.fixture, "payload.fixture");
   assertObject(payload.playerStates, "payload.playerStates");
   assertObject(payload.pitcherStates, "payload.pitcherStates");
+  for (const [playerId, playerState] of Object.entries(payload.playerStates)) {
+    validateSecondaryPositionTraining(playerState.positionTraining ?? null, `payload.playerStates.${playerId}.positionTraining`);
+    if (playerState.positionTraining?.targetPosition &&
+        (playerState.positionTraining.targetPosition === playerState.primaryPosition ||
+         !Object.hasOwn(playerState.positionFamiliarity ?? {}, playerState.positionTraining.targetPosition))) {
+      throw new RangeError(`부포지션 훈련 대상이 선수 친숙도에 없습니다: ${playerId}`);
+    }
+  }
   if (payload.scoutingStates !== undefined && payload.scoutingStates !== null) assertObject(payload.scoutingStates, "payload.scoutingStates");
   if (payload.roleStates !== undefined && payload.roleStates !== null) assertObject(payload.roleStates, "payload.roleStates");
   if (payload.organizationState !== undefined && payload.organizationState !== null) assertObject(payload.organizationState, "payload.organizationState");
@@ -248,6 +257,12 @@ function validateFull(payload) {
   for (const [playerId, playerState] of Object.entries(payload.playerStates ?? {})) {
     validateHealthState(playerState.health, `payload.playerStates.${playerId}.health`);
     validatePlayerRestRequest(playerState.restRequest ?? null, `payload.playerStates.${playerId}.restRequest`);
+    validateSecondaryPositionTraining(playerState.positionTraining ?? null, `payload.playerStates.${playerId}.positionTraining`);
+    if (playerState.positionTraining?.targetPosition &&
+        (playerState.positionTraining.targetPosition === playerState.primaryPosition ||
+         !Object.hasOwn(playerState.positionFamiliarity ?? {}, playerState.positionTraining.targetPosition))) {
+      throw new RangeError(`부포지션 훈련 대상이 선수 친숙도에 없습니다: ${playerId}`);
+    }
     validateAgingState(playerState.aging, `payload.playerStates.${playerId}.aging`, { allowMigration: true });
     validateDevelopmentState(playerState.development, `payload.playerStates.${playerId}.development`, { positionPlayer: true });
     if (playerState.positionFamiliarity !== undefined) {

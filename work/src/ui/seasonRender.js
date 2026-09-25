@@ -130,6 +130,23 @@ function coachTrainingFeedback(coaching) {
   return `<p class="condition-note"><strong>코치 제안 · ${esc(trainingFocusLabel(coaching.recommendedFocus))}</strong> ${esc(reasons[coaching.reasonCode] ?? reasons.GENERAL_DEVELOPMENT)} ${esc(response)} 코치 제안에 따른 추가 능력치·승격 보너스는 없습니다.</p>`;
 }
 
+function secondaryPositionTrainingControls(status) {
+  if (!status) return "";
+  const primary = status.primaryPosition ?? "DH";
+  const positions = Object.keys(status.positionFamiliarity ?? {})
+    .filter((position) => ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"].includes(position) && position !== primary)
+    .sort();
+  const training = status.positionTraining ?? { targetPosition: null, trainedDays: 0 };
+  if (!positions.length) return `<p class="condition-note">현재 익힐 수 있는 부포지션이 없습니다.</p>`;
+  const current = training.targetPosition ?? null;
+  const options = [["NONE", "훈련 중지"], ...positions.map((position) => [position, position])];
+  return `<div class="training-focus-wrap">
+    <div class="training-focus-head"><strong>부포지션 훈련</strong><span>${current ? `${esc(current)} · ${Number(training.trainedDays ?? 0)}일` : "선택 전"}</span></div>
+    <div class="training-focus-grid">${options.map(([value, label]) => `<button type="button" data-position-training="${esc(value)}" class="${(current ?? "NONE") === value ? "active" : ""}">${esc(label)}</button>`).join("")}</div>
+    <p class="condition-note">건강한 날이 지나면 선택한 포지션 친숙도가 조금씩 높아집니다. 경기 출전 기록·타격 성장·주전 보너스는 생기지 않으며 실제 기용은 감독이 결정합니다.</p>
+  </div>`;
+}
+
 function conditionCard(snapshot) {
   const status = snapshot.userPlayer?.status;
   if (!status) return "";
@@ -156,6 +173,7 @@ function conditionCard(snapshot) {
     </div>
     ${trainingFocusControls(dev.focus ?? "BALANCED")}
     ${coachTrainingFeedback(snapshot.userPlayer?.coaching)}
+    ${secondaryPositionTrainingControls(status)}
     <p class="condition-note">Form과 피로는 일시적인 경기 컨텍스트이며, 숨은 성장률·실제 ceiling은 표시하지 않습니다.</p>
   </section>`;
 }
@@ -519,6 +537,7 @@ function playerDevelopmentView(player) {
     <div class="development-bars full-development-bars">${developmentRows(status)}</div>
     ${trainingFocusControls(status.development?.focus ?? "BALANCED")}
     ${coachTrainingFeedback(player.coaching)}
+    ${secondaryPositionTrainingControls(status)}
     <p class="condition-note">진행 바는 누적 성장 progress입니다. 훈련 집중은 성장 총량을 늘리지 않고 분배만 바꿉니다. 숨은 Development Rate와 실제 ceiling은 표시하지 않습니다.</p>
   </section>`;
 }
@@ -1048,6 +1067,7 @@ function renderSeason(root, snapshot, handlers, tab = "HOME", uiState = {}) {
   root.querySelectorAll("[data-season-tab]").forEach((button) => button.addEventListener("click", () => handlers.onTab(button.dataset.seasonTab)));
   root.querySelectorAll("[data-season-action]").forEach((button) => button.addEventListener("click", () => handlers.onAction(button.dataset.seasonAction)));
   root.querySelectorAll("[data-training-focus]").forEach((button) => button.addEventListener("click", () => handlers.onTrainingFocus?.(button.dataset.trainingFocus)));
+  root.querySelectorAll("[data-position-training]").forEach((button) => button.addEventListener("click", () => handlers.onSecondaryPositionTraining?.(button.dataset.positionTraining === "NONE" ? null : button.dataset.positionTraining)));
   root.querySelectorAll("[data-backup-restore]").forEach((button) => button.addEventListener("click", () => handlers.onRestoreBackup?.(button.dataset.backupRestore)));
   root.querySelectorAll("[data-player-section]").forEach((button) => button.addEventListener("click", () => handlers.onPlayerSection?.(button.dataset.playerSection)));
   root.querySelectorAll("[data-league-section]").forEach((button) => button.addEventListener("click", () => handlers.onLeagueSection?.(button.dataset.leagueSection)));

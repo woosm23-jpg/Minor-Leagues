@@ -75,6 +75,7 @@ function createPositionPlayerSeasonState(player, positionProfile = null, develop
     consecutiveStarts: 0,
     positionFamiliarity: initialPositionFamiliarity(player, profile),
     positionReps: initialPositionReps(player, profile),
+    positionTraining: null,
     development: createPositionDevelopmentState(player, developmentOptions)
   });
 }
@@ -95,6 +96,7 @@ function normalizePositionPlayerSeasonState(state, player, positionProfile = nul
     primaryPosition: state.primaryPosition ?? base.primaryPosition,
     positionFamiliarity: familiarity,
     positionReps: reps,
+    positionTraining: state.positionTraining ?? null,
     health: normalizeHealthState(state.health ?? null, player, { kind: "POSITION" }),
     aging,
     development
@@ -397,6 +399,9 @@ function getPositionPlayerSeasonView(state) {
     consecutiveStarts: Number(state.consecutiveStarts ?? 0),
     positionFamiliarity: Object.fromEntries(Object.entries(state.positionFamiliarity ?? {}).map(([key, value]) => [key, Number(value.toFixed(3))])),
     positionReps: { ...(state.positionReps ?? {}) },
+    primaryPosition: state.primaryPosition ?? "DH",
+    positionTraining: state.positionTraining ? { ...state.positionTraining }
+      : { targetPosition: null, trainedDays: 0, lastTrainingDate: null },
     development: {
       focus: state.development.focus,
       progress: Object.fromEntries(Object.entries(state.development.progress).map(([key, value]) => [key, Number(value.toFixed(3))])),
