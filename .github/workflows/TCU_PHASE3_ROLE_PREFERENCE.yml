@@ -1,0 +1,359 @@
+name: THE CALL-UP Phase 3 Player Role Preference
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE3_ROLE_PREFERENCE.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  role-preference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Implement limited player role preference and safe save validation
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          if [[ -e src/engine/season/rolePreference.js || -e tests/rolePreference.test.js ]]; then
+            echo 'Existing role-preference files detected; inspect main before modifying.' >&2
+            exit 1
+          fi
+          cat > src/engine/season/rolePreference.js <<'JS_ROLE_MODULE'
+          const PREFERENCES = new Set(["OPEN", "EVERYDAY", "VERSATILE"]);
+          const VERSATILE_ROLES = new Set(["UTILITY", "ROTATION"]);
+          const EVERYDAY_ROLES = new Set(["STARTER", "AAA_STARTER"]);
+          const MAX_LINEUP_NUDGE = 0.35;
+
+          function validatePlayerRolePreference(value, label = "rolePreference") {
+            if (value == null) return true; // Saves from earlier builds have no preference.
+            if (!value || typeof value !== "object" || Array.isArray(value) ||
+                !PREFERENCES.has(value.mode) ||
+                typeof value.requestedDate !== "string" ||
+                !/^\d{4}-\d{2}-\d{2}$/.test(value.requestedDate)) {
+              throw new RangeError(`${label} 역할 선호 데이터가 잘못되었습니다.`);
+            }
+            return true;
+          }
+
+          function setPlayerRolePreference(state, mode, date) {
+            if (!state?.playerId || !PREFERENCES.has(mode) ||
+                typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+              throw new RangeError("역할 선호 선택이 잘못되었습니다.");
+            }
+            if ((state.rolePreference?.mode ?? "OPEN") === mode) return state;
+            return Object.freeze({ ...state,
+              rolePreference: Object.freeze({ mode, requestedDate: date }) });
+          }
+
+          // Only a marginal lineup consideration, not a rating, injury, role or promotion
+          // modifier. A player must already have the relevant manager-assigned role.
+          function rolePreferenceLineupBonus({ preference = null, role = null,
+            baselineStarter = false, position = null, primaryPosition = null,
+            coverageEligible = false } = {}) {
+            const mode = preference?.mode ?? "OPEN";
+            if (mode === "EVERYDAY" && baselineStarter && EVERYDAY_ROLES.has(role)) {
+              return MAX_LINEUP_NUDGE;
+            }
+            if (mode === "VERSATILE" && !baselineStarter && VERSATILE_ROLES.has(role) &&
+                position && position !== primaryPosition && coverageEligible) {
+              return MAX_LINEUP_NUDGE;
+            }
+            return 0;
+          }
+
+          // This is an observed match between the preference, actual role and completed
+          // playing time. It is NOT a promise or a hidden organizational decision score.
+          function getRolePreferenceView(state, roleState = null, playingTime = null) {
+            const raw = state?.rolePreference ?? null;
+            validatePlayerRolePreference(raw);
+            const mode = raw?.mode ?? "OPEN";
+            const role = roleState?.role ?? null;
+            const games = Math.max(0, Number(playingTime?.gamesPlayed ?? 0));
+            const secondaryGames = Math.max(0, Number(playingTime?.secondaryGames ?? 0));
+            let fitBand = "OPEN";
+            let reasonCode = "NO_REQUEST";
+            if (mode === "EVERYDAY") {
+              if (EVERYDAY_ROLES.has(role) && games >= 4) {
+                fitBand = "ALIGNED"; reasonCode = "EVERYDAY_ROLE_AND_GAMES";
+              } else if (games < 4) {
+                fitBand = "EVALUATING"; reasonCode = "PLAYING_TIME_SAMPLE";
+              } else {
+                fitBand = "NOT_YET"; reasonCode = "MANAGER_ROLE_DIFFERENT";
+              }
+            } else if (mode === "VERSATILE") {
+              if (VERSATILE_ROLES.has(role) && secondaryGames >= 2) {
+                fitBand = "ALIGNED"; reasonCode = "VERSATILE_ROLE_AND_REPS";
+              } else if (games < 4) {
+                fitBand = "EVALUATING"; reasonCode = "PLAYING_TIME_SAMPLE";
+              } else {
+                fitBand = "NOT_YET"; reasonCode = "VERSATILITY_NOT_ESTABLISHED";
+              }
+            }
+            return Object.freeze({ mode, requestedDate: raw?.requestedDate ?? null,
+              fitBand, reasonCode, effect: "MARGINAL_ROLE_ALIGNED_LINEUP_CONSIDERATION",
+              managerControlsRole: true });
+          }
+
+          export { PREFERENCES, MAX_LINEUP_NUDGE, validatePlayerRolePreference,
+            setPlayerRolePreference, rolePreferenceLineupBonus, getRolePreferenceView };
+          JS_ROLE_MODULE
+          cat > tests/rolePreference.test.js <<'JS_ROLE_TEST'
+          import assert from 'node:assert/strict';
+          import test from 'node:test';
+          import { writeFileSync } from 'node:fs';
+          import { seasonApi } from '../src/api/seasonApi.js';
+          import { renderSeason } from '../src/ui/seasonRender.js';
+          import { rolePreferenceLineupBonus, getRolePreferenceView,
+            validatePlayerRolePreference } from '../src/engine/season/rolePreference.js';
+
+          const uiRoot = () => ({ innerHTML: '', querySelectorAll: () => [], querySelector: () => null });
+
+          test('preference only gives a capped nudge after manager role and coverage qualify', () => {
+            const everyday = { mode: 'EVERYDAY', requestedDate: '2026-04-01' };
+            const versatile = { mode: 'VERSATILE', requestedDate: '2026-04-01' };
+            assert.equal(rolePreferenceLineupBonus({ preference: everyday,
+              role: 'AAA_STARTER', baselineStarter: true }), 0.35);
+            assert.equal(rolePreferenceLineupBonus({ preference: everyday,
+              role: 'BENCH', baselineStarter: true }), 0);
+            assert.equal(rolePreferenceLineupBonus({ preference: everyday,
+              role: 'AAA_STARTER', baselineStarter: false }), 0);
+            assert.equal(rolePreferenceLineupBonus({ preference: versatile,
+              role: 'UTILITY', baselineStarter: false, position: 'LF',
+              primaryPosition: 'CF', coverageEligible: true }), 0.35);
+            assert.equal(rolePreferenceLineupBonus({ preference: versatile,
+              role: 'UTILITY', baselineStarter: false, position: 'LF',
+              primaryPosition: 'CF', coverageEligible: false }), 0);
+            assert.equal(rolePreferenceLineupBonus({ preference: versatile,
+              role: 'AAA_STARTER', baselineStarter: false, position: 'LF',
+              primaryPosition: 'CF', coverageEligible: true }), 0);
+            assert.equal(getRolePreferenceView({ rolePreference: versatile },
+              { role: 'UTILITY' }, { gamesPlayed: 8, secondaryGames: 3 }).fitBand, 'ALIGNED');
+            assert.equal(getRolePreferenceView({ rolePreference: versatile },
+              { role: 'BENCH' }, { gamesPlayed: 8, secondaryGames: 0 }).fitBand, 'NOT_YET');
+            assert.equal(validatePlayerRolePreference(null), true);
+          });
+
+          test('player role preference UI, state, autosave source and day replay', () => {
+            const first = seasonApi.createDemoSeason({ seed: 'phase3-role-preference', startDate: '2026-04-01' });
+            const id = first.seasonId;
+            const before = seasonApi.serializeSeason(id);
+            const playerId = before.fixture.userPlayerId;
+            assert.equal(first.userRole.preference.mode, 'OPEN');
+            const chosen = seasonApi.setRolePreference(id, 'EVERYDAY');
+            assert.equal(chosen.userRole.preference.mode, 'EVERYDAY');
+            assert.equal(chosen.userRole.preference.requestedDate, chosen.currentDate);
+            const saved = seasonApi.serializeSeason(id);
+            assert.deepEqual(saved.playerStates[playerId].development, before.playerStates[playerId].development,
+              'request must not award ratings or development progress');
+            assert.deepEqual(saved.playerStates[playerId].health, before.playerStates[playerId].health,
+              'request must not modify fatigue or injury');
+            assert.deepEqual(saved.roleStates, before.roleStates,
+              'manager-assigned roles cannot be rewritten by a request');
+            const ui = uiRoot();
+            renderSeason(ui, chosen, {}, 'HOME', {});
+            assert.match(ui.innerHTML, /data-role-preference="EVERYDAY"/);
+            assert.match(ui.innerHTML, /역할 선호/);
+            assert.match(ui.innerHTML, /구단 판단/);
+            const checkpoint = seasonApi.serializeSeason(id);
+            const afterDay = seasonApi.simulateOneDay(id);
+            seasonApi.restoreSeason(checkpoint);
+            const replay = seasonApi.simulateOneDay(id);
+            assert.deepEqual(replay.userRole.preference, afterDay.userRole.preference);
+            assert.deepEqual(replay.userSeasonLine, afterDay.userSeasonLine);
+            assert.equal(replay.currentDate, afterDay.currentDate);
+            const flexible = seasonApi.setRolePreference(id, 'VERSATILE');
+            assert.equal(flexible.userRole.preference.mode, 'VERSATILE');
+            const reset = seasonApi.setRolePreference(id, 'OPEN');
+            assert.equal(reset.userRole.preference.mode, 'OPEN');
+            assert.equal(reset.userRole.preference.fitBand, 'OPEN');
+          });
+
+          test('historical saves load and invalid role requests fail in the normal restore path', () => {
+            const initial = seasonApi.createDemoSeason({ seed: 'phase3-role-preference-legacy', startDate: '2026-04-01' });
+            const id = initial.seasonId;
+            const legacy = seasonApi.serializeSeason(id);
+            delete legacy.playerStates[legacy.fixture.userPlayerId].rolePreference;
+            assert.equal(seasonApi.restoreSeason(legacy).userRole.preference.mode, 'OPEN');
+            const invalid = seasonApi.serializeSeason(id);
+            invalid.playerStates[invalid.fixture.userPlayerId].rolePreference =
+              { mode: 'GUARANTEED_STARTER', requestedDate: '2026-04-01' };
+            assert.throws(() => seasonApi.restoreSeason(invalid), /역할 선호/);
+            assert.throws(() => seasonApi.setRolePreference(id, 'GUARANTEED_STARTER'), /역할 선호/);
+            writeFileSync('reports/phase3-role-preference.json', JSON.stringify({
+              schema: 'THE_CALL_UP_PHASE3_ROLE_PREFERENCE_V1', pass: true,
+              cappedManagerConsideration: true, noGuaranteedRole: true,
+              noHiddenRatingsOrFatigueBoost: true, homeUi: true,
+              saveRestoreAndReplay: true, historicalSaveCompatibility: true,
+              strictInvalidSaveRejection: true
+            }, null, 2) + '\n', 'utf8');
+          });
+          JS_ROLE_TEST
+          python3 - <<'PY_ROLE_PATCH'
+          from pathlib import Path
+
+          def replace_once(path, before, after):
+              p = Path(path)
+              source = p.read_text(encoding='utf-8')
+              count = source.count(before)
+              if count != 1:
+                  raise RuntimeError(f'{path}: expected exactly one anchor, found {count}: {before[:90]!r}')
+              p.write_text(source.replace(before, after, 1), encoding='utf-8')
+
+          replace_once('src/engine/season/lineupRestAI.js',
+              'import { rolePriority } from "./roleSystem.js";',
+              'import { rolePriority } from "./roleSystem.js";\n'
+              'import { rolePreferenceLineupBonus } from "./rolePreference.js";')
+          replace_once('src/engine/season/lineupRestAI.js',
+              '  const stabilityBonus =\n'
+              '    baselineStarter ? 1 : 0;\n\n'
+              '  const score =\n'
+              '    offense * 0.70 +\n'
+              '    defense * 0.30 +\n'
+              '    roleBonus +\n'
+              '    momentumBonus -\n'
+              '    fatiguePenalty +\n'
+              '    stabilityBonus;',
+              '  const stabilityBonus =\n'
+              '    baselineStarter ? 1 : 0;\n\n'
+              '  const preferenceBonus = rolePreferenceLineupBonus({\n'
+              '    preference: playerStates?.[playerId]?.rolePreference ?? null,\n'
+              '    role, baselineStarter, position,\n'
+              '    primaryPosition: playerStates?.[playerId]?.primaryPosition ?? basePlayer?.positioning?.primaryPosition ?? "DH",\n'
+              '    coverageEligible: canUtilityCover(roster, playerStates, roleStates, playerId, position)\n'
+              '  });\n\n'
+              '  const score =\n'
+              '    offense * 0.70 +\n'
+              '    defense * 0.30 +\n'
+              '    roleBonus +\n'
+              '    momentumBonus -\n'
+              '    fatiguePenalty +\n'
+              '    stabilityBonus +\n'
+              '    preferenceBonus;')
+
+          replace_once('src/api/seasonApi.js',
+              'import { getTrainingCoachFeedback } from "../engine/season/coachingFeedback.js";',
+              'import { getTrainingCoachFeedback } from "../engine/season/coachingFeedback.js";\n'
+              'import { setPlayerRolePreference, getRolePreferenceView } from "../engine/season/rolePreference.js";')
+          replace_once('src/api/seasonApi.js',
+              '        roleFit: getRoleFitFeedback(userRoleState, playingTime, { currentDate: session.state.currentDate })',
+              '        roleFit: getRoleFitFeedback(userRoleState, playingTime, { currentDate: session.state.currentDate }),\n'
+              '        preference: getRolePreferenceView(\n'
+              '          session.playerStates?.[session.fixture.userPlayerId] ?? null, userRoleState, playingTime)')
+          replace_once('src/api/seasonApi.js',
+              '  requestNextGameRest(seasonId) {',
+              '  setRolePreference(seasonId, mode) {\n'
+              '    const session = assertSession(seasonId);\n'
+              '    const playerId = session.fixture.userPlayerId;\n'
+              '    session.playerStates = { ...session.playerStates,\n'
+              '      [playerId]: setPlayerRolePreference(session.playerStates[playerId], mode, session.state.currentDate) };\n'
+              '    return snapshot(session);\n'
+              '  },\n'
+              '  requestNextGameRest(seasonId) {')
+
+          replace_once('src/services/seasonSerialization.js',
+              'import { validateSecondaryPositionTraining } from "../engine/season/secondaryPositionTraining.js";',
+              'import { validateSecondaryPositionTraining } from "../engine/season/secondaryPositionTraining.js";\n'
+              'import { validatePlayerRolePreference } from "../engine/season/rolePreference.js";')
+          replace_once('src/services/seasonSerialization.js',
+              '  for (const [playerId, playerState] of Object.entries(payload.playerStates)) {\n'
+              '    validateSecondaryPositionTraining(playerState.positionTraining ?? null, `payload.playerStates.${playerId}.positionTraining`);',
+              '  for (const [playerId, playerState] of Object.entries(payload.playerStates)) {\n'
+              '    validatePlayerRolePreference(playerState.rolePreference ?? null, `payload.playerStates.${playerId}.rolePreference`);\n'
+              '    validateSecondaryPositionTraining(playerState.positionTraining ?? null, `payload.playerStates.${playerId}.positionTraining`);')
+
+          role_controls = """function rolePreferenceControls(preference) {
+            const current = preference?.mode ?? "OPEN";
+            const options = [["OPEN", "구단 판단에 맡김"], ["EVERYDAY", "주전 출전 선호"], ["VERSATILE", "멀티포지션 기용 선호"]];
+            const reasons = {
+              NO_REQUEST: "선수가 별도 역할 선호를 전달하지 않았습니다.",
+              PLAYING_TIME_SAMPLE: "기용 표본을 더 확인하고 있습니다.",
+              EVERYDAY_ROLE_AND_GAMES: "현재 주전 역할과 실제 출전 기록이 선호에 맞습니다.",
+              MANAGER_ROLE_DIFFERENT: "현재 조직이 부여한 역할은 요청과 다릅니다.",
+              VERSATILE_ROLE_AND_REPS: "현재 멀티포지션 역할과 실제 기용이 선호에 맞습니다.",
+              VERSATILITY_NOT_ESTABLISHED: "멀티포지션 실전 기용은 아직 정착되지 않았습니다."
+            };
+            return `<div class="training-focus-wrap role-preference-wrap">
+              <div class="training-focus-head"><strong>역할 선호</strong><span>최종 결정은 감독·조직</span></div>
+              <div class="training-focus-grid">${options.map(([mode, label]) => `<button type="button" data-role-preference="${mode}" class="${current === mode ? "active" : ""}">${label}</button>`).join("")}</div>
+              <p class="condition-note">${esc(reasons[preference?.reasonCode] ?? reasons.NO_REQUEST)} 선호는 이미 부여된 역할·수비 가능 범위 안에서 접전 라인업 선택에만 소폭 고려됩니다. 능력치·승격·주전 자리 보장은 없습니다.</p>
+            </div>`;
+          }
+
+          """
+          replace_once('src/ui/seasonRender.js',
+              'function roleStatusCard(snapshot) {', role_controls + 'function roleStatusCard(snapshot) {')
+          replace_once('src/ui/seasonRender.js',
+              '    </div>\n    <p class="condition-note">${esc(trajectory)}',
+              '    </div>\n    ${rolePreferenceControls(snapshot.userRole?.preference)}\n'
+              '    <p class="condition-note">${esc(trajectory)}')
+          replace_once('src/ui/seasonRender.js',
+              '  root.querySelectorAll("[data-position-training]").forEach((button) => button.addEventListener("click", () => handlers.onSecondaryPositionTraining?.(button.dataset.positionTraining === "NONE" ? null : button.dataset.positionTraining)));',
+              '  root.querySelectorAll("[data-position-training]").forEach((button) => button.addEventListener("click", () => handlers.onSecondaryPositionTraining?.(button.dataset.positionTraining === "NONE" ? null : button.dataset.positionTraining)));\n'
+              '  root.querySelectorAll("[data-role-preference]").forEach((button) => button.addEventListener("click", () => handlers.onRolePreference?.(button.dataset.rolePreference)));')
+
+          replace_once('src/app/seasonApp.js',
+              '      async onSecondaryPositionTraining(position) {\n'
+              '        snapshot = seasonApi.setSecondaryPositionTraining(snapshot.seasonId, position);\n'
+              '        renderHome();\n'
+              '        void queueAutosave();\n'
+              '      },',
+              '      async onSecondaryPositionTraining(position) {\n'
+              '        snapshot = seasonApi.setSecondaryPositionTraining(snapshot.seasonId, position);\n'
+              '        renderHome();\n'
+              '        void queueAutosave();\n'
+              '      },\n'
+              '      async onRolePreference(mode) {\n'
+              '        snapshot = seasonApi.setRolePreference(snapshot.seasonId, mode);\n'
+              '        renderHome();\n'
+              '        void queueAutosave();\n'
+              '      },')
+          print('Role preference patch applied with exact source anchors.')
+          PY_ROLE_PATCH
+          node --check src/engine/season/rolePreference.js
+          node --check src/engine/season/lineupRestAI.js
+          node --check src/api/seasonApi.js
+          node --check src/services/seasonSerialization.js
+          node --check src/ui/seasonRender.js
+          node --check src/app/seasonApp.js
+          node --check tests/rolePreference.test.js
+          git diff --check
+
+      - name: Verify existing tests and role preference integration
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          npm test
+          node --input-type=module <<'JS_ROLE_REPORT'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const report = JSON.parse(readFileSync('reports/phase3-role-preference.json', 'utf8'));
+          assert.equal(report.pass, true);
+          for (const [key, value] of Object.entries(report)) {
+            if (key !== 'schema') assert.equal(value, true, key);
+          }
+          console.log('Phase 3 role preference integrated regression PASS');
+          JS_ROLE_REPORT
+
+      - name: Commit verified sources tests and report
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add src/engine/season/rolePreference.js src/engine/season/lineupRestAI.js src/api/seasonApi.js src/services/seasonSerialization.js src/ui/seasonRender.js src/app/seasonApp.js tests/rolePreference.test.js reports/phase3-role-preference.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No verified role-preference source change; refusing empty commit.' >&2
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase3: connect role preference to bounded manager lineup decisions'
+          git push origin HEAD:main
