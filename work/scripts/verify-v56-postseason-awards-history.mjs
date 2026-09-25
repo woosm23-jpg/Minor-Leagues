@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { seasonApi } from "../src/api/seasonApi.js";
 import { validateSeasonSavePayload } from "../src/services/seasonSerialization.js";
 import { POSTSEASON_RULESET_2026, POSTSEASON_ROUND_ORDER } from "../src/engine/career/postseasonHistory.js";
+import { auditSeasonHistoryEntry } from "../src/engine/career/seasonHistoryAudit.js";
 
 const master=JSON.parse(zlib.gunzipSync(fs.readFileSync("data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz")).toString("utf8"));
 const catalog=seasonApi.getCareerCreationCatalog({masterSnapshot:master});
@@ -58,6 +59,10 @@ const afterPayload=seasonApi.serializeSeason(season.seasonId);
 assert.equal(JSON.stringify(afterPayload.levelSeasons.MLB),regularMlbBefore);
 assert.equal(validateSeasonSavePayload(afterPayload,{mode:"FULL"}),true);
 const archive=afterPayload.historyState.seasons[0];
+const audited=auditSeasonHistoryEntry(archive);
+assert.equal(audited.pass,true);
+assert.equal(audited.leaguesAudited,2);
+assert.equal(audited.regularAndPostseasonSeparate,true);
 assert.equal(archive.seasonYear,2026);
 assert.equal(archive.championTeamId,afterPayload.postseasonState.championTeamId);
 assert.equal(archive.awards.methodology.goldGlove,"DEFERRED_FIELDING_EVENT_TOTALS_REQUIRED");

@@ -1,0 +1,16 @@
+{
+  "schema": "THE_CALL_UP_PHASE6_VALUE_HISTORY_BUNDLE_V1",
+  "pass": true,
+  "derivedHitterValueNoOvr": true,
+  "derivedPitcherValueNoOvr": true,
+  "noOfficialWarClaim": true,
+  "noFabricatedFieldingOrParkAdjustment": true,
+  "regularAndPostseasonSeparated": true,
+  "archivedAwardsAndChampionshipAudited": true,
+  "userRetirementNotForced": true,
+  "saveUnchangedByReadModel": true,
+  "saveRestoreReplay": true,
+  "productionV3WorldGames2026": 10710,
+  "productionV3PostseasonChampion": "136",
+  "source": "2026 production v2 awards/retirement scenarios; current v3 world gate; partial values are NOT official WAR"
+}

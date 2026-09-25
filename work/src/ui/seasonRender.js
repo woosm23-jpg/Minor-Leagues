@@ -513,6 +513,13 @@ function rankChip(label, rank) {
   return `<div><span>${esc(label)}</span><b>${rank ? `#${rank}` : "—"}</b></div>`;
 }
 
+function estimatedValueCard(value) {
+  if (!value) return "";
+  const note = "공식 WAR 아님 · 수비 기여·구장 보정 미포함 · 정규시즌 기록 기반";
+  if (value.status !== "READY") return `<div class="player-value-wrap"><p class="player-section-label">공격·주루 가치 추정</p><p class="condition-note">표본 축적 중 · ${esc(note)}</p></div>`;
+  return `<div class="player-value-wrap"><p class="player-section-label">공격·주루 가치 추정</p><div class="player-rank-grid"><div><span>참고 승수</span><b>${Number(value.partialWins).toFixed(2)}</b><small>${esc(value.level)} · ${value.PA} PA</small></div><div><span>타격 기여</span><b>${Number(value.battingRuns).toFixed(1)} R</b><small>리그 공격 환경 대비</small></div><div><span>주루 기여</span><b>${Number(value.runningRuns).toFixed(1)} R</b><small>도루·도루실패 기반</small></div><div><span>포지션/대체수준</span><b>${Number(value.positionalRuns+value.replacementRuns).toFixed(1)} R</b><small>수비 실적 미포함</small></div></div><p class="condition-note">${esc(note)}. 실제 기용·승격·수상·트레이드 평가에는 사용하지 않습니다.</p></div>`;
+}
+
 function playerStatsView(player, leaders) {
   const line = player.seasonLine ?? {};
   const ranks = player.leaderRanks ?? {};
@@ -526,6 +533,7 @@ function playerStatsView(player, leaders) {
     <div class="section-head player-rank-head"><strong>리그 순위</strong><span>규정 ${leaders?.qualificationPA ?? 0} PA</span></div>
     <div class="player-rank-grid">${[["AVG",ranks.AVG],["OPS",ranks.OPS],["HR",ranks.HR],["RBI",ranks.RBI],["SB",ranks.SB]].map(([l,r]) => rankChip(l,r)).join("")}</div>
     ${player.seasonLinesByLevel ? `<div class="level-stat-split">${["A","HIGH_A","AA","AAA","MLB"].map((level) => { const row = player.seasonLinesByLevel[level] ?? {}; return `<div><span>${esc(levelLabel(level))}</span><strong>${row.G ?? 0} G · ${row.H ?? 0} H · ${row.HR ?? 0} HR</strong><small>${fmtRate(row.AVG)} AVG · ${fmtRate(row.OPS)} OPS</small></div>`; }).join("")}</div>` : ""}
+    ${estimatedValueCard(player.valueEstimate)}
     <p class="condition-note">현재 레벨 리그 순위와 레벨별 정규시즌 기록을 분리해 표시합니다. AVG/OBP/SLG/OPS 순위는 규정 타석을 충족한 선수만 집계합니다.</p>
   </section>`;
 }

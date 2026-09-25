@@ -38,6 +38,7 @@ import { selectPostseasonRosterPlayerIds } from "../engine/career/postseasonRost
 import { selectPostseasonStarter } from "../engine/career/postseasonRotationPolicy.js";
 import { createAmateurAcquisitionState, normalizeAmateurAcquisitionState, prepareAmateurYear, processInternationalSignings, advanceAmateurCalendar, getAmateurAcquisitionPublicView } from "../engine/career/amateurAcquisition.js";
 import { createRetirementHallState, normalizeRetirementHallState, recordMlbSeason, archiveRetiredPlayers, announceUserFinalSeason, retireUserPlayer, processHallOfFameYear, getRetirementHallPublicView } from "../engine/career/retirementHallOfFame.js";
+import { estimateHitterSeasonValue } from "../engine/season/seasonValueReadModel.js";
 import { buildSpringCampOutlook, setSpringRolePreference } from "../engine/career/springCamp.js";
 
 const sessions = new Map();
@@ -1723,6 +1724,7 @@ function playerDetailView(session, playerId, leaders = null) {
     contractMarket: getContractMarketPublicView(session.contractMarketStates?.[playerId] ?? null),
     trade: playerId === session.fixture.userPlayerId ? getTradePublicView(session.tradeState) : null,
     seasonLine,
+    valueEstimate: estimateHitterSeasonValue({ line: seasonLine, leagueLines: stateForLevel(session, detailLevel).playerBatting, position: identity.primaryPosition ?? "DH", level: detailLevel }),
     seasonLinesByLevel,
     roleState: getRolePublicView(roleState, { currentDate: session.state.currentDate }),
     utilityPathway,
