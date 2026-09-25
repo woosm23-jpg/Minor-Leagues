@@ -1,0 +1,13 @@
+{
+  "schema": "THE_CALL_UP_PHASE4_MARKET_PLAYER_ACTIONS_V1",
+  "pass": true,
+  "productionMarketUi": true,
+  "strategyInfluencesFutureOfferModel": true,
+  "noInstantContractOrRosterGrant": true,
+  "cancellableTradeRequest": true,
+  "duplicateRequestGuard": true,
+  "noPlayerChosenDestination": true,
+  "saveRestoreReplay": true,
+  "malformedSaveRejected": true,
+  "source": "2026 production snapshot v2 baseline; v3 world gate separately required"
+}

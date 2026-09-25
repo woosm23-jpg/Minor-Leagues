@@ -29,8 +29,8 @@ import { createPlayerRestRequest, settlePlayerRestRequest, getPlayerRestRequestP
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
 import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
 import { createRosterControlState, normalizeRosterControlState, advanceRosterControlToDate, getRosterControlPublicView, knownFortyManCount, prepareAaaMlbEmergencyInjuryMove, prepareAaaMlbEmergencyInjuryReturn, prepareAaaMlbRosterMove } from "../engine/career/rosterControlState.js";
-import { createContractMarketState, normalizeContractMarketState, refreshContractMarketState, prepareArbitrationCase, resolveArbitration, getContractMarketPublicView } from "../engine/career/contractMarket.js";
-import { createTradeState, normalizeTradeState, requestTradeState, addTradeRumor, recordTrade, getTradePublicView } from "../engine/career/tradeState.js";
+import { createContractMarketState, normalizeContractMarketState, refreshContractMarketState, prepareArbitrationCase, resolveArbitration, getContractMarketPublicView, setAgentStrategy as chooseAgentStrategy } from "../engine/career/contractMarket.js";
+import { createTradeState, normalizeTradeState, requestTradeState, cancelTradeRequestState, addTradeRumor, recordTrade, getTradePublicView } from "../engine/career/tradeState.js";
 import { executeTrade } from "../services/tradeService.js";
 import { OFFSEASON_PHASES, createOffseasonState, normalizeOffseasonState, completeOffseasonPhase, getOffseasonPublicView } from "../engine/career/offseasonPipeline.js";
 import { POSTSEASON_RULESET_2026, POSTSEASON_ROUND_ORDER, createPostseasonState, normalizePostseasonState, getPostseasonPublicView, createHistoryState, normalizeHistoryState, appendSeasonHistory, getHistoryPublicView } from "../engine/career/postseasonHistory.js";
@@ -1472,6 +1472,12 @@ function requestTrade(seasonId, { preferences = {} } = {}) {
   session.tradeState=requestTradeState(session.tradeState,{date:session.state.currentDate,preferences});
   return snapshot(session);
 }
+function cancelTradeRequest(seasonId) {
+  const session = assertSession(seasonId);
+  session.tradeState = cancelTradeRequestState(session.tradeState,
+    { date: session.state.currentDate });
+  return snapshot(session);
+}
 function updateStateUserTeam(state, teamId) { return freeze({ ...state, userTeamId: String(teamId) }); }
 function executeTradeProposal(seasonId, proposal) {
   const session=assertSession(seasonId);
@@ -1697,6 +1703,7 @@ function playerDetailView(session, playerId, leaders = null) {
       currentDate: session.state.currentDate
     }),
     rosterControl: getRosterControlPublicView(session.rosterControlStates?.[playerId] ?? null),
+    marketActionsAvailable: isUser && session.fixture.worldMode === "PRODUCTION_REAL",
     contractMarket: getContractMarketPublicView(session.contractMarketStates?.[playerId] ?? null),
     trade: playerId === session.fixture.userPlayerId ? getTradePublicView(session.tradeState) : null,
     seasonLine,
@@ -2620,6 +2627,15 @@ const seasonApi = Object.freeze({
       [playerId]: setPlayerRolePreference(session.playerStates[playerId], mode, session.state.currentDate) };
     return snapshot(session);
   },
+  setAgentStrategy(seasonId, strategy) {
+    const session = assertSession(seasonId);
+    const playerId = session.fixture.userPlayerId;
+    const current = session.contractMarketStates?.[playerId];
+    if (!current) throw new RangeError("에이전트 계약 시장 데이터가 없습니다.");
+    session.contractMarketStates = { ...session.contractMarketStates,
+      [playerId]: chooseAgentStrategy(current, strategy) };
+    return snapshot(session);
+  },
   requestNextGameRest(seasonId) {
     const session = assertSession(seasonId);
     const level = currentUserLevel(session);
@@ -2840,6 +2856,7 @@ const seasonApi = Object.freeze({
   advanceOffseasonPhase(seasonId) { const session=assertSession(seasonId); if(session.offseasonState?.status==="COMPLETE") return snapshot(session); advanceOffseasonPhaseInternal(session); return snapshot(session); },
   advanceToNextSeason(seasonId) { const session = assertSession(seasonId); if(session.retirementHallState?.user?.retired) throw new RangeError("은퇴한 커리어는 다음 시즌으로 진행할 수 없습니다."); return completeOffseasonToOpeningDayInternal(session); },
   requestTrade,
+  cancelTradeRequest,
   executeTradeProposal,
   closeActiveGame(seasonId) { const session=assertSession(seasonId); clearActiveGame(session); return snapshot(session); },
   resetDemoSeason(seasonId, options={}) { const session=assertSession(seasonId); clearActiveGame(session); sessions.delete(seasonId); return this.createDemoSeason(options); }

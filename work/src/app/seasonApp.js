@@ -393,6 +393,17 @@ function startSeasonApp(root) {
         renderHome();
         void queueAutosave();
       },
+      async onAgentStrategy(strategy) {
+        try {
+          snapshot = seasonApi.setAgentStrategy(snapshot.seasonId, strategy);
+          saveMessage = "에이전트 계약 전략을 변경했습니다.";
+          renderHome();
+          void queueAutosave();
+        } catch (error) {
+          saveMessage = `에이전트 전략 변경 실패: ${error?.message ?? error}`;
+          renderHome();
+        }
+      },
       async onImportFile(file) {
         try {
           saveMessage = ".tcu 검증 중...";
@@ -436,6 +447,23 @@ function startSeasonApp(root) {
       async onAction(action) {
         if (action === "CAREERS") {
           await goToCareerSelect();
+          return;
+        }
+        if (["REQUEST_TRADE_CONTENDER", "REQUEST_TRADE_PLAYING_TIME", "CANCEL_TRADE_REQUEST"].includes(action)) {
+          try {
+            snapshot = action === "CANCEL_TRADE_REQUEST"
+              ? seasonApi.cancelTradeRequest(snapshot.seasonId)
+              : seasonApi.requestTrade(snapshot.seasonId, { preferences: action === "REQUEST_TRADE_CONTENDER"
+                ? { preferContender: true } : { preferPlayingTime: true } });
+            saveMessage = action === "CANCEL_TRADE_REQUEST"
+              ? "에이전트에게 트레이드 요청 철회를 전달했습니다."
+              : "에이전트에게 트레이드 요청을 전달했습니다. 이적이 확정된 것은 아닙니다.";
+            renderHome();
+            void queueAutosave();
+          } catch (error) {
+            saveMessage = `트레이드 요청 처리 실패: ${error?.message ?? error}`;
+            renderHome();
+          }
           return;
         }
         if (action === "REQUEST_REST" || action === "CANCEL_REST") {

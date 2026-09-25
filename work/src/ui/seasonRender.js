@@ -664,6 +664,28 @@ function moneyLabel(value, currency = "USD") {
   return `${prefix}${Math.round(Number(value)).toLocaleString("en-US")}`;
 }
 
+function playerMarketActionControls(player, market, trade) {
+  if (!player.isUser || !player.marketActionsAvailable || !market || !trade) return "";
+  const current = market.agentStrategy ?? "BALANCED";
+  const options = [["SECURITY", "계약 기간 우선"], ["BALANCED", "기간·연봉 균형"],
+    ["BET_ON_MYSELF", "단기·연봉 우선"]];
+  const status = trade.agentRequest?.status ?? "NONE";
+  const request = status === "REQUESTED";
+  const requestText = status === "REQUESTED" ? "요청 전달됨 · 구단 판단 대기"
+    : status === "CANCELLED" ? "이전 요청 철회됨"
+      : status === "SATISFIED" ? "이적 요청에 따른 거래 완료" : "신청 내역 없음";
+  return `<div class="training-focus-wrap market-actions-wrap">
+    <div class="training-focus-head"><strong>에이전트 계약 전략</strong><span>시장 제안의 기간·연봉 선호</span></div>
+    <div class="training-focus-grid">${options.map(([value, label]) => `<button type="button" data-agent-strategy="${value}" class="${current === value ? "active" : ""}">${label}</button>`).join("")}</div>
+    <p class="condition-note">선택은 향후 FA 시장 추정·제안에 사용됩니다. 이미 체결된 계약과 실제 실력은 바뀌지 않습니다.</p>
+    <div class="training-focus-head"><strong>트레이드 요청</strong><span>${esc(requestText)}</span></div>
+    <div class="progress-actions">${request
+      ? `<button type="button" class="secondary" data-season-action="CANCEL_TRADE_REQUEST">트레이드 요청 철회</button>`
+      : `<button type="button" class="secondary" data-season-action="REQUEST_TRADE_PLAYING_TIME">출전 기회 선호로 요청</button><button type="button" class="secondary" data-season-action="REQUEST_TRADE_CONTENDER">경쟁력 있는 팀 선호로 요청</button>`}</div>
+    <p class="condition-note">에이전트에게 의사를 전달하는 기능입니다. 목적지·트레이드 성사·주전 자리를 직접 결정할 수 없습니다.</p>
+  </div>`;
+}
+
 function playerContractView(player) {
   const contract = player.contract;
   if (!contract) return `<section class="card player-detail-card player-contract-card"><p class="season-empty">계약/서비스타임 데이터가 없습니다.</p></section>`;
@@ -692,6 +714,7 @@ function playerContractView(player) {
       <div><span>Trade Market</span><b>${trade?.rumor ? trade.rumor.confidence : "활성 루머 없음"}</b><small>${trade?.lastTrade ? `최근 ${trade.lastTrade.date}` : "확정 트레이드 없음"}</small></div>
       <div><span>Agent Request</span><b>${trade?.agentRequest?.status ?? "NONE"}</b><small>요청은 이적을 보장하지 않음</small></div>
     </div>
+    ${playerMarketActionControls(player, market, trade)}
     <p class="condition-note">v54 Trade Value는 OVR이 아니라 현재 기여도·미래가치·control·contract surplus·포지션 need·부상·나이를 사용합니다. 루머는 Speculation/Credible/Strong으로 표시되며 성사되지 않을 수 있습니다. 사용자는 GM이 아닙니다. 에이전트를 통해 요청할 수 있지만 임의 목적지를 선택하는 기능은 제공하지 않습니다.</p>
   </section>`;
 }
@@ -1113,6 +1136,7 @@ function renderSeason(root, snapshot, handlers, tab = "HOME", uiState = {}) {
   root.querySelectorAll("[data-training-focus]").forEach((button) => button.addEventListener("click", () => handlers.onTrainingFocus?.(button.dataset.trainingFocus)));
   root.querySelectorAll("[data-position-training]").forEach((button) => button.addEventListener("click", () => handlers.onSecondaryPositionTraining?.(button.dataset.positionTraining === "NONE" ? null : button.dataset.positionTraining)));
   root.querySelectorAll("[data-role-preference]").forEach((button) => button.addEventListener("click", () => handlers.onRolePreference?.(button.dataset.rolePreference)));
+  root.querySelectorAll("[data-agent-strategy]").forEach((button) => button.addEventListener("click", () => handlers.onAgentStrategy?.(button.dataset.agentStrategy)));
   root.querySelectorAll("[data-backup-restore]").forEach((button) => button.addEventListener("click", () => handlers.onRestoreBackup?.(button.dataset.backupRestore)));
   root.querySelectorAll("[data-player-section]").forEach((button) => button.addEventListener("click", () => handlers.onPlayerSection?.(button.dataset.playerSection)));
   root.querySelectorAll("[data-league-section]").forEach((button) => button.addEventListener("click", () => handlers.onLeagueSection?.(button.dataset.leagueSection)));
