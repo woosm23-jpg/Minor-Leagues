@@ -1,0 +1,325 @@
+name: THE CALL-UP Phase 3 Consolidated Decisions and Final Gate
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE3_CONSOLIDATED_DECISIONS.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  consolidated-phase3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply lineup explanation and organization home feedback together
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e src/engine/season/managerDecisionReadModel.js
+          test ! -e tests/phase3ManagerDecisionBundle.test.js
+          cat > src/engine/season/managerDecisionReadModel.js <<'TCU_MODULE'
+          const REASON_CODES = new Set([
+            "STARTING_LINEUP", "PLAYER_REQUEST_APPROVED", "INJURY_UNAVAILABLE",
+            "FATIGUE_REST", "COMPETITION_DIRECT", "UTILITY_COVER",
+            "BENCH_ROLE", "OTHER_LINEUP_DECISION"
+          ]);
+          const APPEARANCES = new Set(["STARTED", "BENCH_PA", "NOT_STARTED"]);
+          const LEVELS = new Set(["A", "HIGH_A", "AA", "AAA", "MLB"]);
+
+          // Read the lineup that the manager actually selected. Never infer a decision
+          // from the user's desired role or secretly change the lineup or results.
+          function completedUserManagerDecision({ fixture, game, level, userTeamId,
+            userPlayerId, battingBySide = {} } = {}) {
+            if (!fixture?.players?.[userPlayerId] || !game?.gameId || !LEVELS.has(level)) return null;
+            const side = fixture.teams?.away?.id === userTeamId ? "away"
+              : fixture.teams?.home?.id === userTeamId ? "home" : null;
+            if (!side) return null;
+            const plan = fixture.dailyLineups?.[side];
+            if (!plan) return null;
+            const started = (plan.lineup ?? []).includes(userPlayerId);
+            const pa = Number(battingBySide?.[side]?.[userPlayerId]?.PA ?? 0);
+            const appearance = started ? "STARTED" : pa > 0 ? "BENCH_PA" : "NOT_STARTED";
+            const replacement = (plan.replacements ?? []).find(row => row.forPlayerId === userPlayerId) ?? null;
+            let reasonCode = "OTHER_LINEUP_DECISION";
+            if (started) reasonCode = "STARTING_LINEUP";
+            else if (fixture.voluntaryRest?.approved === true &&
+              (plan.voluntaryRest?.approved === true || replacement?.kind === "PLAYER_REST_REQUEST")) {
+              reasonCode = "PLAYER_REQUEST_APPROVED";
+            } else if ((plan.unavailable ?? []).includes(userPlayerId)) reasonCode = "INJURY_UNAVAILABLE";
+            else if ((plan.rested ?? []).includes(userPlayerId)) reasonCode = "FATIGUE_REST";
+            else if (replacement?.kind === "COMPETITION_DIRECT") reasonCode = "COMPETITION_DIRECT";
+            else if (replacement?.kind === "UTILITY_BACKFILL") reasonCode = "UTILITY_COVER";
+            else if ((plan.bench ?? []).some(row => row.playerId === userPlayerId)) reasonCode = "BENCH_ROLE";
+            const decision = Object.freeze({ version: 1, date: game.date, gameId: game.gameId,
+              level, appearance, reasonCode, replacementPlayerId: replacement?.playerId ?? null });
+            validateUserManagerDecision(decision);
+            return decision;
+          }
+
+          function validateUserManagerDecision(value, label = "lastManagerDecision") {
+            if (value == null) return true; // Legacy saves did not record lineup reasons.
+            if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1 ||
+                typeof value.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.date) ||
+                typeof value.gameId !== "string" || !value.gameId || !LEVELS.has(value.level) ||
+                !APPEARANCES.has(value.appearance) || !REASON_CODES.has(value.reasonCode) ||
+                (value.replacementPlayerId !== null &&
+                  (typeof value.replacementPlayerId !== "string" || !value.replacementPlayerId))) {
+              throw new RangeError(`${label} 경기 기용 판단 데이터가 잘못되었습니다.`);
+            }
+            return true;
+          }
+
+          function getUserManagerDecisionPublicView(value) {
+            validateUserManagerDecision(value);
+            return value ? Object.freeze({ ...value }) : null;
+          }
+
+          export { completedUserManagerDecision, validateUserManagerDecision,
+            getUserManagerDecisionPublicView };
+          TCU_MODULE
+          cat > tests/phase3ManagerDecisionBundle.test.js <<'TCU_TEST'
+          import assert from "node:assert/strict";
+          import test from "node:test";
+          import { writeFileSync } from "node:fs";
+          import { seasonApi } from "../src/api/seasonApi.js";
+          import { renderSeason } from "../src/ui/seasonRender.js";
+          import { completedUserManagerDecision, validateUserManagerDecision } from
+            "../src/engine/season/managerDecisionReadModel.js";
+
+          const fixture = (plan, voluntaryRest = null) => ({
+            players: { user: { id: "user" } },
+            teams: { away: { id: "my-team" }, home: { id: "opponent" } },
+            dailyLineups: { away: plan }, voluntaryRest
+          });
+          const common = { game: { gameId: "g1", date: "2026-04-02" }, level: "AAA",
+            userTeamId: "my-team", userPlayerId: "user" };
+
+          // A manager explanation is a record of real lineup evidence, not a guessed
+          // trust score or a player-only lineup modifier.
+          test("manager explanations distinguish real starts, competition and requested rest", () => {
+            const selected = completedUserManagerDecision({ ...common,
+              fixture: fixture({ lineup: ["user"], bench: [], rested: [], unavailable: [], replacements: [] }) });
+            assert.equal(selected.appearance, "STARTED");
+            assert.equal(selected.reasonCode, "STARTING_LINEUP");
+            const competition = completedUserManagerDecision({ ...common,
+              fixture: fixture({ lineup: ["backup"], bench: [{ playerId: "user" }],
+                replacements: [{ kind: "COMPETITION_DIRECT", forPlayerId: "user", playerId: "backup" }] }) });
+            assert.equal(competition.reasonCode, "COMPETITION_DIRECT");
+            assert.equal(competition.replacementPlayerId, "backup");
+            const requested = completedUserManagerDecision({ ...common,
+              fixture: fixture({ lineup: ["backup"], bench: [],
+                replacements: [{ kind: "PLAYER_REST_REQUEST", forPlayerId: "user", playerId: "backup" }],
+                voluntaryRest: { approved: true } }, { approved: true }) });
+            assert.equal(requested.reasonCode, "PLAYER_REQUEST_APPROVED");
+            assert.equal(validateUserManagerDecision(null), true);
+            assert.throws(() => validateUserManagerDecision({ ...requested, reasonCode: "GUARANTEED_PROMOTION" }), /기용 판단/);
+          });
+
+          test("batting focus, secondary practice, role preference and rest share one save-safe calendar", () => {
+            const initial = seasonApi.createDemoSeason({ seed: "phase3-consolidated-final-choices", startDate: "2026-04-01" });
+            const id = initial.seasonId;
+            seasonApi.setTrainingFocus(id, "CONTACT");
+            seasonApi.setSecondaryPositionTraining(id, "LF");
+            seasonApi.setRolePreference(id, "EVERYDAY");
+            const chosen = seasonApi.requestNextGameRest(id);
+            assert.equal(chosen.userRestRequest.status, "PENDING");
+            const checkpoint = seasonApi.serializeSeason(id);
+            const first = seasonApi.simulateOneDay(id);
+            assert.equal(first.userRestRequest.status, "APPROVED");
+            assert.equal(first.userManagerDecision?.reasonCode, "PLAYER_REQUEST_APPROVED");
+            assert.equal(first.userManagerDecision?.appearance, "NOT_STARTED");
+            assert.equal(first.userSeasonLine.G, 0);
+            assert.equal(first.userPlayer.status.development.focus, "CONTACT");
+            assert.equal(first.userPlayer.status.positionTraining.targetPosition, "LF");
+            assert.equal(first.userRole.preference.mode, "EVERYDAY");
+            const ui = { innerHTML: "", querySelectorAll: () => [], querySelector: () => null };
+            renderSeason(ui, first, {}, "HOME", {});
+            assert.match(ui.innerHTML, /지난 경기 기용/);
+            assert.match(ui.innerHTML, /휴식 요청/);
+            const restored = seasonApi.restoreSeason(checkpoint);
+            assert.equal(restored.userManagerDecision, null);
+            const replay = seasonApi.simulateOneDay(id);
+            assert.deepEqual(replay.userManagerDecision, first.userManagerDecision);
+            assert.deepEqual(replay.userSeasonLine, first.userSeasonLine);
+            assert.deepEqual(replay.userRole.preference, first.userRole.preference);
+            assert.deepEqual(replay.userPlayer.status.positionTraining, first.userPlayer.status.positionTraining);
+            const saved = seasonApi.serializeSeason(id);
+            assert.deepEqual(seasonApi.restoreSeason(saved).userManagerDecision, first.userManagerDecision);
+          });
+
+          test("old saves load and malformed manager decisions fail on normal restore", () => {
+            const initial = seasonApi.createDemoSeason({ seed: "phase3-consolidated-save-compat", startDate: "2026-04-01" });
+            const id = initial.seasonId;
+            const old = seasonApi.serializeSeason(id);
+            delete old.playerStates[old.fixture.userPlayerId].lastManagerDecision;
+            assert.equal(seasonApi.restoreSeason(old).userManagerDecision, null);
+            const invalid = seasonApi.serializeSeason(id);
+            invalid.playerStates[invalid.fixture.userPlayerId].lastManagerDecision = {
+              version: 1, date: "2026-04-02", gameId: "g1", level: "AAA",
+              appearance: "STARTED", reasonCode: "NOT_A_REAL_REASON", replacementPlayerId: null
+            };
+            assert.throws(() => seasonApi.restoreSeason(invalid), /기용 판단/);
+            writeFileSync("reports/phase3-consolidated-player-decisions.json", JSON.stringify({
+              schema: "THE_CALL_UP_PHASE3_CONSOLIDATED_PLAYER_DECISIONS_V1", pass: true,
+              authoritativeManagerExplanation: true, organizationReasonsOnHome: true,
+              trainingRestRoleAndSecondaryReplay: true, legacySaveCompatibility: true,
+              rejectsInvalidSave: true
+            }, null, 2) + "\n", "utf8");
+          });
+          TCU_TEST
+          python3 - <<'TCU_PATCH'
+          from pathlib import Path
+
+          def patch(path, original, updated):
+              p = Path(path)
+              source = p.read_text(encoding="utf-8")
+              count = source.count(original)
+              if count != 1:
+                  raise RuntimeError(f"{path}: expected 1 exact patch anchor, found {count}: {original[:65]!r}")
+              p.write_text(source.replace(original, updated), encoding="utf-8")
+
+          patch("src/api/seasonApi.js",
+                'import { setPlayerRolePreference, getRolePreferenceView } from "../engine/season/rolePreference.js";',
+                'import { setPlayerRolePreference, getRolePreferenceView } from "../engine/season/rolePreference.js";\n'
+                'import { completedUserManagerDecision, getUserManagerDecisionPublicView } from "../engine/season/managerDecisionReadModel.js";')
+
+          record = '''function recordCompletedUserManagerDecision(session, level, game, fixture, battingBySide) {
+            const userPlayerId = session.fixture.userPlayerId;
+            const result = completedUserManagerDecision({
+              fixture, game, level, battingBySide, userPlayerId,
+              userTeamId: userTeamIdForLevel(session, level)
+            });
+            if (!result || !session.playerStates?.[userPlayerId]) return;
+            session.playerStates = { ...session.playerStates,
+              [userPlayerId]: Object.freeze({
+                ...session.playerStates[userPlayerId], lastManagerDecision: result
+              }) };
+          }
+
+          '''
+          patch("src/api/seasonApi.js", "function finalizeSimulatedFixture(session, level, game, fixture, result) {",
+                record + "function finalizeSimulatedFixture(session, level, game, fixture, result) {")
+          patch("src/api/seasonApi.js",
+                "  applyCompletedGamePitcherStates(session, fixture, pitchingBySide, game.date);\n}\n\nfunction canRequestNextGameRest(",
+                "  applyCompletedGamePitcherStates(session, fixture, pitchingBySide, game.date);\n"
+                "  recordCompletedUserManagerDecision(session, level, game, fixture, battingBySide);\n}\n\nfunction canRequestNextGameRest(")
+          patch("src/api/seasonApi.js",
+                "  applyCompletedGamePitcherStates(session, fixture, pitchingBySide, game.date);\n  simulateWorldDate(session, game.date, { excludeLevel: level, excludeGameId: game.gameId });",
+                "  applyCompletedGamePitcherStates(session, fixture, pitchingBySide, game.date);\n"
+                "  recordCompletedUserManagerDecision(session, level, game, fixture, battingBySide);\n"
+                "  simulateWorldDate(session, game.date, { excludeLevel: level, excludeGameId: game.gameId });")
+          patch("src/api/seasonApi.js",
+                "    userRestRequest: Object.freeze({",
+                "    userManagerDecision: getUserManagerDecisionPublicView(session.playerStates?.[session.fixture.userPlayerId]?.lastManagerDecision ?? null),\n"
+                "    userRestRequest: Object.freeze({")
+
+          patch("src/services/seasonSerialization.js",
+                'import { validatePlayerRolePreference } from "../engine/season/rolePreference.js";',
+                'import { validatePlayerRolePreference } from "../engine/season/rolePreference.js";\n'
+                'import { validateUserManagerDecision } from "../engine/season/managerDecisionReadModel.js";')
+          patch("src/services/seasonSerialization.js",
+                '    validatePlayerRolePreference(playerState.rolePreference ?? null, `payload.playerStates.${playerId}.rolePreference`);',
+                '    validatePlayerRolePreference(playerState.rolePreference ?? null, `payload.playerStates.${playerId}.rolePreference`);\n'
+                '    validateUserManagerDecision(playerState.lastManagerDecision ?? null, `payload.playerStates.${playerId}.lastManagerDecision`);')
+
+          ui = '''function managerDecisionCard(snapshot) {
+            const last = snapshot.userManagerDecision ?? null;
+            const evaluation = snapshot.organization?.userEvaluation ?? null;
+            if (!last && !evaluation) return "";
+            const reasons = {
+              STARTING_LINEUP: "감독이 선발 라인업에 배치했습니다.",
+              PLAYER_REQUEST_APPROVED: "요청한 휴식이 승인되어 선발 및 벤치에서 제외됐습니다.",
+              INJURY_UNAVAILABLE: "부상으로 라인업에서 제외됐습니다.",
+              FATIGUE_REST: "피로 관리에 따른 휴식입니다.",
+              COMPETITION_DIRECT: "다른 선수와의 경기별 선발 경쟁 결과입니다.",
+              UTILITY_COVER: "수비 포지션 재배치로 다른 선수가 기용됐습니다.",
+              BENCH_ROLE: "현재 벤치 역할로 경기를 시작했습니다.",
+              OTHER_LINEUP_DECISION: "감독의 경기별 선수 구성에 따라 비선발로 배치됐습니다."
+            };
+            const appearances = {
+              STARTED: "선발", BENCH_PA: "비선발 타석 출전", NOT_STARTED: "비선발"
+            };
+            const lastRow = last ? `<div class="role-status-grid"><div><span>${esc(dateLabel(last.date))} 기용</span><b>${esc(appearances[last.appearance] ?? "비선발")}</b><small>${esc(levelLabel(last.level))}</small></div><div><span>감독 판단</span><b>${esc(reasons[last.reasonCode] ?? "기용 기록 확인")}</b><small>실제 완료 경기의 라인업 기준</small></div></div>` : "";
+            const decision = evaluation?.decision === "PROMOTE" ? "승격 검토"
+              : evaluation?.decision === "DEMOTE" ? "강등 검토"
+                : "현 배치 유지 또는 검토";
+            const orgRow = evaluation ? `<p class="condition-note"><strong>최근 조직 평가 · ${esc(decision)}</strong> ${esc((evaluation.reasonCodes ?? []).map(orgReasonLabel).join(" · ") || "경기 표본 확인 중")} · ${esc(dateLabel(evaluation.date))}. 정기 평가 사유이며 내부 점수·숨겨진 실제 잠재력은 표시하지 않습니다.</p>` : "";
+            return `<section class="card role-status-card"><div class="section-head"><strong>지난 경기 기용 · 조직 평가</strong><span>실제 기록 기반</span></div>${lastRow}${orgRow}</section>`;
+          }
+
+          '''
+          patch("src/ui/seasonRender.js", "function roleStatusCard(snapshot) {", ui + "function roleStatusCard(snapshot) {")
+          patch("src/ui/seasonRender.js",
+                "${recordCard(snapshot)}${conditionCard(snapshot)}${roleStatusCard(snapshot)}${restRequestCard(snapshot)}",
+                "${recordCard(snapshot)}${conditionCard(snapshot)}${roleStatusCard(snapshot)}${managerDecisionCard(snapshot)}${restRequestCard(snapshot)}")
+          print("Consolidated Phase 3 patches applied with guarded source anchors")
+          TCU_PATCH
+          node --check src/engine/season/managerDecisionReadModel.js
+          node --check src/api/seasonApi.js
+          node --check src/services/seasonSerialization.js
+          node --check src/ui/seasonRender.js
+          node --check tests/phase3ManagerDecisionBundle.test.js
+          git diff --check
+      - name: Test all recent player decisions together
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
+          node --input-type=module <<'TCU_ASSERT'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const list = [
+            'phase3-one-day-progression.json',
+            'phase3-training-coach-feedback.json',
+            'phase3-player-rest-request.json',
+            'phase3-secondary-position-training.json',
+            'phase3-role-preference.json',
+            'phase3-consolidated-player-decisions.json'
+          ];
+          for (const name of list) {
+            const result = JSON.parse(readFileSync(`reports/${name}`, 'utf8'));
+            assert.equal(result.pass, true, name);
+          }
+          console.log('Phase 3 recent player decisions regression PASS');
+          TCU_ASSERT
+      - name: Re-run full production 2026 Phase 3 integrated world audit
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase3-integration-4r.mjs
+          node --input-type=module <<'TCU_WORLD'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const result = JSON.parse(readFileSync('reports/phase3-integrated-regression-4r-v1.json', 'utf8'));
+          assert.equal(result.pass, true);
+          assert.equal(result.regularSeason.worldGames, 10710);
+          assert.ok(result.postseason.championTeamId);
+          assert.ok(Object.values(result.gates).every(Boolean));
+          console.log('2026 five-level world + postseason Phase 3 PASS');
+          TCU_WORLD
+          git diff --check
+      - name: Commit only if player and world regression gates pass
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add src/engine/season/managerDecisionReadModel.js src/api/seasonApi.js src/services/seasonSerialization.js src/ui/seasonRender.js tests/phase3ManagerDecisionBundle.test.js reports/phase3-consolidated-player-decisions.json reports/phase3-integrated-regression-4r-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Expected verified code change missing' >&2
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase3: consolidate manager decisions, organization feedback and full 2026 gate'
+          git push origin HEAD:main
