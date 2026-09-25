@@ -1,0 +1,11 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_ROLE_PREFERENCE_V1",
+  "pass": true,
+  "cappedManagerConsideration": true,
+  "noGuaranteedRole": true,
+  "noHiddenRatingsOrFatigueBoost": true,
+  "homeUi": true,
+  "saveRestoreAndReplay": true,
+  "historicalSaveCompatibility": true,
+  "strictInvalidSaveRejection": true
+}

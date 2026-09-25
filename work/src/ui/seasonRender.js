@@ -830,6 +830,24 @@ function orgReasonLabel(code) {
   })[code] ?? code;
 }
 
+function rolePreferenceControls(preference) {
+  const current = preference?.mode ?? "OPEN";
+  const options = [["OPEN", "구단 판단에 맡김"], ["EVERYDAY", "주전 출전 선호"], ["VERSATILE", "멀티포지션 기용 선호"]];
+  const reasons = {
+    NO_REQUEST: "선수가 별도 역할 선호를 전달하지 않았습니다.",
+    PLAYING_TIME_SAMPLE: "기용 표본을 더 확인하고 있습니다.",
+    EVERYDAY_ROLE_AND_GAMES: "현재 주전 역할과 실제 출전 기록이 선호에 맞습니다.",
+    MANAGER_ROLE_DIFFERENT: "현재 조직이 부여한 역할은 요청과 다릅니다.",
+    VERSATILE_ROLE_AND_REPS: "현재 멀티포지션 역할과 실제 기용이 선호에 맞습니다.",
+    VERSATILITY_NOT_ESTABLISHED: "멀티포지션 실전 기용은 아직 정착되지 않았습니다."
+  };
+  return `<div class="training-focus-wrap role-preference-wrap">
+    <div class="training-focus-head"><strong>역할 선호</strong><span>최종 결정은 감독·조직</span></div>
+    <div class="training-focus-grid">${options.map(([mode, label]) => `<button type="button" data-role-preference="${mode}" class="${current === mode ? "active" : ""}">${label}</button>`).join("")}</div>
+    <p class="condition-note">${esc(reasons[preference?.reasonCode] ?? reasons.NO_REQUEST)} 선호는 이미 부여된 역할·수비 가능 범위 안에서 접전 라인업 선택에만 소폭 고려됩니다. 능력치·승격·주전 자리 보장은 없습니다.</p>
+  </div>`;
+}
+
 function roleStatusCard(snapshot) {
   const assignment = snapshot.userRole?.assignment;
   if (!assignment) return "";
@@ -847,6 +865,7 @@ function roleStatusCard(snapshot) {
       <div><span>Role Fit</span><b>${esc(roleFitBandLabel(snapshot.userRole?.roleFit?.fitBand))}</b><small>${esc(roleFitReasonLabel(snapshot.userRole?.roleFit?.reasonCodes?.[0]))}</small></div>
       <div><span>다음 검토</span><b>${assignment.reviewDueInDays === 0 ? "검토 가능" : `${assignment.reviewDueInDays}일`}</b><small>${assignment.reviews}회 검토 완료</small></div>
     </div>
+    ${rolePreferenceControls(snapshot.userRole?.preference)}
     <p class="condition-note">${esc(trajectory)}${blocker ? ` 상위 레벨 ${esc(snapshot.organization.userPosition)}에는 ${esc(blocker.name)}이(가) 있어 포지션 경쟁도 함께 고려됩니다.` : ""} 역할 검토는 매일이 아니라 주기적으로 이루어집니다. Role Fit은 v35부터 설명용 진단이며 실제 역할 변경 입력으로 사용하지 않습니다. v36 포지션 배치는 선발 9명 선택 뒤의 제한적 최적화로, 타순이나 승격 판단을 바꾸지 않습니다. v37 후반 벤치 AI도 OVR이 아니라 실제 coverage와 타격·주루·수비 도구를 사용합니다. v38에서는 순수 AI 일정만 Detailed-fit Fast Sim을 사용하고 사용자 경기와 공식 기록 흐름은 Detailed 엔진 기준을 유지합니다.</p>
   </section>`;
 }
@@ -1068,6 +1087,7 @@ function renderSeason(root, snapshot, handlers, tab = "HOME", uiState = {}) {
   root.querySelectorAll("[data-season-action]").forEach((button) => button.addEventListener("click", () => handlers.onAction(button.dataset.seasonAction)));
   root.querySelectorAll("[data-training-focus]").forEach((button) => button.addEventListener("click", () => handlers.onTrainingFocus?.(button.dataset.trainingFocus)));
   root.querySelectorAll("[data-position-training]").forEach((button) => button.addEventListener("click", () => handlers.onSecondaryPositionTraining?.(button.dataset.positionTraining === "NONE" ? null : button.dataset.positionTraining)));
+  root.querySelectorAll("[data-role-preference]").forEach((button) => button.addEventListener("click", () => handlers.onRolePreference?.(button.dataset.rolePreference)));
   root.querySelectorAll("[data-backup-restore]").forEach((button) => button.addEventListener("click", () => handlers.onRestoreBackup?.(button.dataset.backupRestore)));
   root.querySelectorAll("[data-player-section]").forEach((button) => button.addEventListener("click", () => handlers.onPlayerSection?.(button.dataset.playerSection)));
   root.querySelectorAll("[data-league-section]").forEach((button) => button.addEventListener("click", () => handlers.onLeagueSection?.(button.dataset.leagueSection)));

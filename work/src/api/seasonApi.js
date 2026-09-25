@@ -22,6 +22,7 @@ import { getUtilityPathwayView } from "../engine/season/utilityUsage.js";
 import { getPositionPlayingTimeView } from "../engine/season/playingTimeReadModel.js";
 import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
 import { getTrainingCoachFeedback } from "../engine/season/coachingFeedback.js";
+import { setPlayerRolePreference, getRolePreferenceView } from "../engine/season/rolePreference.js";
 import { setSecondaryPositionTraining as chooseSecondaryPositionTraining, advanceSecondaryPositionTraining } from "../engine/season/secondaryPositionTraining.js";
 import { createPlayerRestRequest, settlePlayerRestRequest, getPlayerRestRequestPublicView } from "../engine/season/playerRestRequest.js";
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
@@ -2368,7 +2369,9 @@ function snapshot(session) {
         restGames: Math.max(0, assignmentTeamGames - userLine.G),
         assignment: getRolePublicView(userRoleState, { currentDate: session.state.currentDate }),
         playingTime,
-        roleFit: getRoleFitFeedback(userRoleState, playingTime, { currentDate: session.state.currentDate })
+        roleFit: getRoleFitFeedback(userRoleState, playingTime, { currentDate: session.state.currentDate }),
+        preference: getRolePreferenceView(
+          session.playerStates?.[session.fixture.userPlayerId] ?? null, userRoleState, playingTime)
       };
     })(),
     userRestRequest: Object.freeze({
@@ -2591,6 +2594,13 @@ const seasonApi = Object.freeze({
     const playerId = session.fixture.userPlayerId;
     session.playerStates = { ...session.playerStates,
       [playerId]: chooseSecondaryPositionTraining(session.playerStates[playerId], findPlayer(session, playerId), position) };
+    return snapshot(session);
+  },
+  setRolePreference(seasonId, mode) {
+    const session = assertSession(seasonId);
+    const playerId = session.fixture.userPlayerId;
+    session.playerStates = { ...session.playerStates,
+      [playerId]: setPlayerRolePreference(session.playerStates[playerId], mode, session.state.currentDate) };
     return snapshot(session);
   },
   requestNextGameRest(seasonId) {

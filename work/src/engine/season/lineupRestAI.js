@@ -1,6 +1,7 @@
 import { getSeasonEffectivePlayer } from "./playerSeasonState.js";
 import { buildBattingOrder } from "./battingOrderAI.js";
 import { rolePriority } from "./roleSystem.js";
+import { rolePreferenceLineupBonus } from "./rolePreference.js";
 import {
   canUtilityCover,
   getUtilityCoverage,
@@ -576,13 +577,21 @@ function startComponents({
   const stabilityBonus =
     baselineStarter ? 1 : 0;
 
+  const preferenceBonus = rolePreferenceLineupBonus({
+    preference: playerStates?.[playerId]?.rolePreference ?? null,
+    role, baselineStarter, position,
+    primaryPosition: playerStates?.[playerId]?.primaryPosition ?? basePlayer?.positioning?.primaryPosition ?? "DH",
+    coverageEligible: canUtilityCover(roster, playerStates, roleStates, playerId, position)
+  });
+
   const score =
     offense * 0.70 +
     defense * 0.30 +
     roleBonus +
     momentumBonus -
     fatiguePenalty +
-    stabilityBonus;
+    stabilityBonus +
+    preferenceBonus;
 
   const side =
     splitSide(opposingPitcher);

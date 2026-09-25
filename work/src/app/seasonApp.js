@@ -388,6 +388,11 @@ function startSeasonApp(root) {
         renderHome();
         void queueAutosave();
       },
+      async onRolePreference(mode) {
+        snapshot = seasonApi.setRolePreference(snapshot.seasonId, mode);
+        renderHome();
+        void queueAutosave();
+      },
       async onImportFile(file) {
         try {
           saveMessage = ".tcu 검증 중...";
