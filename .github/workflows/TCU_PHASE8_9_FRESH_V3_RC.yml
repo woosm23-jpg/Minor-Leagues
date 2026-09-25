@@ -1,0 +1,226 @@
+name: THE CALL-UP Phase 8 Fresh Two-Year Save and Phase 9 Release Candidate
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE8_9_FRESH_V3_RC.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  phase8-long-save-and-rc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 115
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install fresh current-code regression and mobile smoke scripts
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          test -f data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          test -f scripts/verify-phase3-integration-4r.mjs
+          test -f scripts/browser-standalone-smoke-v39.py
+          mkdir -p "$(dirname 'scripts/verify-phase8-fresh-v3-two-year.mjs')"
+          cat <<'TCU_RC_JS' | base64 -d | gzip -d > 'scripts/verify-phase8-fresh-v3-two-year.mjs'
+          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
+          TCU_RC_JS
+          mkdir -p "$(dirname 'scripts/browser-phase9-rc-smoke.py')"
+          cat <<'TCU_RC_BROWSER' | base64 -d | gzip -d > 'scripts/browser-phase9-rc-smoke.py'
+          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
+          TCU_RC_BROWSER
+          node --check scripts/verify-phase8-fresh-v3-two-year.mjs
+          python3 -m py_compile scripts/browser-phase9-rc-smoke.py
+          git diff --check
+      - name: Full unit suite and previously repaired Phase 8 integrity gate
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          npm test
+          node scripts/verify-phase8-save-integrity.mjs
+          node --input-type=module <<'TCU_PHASE8_PRIOR'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const p=JSON.parse(readFileSync('reports/phase8-save-integrity-bundle.json','utf8'));
+          assert.equal(p.pass,true);
+          assert.equal(p.fullSaveRestoreDeterministic,true);
+          console.log('Latest Phase 8 integrity gate PASS');
+          TCU_PHASE8_PRIOR
+      - name: Fresh 2026 and 2027 Production v3 full seasons, playoffs and boundary replay
+        shell: bash
+        working-directory: work
+        timeout-minutes: 85
+        run: |
+          set -euo pipefail
+          node --expose-gc --max-old-space-size=4096 scripts/verify-phase8-fresh-v3-two-year.mjs
+          node --input-type=module <<'TCU_PHASE8_FRESH_GATE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const p=JSON.parse(readFileSync('reports/phase8-fresh-v3-two-year.json','utf8'));
+          assert.equal(p.pass,true);
+          assert.equal(p.completedSeasons,2);
+          assert.equal(p.worldGames,21420);
+          assert.equal(p.replay2027,true);
+          assert.equal(p.results[1].historySeasons,2);
+          console.log('Phase 8 two-year current-world save gate PASS');
+          TCU_PHASE8_FRESH_GATE
+      - name: Production v3 full 2026 world regression after fresh long save
+        shell: bash
+        working-directory: work
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase3-integration-4r.mjs
+          node --input-type=module <<'TCU_RC_WORLD'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const r=JSON.parse(readFileSync('reports/phase3-integrated-regression-4r-v1.json','utf8'));
+          assert.equal(r.pass,true);
+          assert.equal(r.regularSeason.worldGames,10710);
+          assert.ok(r.postseason.championTeamId);
+          assert.ok(Object.values(r.gates).every(Boolean));
+          console.log('Latest Production v3 2026 world and postseason PASS');
+          TCU_RC_WORLD
+      - name: Build the latest single-file Korean Production v3 HTML release candidate
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/build-standalone.mjs --output=dist/THE_CALL_UP_COMPLETE_EDITION_RC.html --master-snapshot=data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          node --input-type=module <<'TCU_RC_HTML'
+          import assert from 'node:assert/strict';
+          import {readFileSync,statSync} from 'node:fs';
+          const p='dist/THE_CALL_UP_COMPLETE_EDITION_RC.html';
+          const html=readFileSync(p,'utf8');
+          assert.ok(statSync(p).size>1_000_000,'Unexpectedly small standalone HTML');
+          assert.match(html,/<html lang="ko">/);
+          assert.match(html,/__THE_CALL_UP_MASTER_SNAPSHOT__/);
+          assert.match(html,/THE CALL-UP/);
+          assert.match(html,/phase8-current-v3-two-year|complete_edition_v1_0/);
+          console.log('Latest production standalone RC bundle structural checks PASS');
+          TCU_RC_HTML
+      - name: Run Chromium smoke at three phone widths
+        shell: bash
+        working-directory: work
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+          python3 scripts/browser-phase9-rc-smoke.py
+      - name: Write source-bound release candidate report and SHA-256
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          sha256sum dist/THE_CALL_UP_COMPLETE_EDITION_RC.html data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz > dist/RELEASE_CANDIDATE_SHA256.txt
+          node --input-type=module <<'TCU_RC_REPORT'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync,statSync} from 'node:fs';
+          import crypto from 'node:crypto';
+          import {execFileSync} from 'node:child_process';
+          const read=f=>JSON.parse(readFileSync(f,'utf8'));
+          const long=read('reports/phase8-fresh-v3-two-year.json');
+          const smoke=read('reports/phase9-rc-mobile-browser.json');
+          const world=read('reports/phase3-integrated-regression-4r-v1.json');
+          assert.equal(long.pass,true);assert.equal(smoke.pass,true);assert.equal(world.pass,true);
+          const data=readFileSync('data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz');
+          const html=readFileSync('dist/THE_CALL_UP_COMPLETE_EDITION_RC.html');
+          const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const report={schema:'THE_CALL_UP_PHASE8_9_RELEASE_CANDIDATE_V1',pass:true,
+            sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
+            dataSha256:sha(data),htmlSha256:sha(html),htmlBytes:statSync('dist/THE_CALL_UP_COMPLETE_EDITION_RC.html').size,
+            freshWorldYears:long.completedSeasons,freshWorldGames:long.worldGames,
+            worldRegression2026Games:world.regularSeason.worldGames,
+            mobileBrowser:smoke.checks,limitations:['Release candidate, not final COMPLETE','Historical 20-year v59 is not fresh-current-code validation','Chromium smoke is not physical-phone timing']};
+          writeFileSync('reports/phase8-9-release-candidate.json',JSON.stringify(report,null,2)+'\n');
+          console.log(JSON.stringify(report,null,2));
+          TCU_RC_REPORT
+          git diff --check
+      - name: Commit verified scripts and reports from the tested source
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add scripts/verify-phase8-fresh-v3-two-year.mjs scripts/browser-phase9-rc-smoke.py reports/phase8-fresh-v3-two-year.json reports/phase9-rc-mobile-browser.json reports/phase8-9-release-candidate.json reports/phase3-integrated-regression-4r-v1.json reports/phase8-save-integrity-bundle.json
+          git diff --cached --check
+          if git diff --cached --quiet; then echo 'No tested report changes to commit' >&2; exit 1; fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase8: fresh v3 two-year save gate and production HTML release candidate'
+          git push origin HEAD:main
+      - name: Upload tested standalone HTML candidate and release report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE_CALL_UP_PHASE8_9_RELEASE_CANDIDATE
+          path: |
+            work/dist/THE_CALL_UP_COMPLETE_EDITION_RC.html
+            work/dist/RELEASE_CANDIDATE_SHA256.txt
+            work/reports/phase8-9-release-candidate.json
+            work/reports/phase8-fresh-v3-two-year.json
+            work/reports/phase9-rc-mobile-browser.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
