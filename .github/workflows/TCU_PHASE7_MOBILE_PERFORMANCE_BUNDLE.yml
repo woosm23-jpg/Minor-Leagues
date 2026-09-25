@@ -1,0 +1,261 @@
+name: THE CALL-UP Phase 7 Mobile Save and Simulation Responsiveness Bundle
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE7_MOBILE_PERFORMANCE_BUNDLE.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  phase7-mobile-performance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 105
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install coalesced save queue, responsive progress UI and mobile controls
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          test -f scripts/verify-phase3-integration-4r.mjs
+          test -f scripts/verify-v55-1-performance.mjs
+          mkdir -p "$(dirname 'src/services/coalescedSaveQueue.js')"
+          cat <<'TCU_PHASE7_ASSET_1' | base64 -d | gzip -d > 'src/services/coalescedSaveQueue.js'
+          H4sIAAAAAAAC/31VbU/bMBD+3l9x9ANKtDYdX0GZxN4kpA2YhjRN0z64zqUJpHZnO5Su5L/vHMeJU8qQQMX39txzz10XC7iEolwV81zh
+          nxoF30GtUcHtJazZDjQvMKsrpH/EDvK6quZbqaoMrkSGT5h9fA9bVRrUyWSxgK+oVgg3119+AsvuGUdhQKqsFEztgNVGavZIrnCNj1Ri
+          3XozWJcVaiMFwrY0BTAhTYHK5hssUpGjkGrNKlcQGFdS61H4UtYio1LJJK8FN6UUwBUygx8kIx+O2Xeq/63GGqM9WCwz2LLSfJbqKqMe
+          U2B6JzhEMaTvYN9AQ0/7Job9BKDMITK7Dcq8jYSTNIWprzOF52forGHGsZNLBGAKJbcgcAt3FPJJKamiaZuUiWwUz1lVLRl/oD4Vgp1Q
+          qTCbxheUp6FfLoU2sEFBHK8I7K/f1lIhvSnJUWv3nLNKo7e0c9YGMzK89Y/MGFxv6PFHO83QxD154WPOiPXuhZ4cbz3rmWKliHy7lrkB
+          TkwATK3ERWsbwTSqRvdsSC8uGGBbUCnK4JpMKhQrU8S92ZNAWqOg1JOR6KLMTRRf9G4WtqwNl2sMKXE/YUH7w+wUwlGEmeAFXW9SOAvt
+          pN27wmrU1CTYdrSGPZAjKRsqUiQBpn0oJIUzU5JZI9PEnBZsowtpkiDZANqhsulIv73uz13vybAIzQis5b/PkXatx36EY+gNSc7wYsTF
+          UUd4ncum/5TT2kZuPAq1rKhPWhCH1raCSsfe4iH20F2aBnI6H1U1jOe4snuhHcjkUZaZ16Pza9rdoT+9XLuNCDml1IKO3egCuAKDi13u
+          1un0tD8NY+tUG0Vg2utw0pviQbxHL8GQY10Tc0t0VboTKOZWeXSZXeqgKQhWexiWlf3hbjATzc+6yHFPadCTi/IfkpdOQx/DjRgKN4A0
+          m97FYwhIdteXRHBOhwsaP0aPclPrImrDDpq056Ml7VbJdakx8uKyVzss50XmUnVevcCOSKM7rKE4spKthNSm5Lq/aB2Em+U9cpPQNyf+
+          tRvZ0z87PBCzgaHZJNyqme/2HMbKnYU6b/qD///KsxBtG0W94NNGKkO8v/ZdaJn/ByqrVLEICAAA
+          TCU_PHASE7_ASSET_1
+          mkdir -p "$(dirname 'tests/phase7MobilePerformance.test.js')"
+          cat <<'TCU_PHASE7_ASSET_2' | base64 -d | gzip -d > 'tests/phase7MobilePerformance.test.js'
+          H4sIAAAAAAAC/8VXS48bRRC++1eU5jQm4xnvEkHi1SQ4rJdEyj5ggxDaXUW9M2W7YaZ70t2zjmVZ4sCFE+LCEXEAcY04ceEPheU/UD0v
+          P+IFbxQJHzya6qqv6/VV9/A0k8oA0xrpMVQyBUfIGHulJNBG8cg4ey1eKhrUK2r2fbE6U8jiA57g6VRE82W9oV7SikjN4MeSJagjjE/Z
+          FX6aY461he8HWkUBOXDFI9RB9Iam/9UynkampehnfA2AZTxo1lZNFIoY1WmxuGaV10afFTqlXWuYi8hwKSDGISqFsduGWQsgQQMKtUyu
+          cI9eIykoQRnhcY0QgsAJnJRvbiwFiR7ArDagdSvbg3nb2io0uRK0XJl7jd58rzVvtWyuXUeqmAumpsByIzUlREOdH4hzxcUImAAuOsOE
+          j8YGJoobhAk3Y5kbSKS2GmaMkLCimMW641ELUM2AorIeNpFow5TB2HraxG39SihDuCJdRF8galo8u1gIX9iykeym2rt2TwAbUK/2ZZZS
+          K2lDKZo3btlfuYGf5XrsNiqFA/bHh+BWGgmKkRlDGIawQ+Wqo/GrvJLTwCaMmzogv8o8VaQCq2piVI4lvl2YLwU75Ir+wzI+AqYnValQ
+          KKHrPWvoxlJhYdhXik1924HurPS3B/fvz72qFGu4JXDBTZ9kLHFLhZizkZDa8Ei77VodYw92ut3tbBqSeXD/XtWPZVIW2VrgyK9dt4yv
+          6m6fJYl7VmTDA9+3Ruai3fbxCtXUfSQlYYkV92PEbFC4U1bLgzORJ4kH9v9iO6eZMZhmFOgXFcTudnZDRm1Dkdrc2GpW3Cp53yHeE4di
+          kBkKYksnZlNo+qxu74wipAGFcPDk4BguZS5ipjjqd0Al720ptAV7NnIHHj4Ep//5s2OnYtHNHNqaQiWD1vgzf6fUOVuz9NahvMKHVeEi
+          LT3ndNA/PT56Pjjad+YblW8PeXwyOHpy9Mnz/f6XN2Fe/B/kOivr69WPpdAb2bLvlfDitsNjd5VRJdGqQ6iKVcOQJdTylmL2EFLF1IeI
+          ji3CSxLQeRQhxo5XdLLbDh/UJ23Fdx1212gRbkWKGgoaoDt36oZ3G+ww3GmbsZKT4vQeKCWV67zIpWE1PTZ39UqWyvqtN08R+HbK/9JU
+          dt9bzbmdt5umK8O0yIh2bQpvdtR6FzTvwWovpPKSVkDzNKey27sUEXtETaGp4mrI6ALDNTCqvdb8MikbpLnujFiKWUKTWGHKuNBAF7Ix
+          EyPbJ3Vdq0ErWKbH0oSLu1/ZHfuYyvLKR11BDdZzsjFx8MNO7Ucn545XTJ19Uu85u93dDzrdu53ujrM8uJQk8BkXAtXjZ4dPKWyPUqGm
+          p8TpyEjVT5KedensYlVeCO3pNi8nwOIK6lpIr3bcm8095/Hx4cDxZpStR7me9mzNV9osZSYaF3Z+44kX0BHEOpdkEDrWwgn+2yRKaDl0
+          aKNFHiQNFsr1NuaKhg9ZG2ZyvY3+69//fP3HK7j+7du/f/wO/nr1PVz//M31T7/C9S8/BO3bJ6ag1EpmYon6SJrDjdtvCnMLr2NmWKe6
+          HrDiQyB0Tp4SHYOlvogoj8tfQHShMFPiAn2IZD4t0lDNzfCe8+Z2tOgF5/4m5871e+ez4AYTI/NoXDnUI82UCZ5V7LrJ5qMUifYW1k3Z
+          y86Ex3TlpNe773ezl+ftmrT/AIyyWS0aDgAA
+          TCU_PHASE7_ASSET_2
+          mkdir -p "$(dirname 'scripts/verify-phase7-mobile-performance.mjs')"
+          cat <<'TCU_PHASE7_ASSET_3' | base64 -d | gzip -d > 'scripts/verify-phase7-mobile-performance.mjs'
+          H4sIAAAAAAAC/31V23LiSAx95yu6/GRqbRNSmU0WylNFEuZWubAh2TzMTlEdW9i9sbs9rTYsm+LfV+0LmGRmXjBuS0fS0VFL5IXShnFE
+          oMdSq5w5UsUwqk8GaLSIjDPuidrwRQOPP4gM5hsZeWstDLRv2677Ejs+CByVnBSiNQmCAepowAsx2H0L/um6RBTHwIXiGWAE8Zyv4M8S
+          SniFQDmuRAQ4iN5Y1ni9SEk0rNCwEqrE8Mv89iYouEZwu5W4jgYbGAerd+/8oV+AXiqdcxmBn1AiBKak4zmlWZ45/f64V9MTwPeSZ26L
+          TsCIntElkEUdeKkB03BfZF3XJeRqXp25RA7EI6dIOcKpj3wlZOI/lRqN46Hh2lyS/cg5Pjr+3T868Y+GznYHLuKwwg9q/M/xuJeBYRoy
+          eqe+EIjHKhCIdwnZ03l9FkpYsxnxKSo6UGUrCN+/NB5hczLeB6yc72r4nzh3g/8AQUOkdIzh12/tyXfbrPBn/SZ+6C+pkZrE3Jec+oVG
+          Sdj2KVaPsaa9fJMpHnd4pu4Inon/oKFZxJQCa8MHRYlpB81rALaVkVi6rV0GMjFpGIbDfkuL2x/zNReHZIy3FbgptWS2/+Pe9hVrYVVn
+          oEkxFNO1EtqjzA97VGiVEHUIBxWJvMwsR6XWIM1HnkNdVSNF9ezu/YL2b7BWOouvgCclWBe8UHlBIoH4/VGnKZTfRGu+Cex0uS912aOz
+          o63nEtGvUie/bpfdgxzcuqxGGAHPMvdrVaMXBIEN9K3fD2AFeuOeK0Uo8s04HZLvHb/+XqcTC55IhUZE6PaD3fx7p3/s7WOAYnqAyY3r
+          D/tB02/vl4Lp8GPvhtDqDaMUcj5y7j9NFxeTq6vFw2wx+zSZT08X17fnn6+mi9n07sPt3fXk5mK6OH+4uaSjv4aOZ6+GkZWGRyhPxF0m
+          JM01XTfBkK25zhlKXmCqDNtXZiXFyS4es7b9MasuByaQcWZnw6/oYNTn56okJgmCkyfP/CIlcTMs6IphUcZF7tjoDZSgwiP7i/NUrWca
+          ZhTKnJe4ITnSndMmK2RRmsbyPFPRM8SPqb03GxiZ7EyNKqP0nusEDE4MqQ7NyclFp/BlmWWPVpF2wG/l1Opg+i9EJRX2aJfJnqKymq5K
+          chBPSqOsC47OhruvlBO11h7Pm+ZVReHolYD2aHEpYy5NFQknKyViunvPhv5bB0s1mtluoGwUosjuG3JpkyQn0BBft/fIPT32xaq6zHkl
+          mQcZpVwmHedWBB/B1Jp7JBVMiBGewDWOdkvFiJw4xmsMkh9Y9rbj3sEa3q+yZqfk6ok+Hay0J+Iha5datRLtnpeJWG7c2tuT1Ckavd+c
+          v6XTDAJNa5CpxP2lA9n+Dx6Wt6NUCAAA
+          TCU_PHASE7_ASSET_3
+          python3 - <<'TCU_PHASE7_PATCH'
+          from pathlib import Path
+          
+          def once(path, before, after):
+              f=Path(path)
+              source=f.read_text(encoding="utf-8")
+              n=source.count(before)
+              if n!=1: raise RuntimeError(f"Phase 7 exact anchor failure: {path}, matches={n}, prefix={before[:88]!r}")
+              f.write_text(source.replace(before, after, 1),encoding="utf-8")
+          
+          p="src/app/seasonApp.js"
+          needle='import { seasonApi } from "../api/seasonApi.js";'
+          once(p,needle,needle+'\nimport { createCoalescedSaveQueue } from "../services/coalescedSaveQueue.js";')
+          needle='function startSeasonApp(root) {'
+          helper='''function waitForProgressPaint() {
+            return new Promise(resolve => {
+              let done = false;
+              let timeout = null;
+              const finish = () => {
+                if (done) return;
+                done = true;
+                if (timeout !== null) globalThis.clearTimeout?.(timeout);
+                resolve();
+              };
+              if (typeof globalThis.requestAnimationFrame === "function" && globalThis.document?.visibilityState !== "hidden") {
+                if (typeof globalThis.setTimeout === "function") timeout = globalThis.setTimeout(finish, 700);
+                globalThis.requestAnimationFrame(() => globalThis.requestAnimationFrame(finish));
+              } else if (typeof globalThis.setTimeout === "function") {
+                globalThis.setTimeout(finish, 0);
+              } else finish();
+            });
+          }
+          
+          '''
+          once(p,needle,helper+needle)
+          needle='  let saveMessage = "";'
+          once(p,needle,needle+'\n  let simBusy = false;')
+          needle='  const saveUi = () => ({ saveMessage, currentSaveId, backups, playerSection, leagueSection, moreSection, leaderCategory, orgPosition, playerDetail, majorEvent });'
+          once(p,needle,needle.replace('majorEvent });','majorEvent, simBusy });'))
+          needle='''  let autosaveQueue = Promise.resolve(true);
+            const waitForAutosaveIdle = () => new Promise((resolve) => {
+              if (typeof globalThis.requestIdleCallback === "function") {
+                globalThis.requestIdleCallback(() => resolve(), { timeout: 750 });
+              } else {
+                globalThis.setTimeout(resolve, 0);
+              }
+            });
+            const queueAutosave = ({ milestone = null } = {}) => {
+              autosaveQueue = autosaveQueue.catch(() => false).then(async () => {
+                await waitForAutosaveIdle();
+                return autosave({ milestone });
+              });
+              return autosaveQueue;
+            };
+          '''
+          after='''  const waitForAutosaveIdle = () => new Promise(resolve => {
+              if (typeof globalThis.requestIdleCallback === "function") {
+                globalThis.requestIdleCallback(resolve, { timeout: 750 });
+              } else if (typeof globalThis.setTimeout === "function") {
+                globalThis.setTimeout(resolve, 0);
+              } else resolve();
+            });
+            const saveQueue = createCoalescedSaveQueue({save: autosave, waitForIdle: waitForAutosaveIdle});
+            const queueAutosave = saveQueue.request;
+          '''
+          once(p,needle,after)
+          needle='''      async onAction(action) {
+          '''
+          after='''      async onAction(action) {
+                  if (simBusy) return;
+                  const isSimulation = ["SIM_GAME", "SIM_SERIES", "SIM_DAY", "SIM_7_DAYS", "SIM_IMPORTANT"].includes(action);
+                  if (isSimulation) {
+                    simBusy = true;
+                    renderHome();
+                    await waitForProgressPaint();
+                  }
+                  try {
+          '''
+          once(p,needle,after)
+          needle='''      }
+              }, tab, saveUi());'''
+          after='''        } finally {
+                    if (isSimulation) {
+                      simBusy = false;
+                      renderHome();
+                    }
+                  }
+                }
+              }, tab, saveUi());'''
+          once(p,needle,after)
+          
+          p="src/ui/seasonRender.js"
+          needle='  root.innerHTML = `<main class="season-screen">'
+          after='''  root.innerHTML = `<main class="season-screen"${uiState.simBusy ? ' aria-busy="true"' : ""}>
+              ${uiState.simBusy ? `<div class="sim-progress-overlay" role="status" aria-live="polite"><div class="sim-progress-card"><span class="sim-progress-spinner" aria-hidden="true"></span><strong>경기 진행 및 저장 중</strong><p>날짜·시리즈 결과와 저장을 처리하고 있습니다. 중복 실행을 막는 중입니다.</p></div></div>` : ""}'''
+          once(p,needle,after)
+          
+          p="styles/app.css"
+          css=Path(p).read_text(encoding="utf-8")
+          if '.sim-progress-overlay {' in css: raise RuntimeError('Phase 7 CSS already installed')
+          with Path(p).open('a',encoding='utf-8') as f:
+              f.write('''\n/* Phase 7: mobile input and non-blocking progress feedback. */
+          button, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+          button:focus-visible, [role="button"]:focus-visible { outline: 2px solid #bac8d9; outline-offset: 2px; }
+          .sim-progress-overlay { position: fixed; inset: 0; z-index: 160; display: grid; place-items: center; padding: 18px; background: rgba(6,10,15,.82); backdrop-filter: blur(4px); }
+          .sim-progress-card { width: min(100%, 340px); padding: 24px 18px; border: 1px solid #405062; border-radius: 18px; background: #131b25; text-align: center; box-shadow: 0 20px 70px rgba(0,0,0,.5); }
+          .sim-progress-card strong { display: block; margin-top: 11px; color: #f3f6f9; font-size: 17px; }
+          .sim-progress-card p { margin: 8px 0 0; color: #a4b2c1; line-height: 1.5; font-size: 12px; }
+          .sim-progress-spinner { width: 24px; height: 24px; display: block; margin: 0 auto; border: 3px solid #526174; border-top-color: #eef3f8; border-radius: 50%; animation: sim-progress-spin 1s linear infinite; }
+          @keyframes sim-progress-spin { to { transform: rotate(360deg); } }
+          @media (prefers-reduced-motion: reduce) { .sim-progress-spinner { animation: none; border-top-color: #eef3f8; } }
+          @media (max-width: 430px) {
+            .season-screen, .season-content, .season-content > *, .season-hero-head > div { min-width: 0; max-width: 100%; }
+            .season-player strong, .career-timeline-row strong { overflow-wrap: anywhere; }
+            .table-scroll { max-width: 100%; }
+            .progress-actions > button, .time-progress-actions > button, .training-focus-grid button { min-height: 44px; }
+          }
+          ''')
+          print('Phase 7: coalesced saves, pre-paint simulation feedback and mobile CSS installed')
+          TCU_PHASE7_PATCH
+          node --check src/services/coalescedSaveQueue.js
+          node --check src/app/seasonApp.js
+          node --check src/ui/seasonRender.js
+          node --check tests/phase7MobilePerformance.test.js
+          node --check scripts/verify-phase7-mobile-performance.mjs
+          git diff --check
+      - name: Run full unit suite and coalescing milestone safety tests
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
+          git diff --check
+      - name: Verify actual redundant save avoidance and existing snapshot speed gate
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-v55-1-performance.mjs
+          node scripts/verify-phase7-mobile-performance.mjs
+          node --input-type=module <<'TCU_PHASE7_SAVES'
+          import assert from "node:assert/strict";
+          import {readFileSync} from "node:fs";
+          const x=JSON.parse(readFileSync("reports/phase7-mobile-performance-bundle.json","utf8"));
+          assert.equal(x.pass,true);
+          assert.equal(x.burstRequestedAutoSaves,81);
+          assert.equal(x.burstActualSaveSerializations,2);
+          assert.equal(x.latestProgressedSavePreserved,true);
+          console.log("Phase 7 save burst gate PASS");
+          TCU_PHASE7_SAVES
+      - name: Verify production v3 2026 whole world and postseason without gameplay changes
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase3-integration-4r.mjs
+          node --input-type=module <<'TCU_PHASE7_WORLD'
+          import assert from "node:assert/strict";
+          import {readFileSync} from "node:fs";
+          const w=JSON.parse(readFileSync("reports/phase3-integrated-regression-4r-v1.json","utf8"));
+          assert.equal(w.pass,true);
+          assert.equal(w.regularSeason.worldGames,10710);
+          assert.ok(w.postseason.championTeamId);
+          assert.ok(Object.values(w.gates).every(Boolean));
+          console.log("Phase 7 production v3 world and postseason gate PASS");
+          TCU_PHASE7_WORLD
+          git diff --check
+      - name: Commit only after all mobile and world gates pass
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add src/services/coalescedSaveQueue.js src/app/seasonApp.js src/ui/seasonRender.js styles/app.css tests/phase7MobilePerformance.test.js scripts/verify-phase7-mobile-performance.mjs reports/phase7-mobile-performance-bundle.json reports/v55-1-performance-gate.json reports/phase3-integrated-regression-4r-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No verified Phase 7 changes; refusing empty commit.' >&2
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase7: coalesce autosave bursts and show mobile simulation progress'
+          git push origin HEAD:main
