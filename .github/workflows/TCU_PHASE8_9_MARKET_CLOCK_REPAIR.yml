@@ -1,0 +1,275 @@
+name: THE CALL-UP Phase 8-9 Contract Market Clock Repair and Mobile Release Candidate
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE8_9_MARKET_CLOCK_REPAIR.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  phase8-long-save-and-rc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 115
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install fresh current-code regression and mobile smoke scripts
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          test -f data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          test -f scripts/verify-phase3-integration-4r.mjs
+          test -f scripts/browser-standalone-smoke-v39.py
+          mkdir -p "$(dirname 'scripts/verify-phase8-fresh-v3-two-year.mjs')"
+          cat <<'TCU_RC_JS' | base64 -d | gzip -d > 'scripts/verify-phase8-fresh-v3-two-year.mjs'
+          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
+          TCU_RC_JS
+          mkdir -p "$(dirname 'scripts/browser-phase9-rc-smoke.py')"
+          cat <<'TCU_RC_BROWSER' | base64 -d | gzip -d > 'scripts/browser-phase9-rc-smoke.py'
+          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
+          TCU_RC_BROWSER
+          python3 - <<'TCU_ROLLOVER_SYNC'
+          from pathlib import Path
+          p=Path('src/api/seasonApi.js')
+          s=p.read_text(encoding='utf8')
+          before='''  const reset = resetSeasonStatesForNewYear({ playerStates: ecology.playerStates, pitcherStates: ecology.pitcherStates, roleStates: session.roleStates, startDate: nextStartDate });
+            session.playerStates = reset.playerStates;
+            session.pitcherStates = reset.pitcherStates;'''
+          after='''  const reset = resetSeasonStatesForNewYear({ playerStates: ecology.playerStates, pitcherStates: ecology.pitcherStates, roleStates: session.roleStates, startDate: nextStartDate });
+            // The new roster is authoritative. Remove out-of-roster state left by old
+            // assignments during rollover, not only when a save is later restored.
+            // Both paths must produce the same active-player map and development data.
+            session.playerStates = normalizePlayerStates(session.fixture, reset.playerStates);
+            session.pitcherStates = normalizePitcherStates(session.fixture, reset.pitcherStates);'''
+          if s.count(before)!=1:
+              raise RuntimeError(f'2027 active-roster normalization anchor mismatch: {s.count(before)}')
+          p.write_text(s.replace(before,after,1),encoding='utf8')
+          print('2027 rollover: active roster and save/restore state normalization synchronized')
+          TCU_ROLLOVER_SYNC
+          python3 - <<'TCU_OPENING_MARKET_CLOCK'
+          from pathlib import Path
+          p=Path('src/api/seasonApi.js')
+          s=p.read_text(encoding='utf8')
+          before='''  session.playerStateDate = nextStartDate;
+            reconcileCurrentMlbServiceDate(session, nextStartDate);
+            session.lastProgress = null;'''
+          after='''  session.playerStateDate = nextStartDate;
+            reconcileCurrentMlbServiceDate(session, nextStartDate);
+            // The 2028 opening-day service credit can change a known player's
+            // free-agency eligibility. Re-evaluate the market against the same
+            // authoritative contract data before save, rather than mutating it
+            // only when a saved career is restored later.
+            session.contractMarketStates = normalizeContractMarketStatesForFixture(
+              session.fixture, session.contractStates, session.contractMarketStates,
+              { currentDate: nextStartDate }
+            );
+            session.lastProgress = null;'''
+          if s.count(before)!=1:
+              raise RuntimeError(f'opening-day contract-market sync anchor mismatch: {s.count(before)}')
+          p.write_text(s.replace(before,after,1),encoding='utf8')
+          print('Opening-day contract and agent market service days synchronized before save')
+          TCU_OPENING_MARKET_CLOCK
+          node --check src/api/seasonApi.js
+          node --check scripts/verify-phase8-fresh-v3-two-year.mjs
+          python3 -m py_compile scripts/browser-phase9-rc-smoke.py
+          git diff --check
+      - name: Full unit suite and previously repaired Phase 8 integrity gate
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          npm test
+          node scripts/verify-phase8-save-integrity.mjs
+          node --input-type=module <<'TCU_PHASE8_PRIOR'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const p=JSON.parse(readFileSync('reports/phase8-save-integrity-bundle.json','utf8'));
+          assert.equal(p.pass,true);
+          assert.equal(p.fullSaveRestoreDeterministic,true);
+          console.log('Latest Phase 8 integrity gate PASS');
+          TCU_PHASE8_PRIOR
+      - name: Build the latest single-file Korean Production v3 HTML release candidate
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          node scripts/build-standalone.mjs --output=dist/THE_CALL_UP_COMPLETE_EDITION_RC.html --master-snapshot=data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          node --input-type=module <<'TCU_RC_HTML'
+          import assert from 'node:assert/strict';
+          import {readFileSync,statSync} from 'node:fs';
+          const p='dist/THE_CALL_UP_COMPLETE_EDITION_RC.html';
+          const html=readFileSync(p,'utf8');
+          assert.ok(statSync(p).size>1_000_000,'Unexpectedly small standalone HTML');
+          assert.match(html,/<html lang="ko">/);
+          assert.match(html,/__THE_CALL_UP_MASTER_SNAPSHOT__/);
+          assert.match(html,/THE CALL-UP/);
+          assert.match(html,/phase8-current-v3-two-year|complete_edition_v1_0/);
+          console.log('Latest production standalone RC bundle structural checks PASS');
+          TCU_RC_HTML
+      - name: Run Chromium smoke at three phone widths
+        shell: bash
+        working-directory: work
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+          python3 scripts/browser-phase9-rc-smoke.py
+      - name: Fresh 2026 and 2027 Production v3 full seasons, playoffs and boundary replay
+        shell: bash
+        working-directory: work
+        timeout-minutes: 85
+        run: |
+          set -euo pipefail
+          node --expose-gc --max-old-space-size=4096 scripts/verify-phase8-fresh-v3-two-year.mjs
+          node --input-type=module <<'TCU_PHASE8_FRESH_GATE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const p=JSON.parse(readFileSync('reports/phase8-fresh-v3-two-year.json','utf8'));
+          assert.equal(p.pass,true);
+          assert.equal(p.completedSeasons,2);
+          assert.equal(p.worldGames,21420);
+          assert.equal(p.replay2027,true);
+          assert.equal(p.results[1].historySeasons,2);
+          console.log('Phase 8 two-year current-world save gate PASS');
+          TCU_PHASE8_FRESH_GATE
+      - name: Production v3 full 2026 world regression after fresh long save
+        shell: bash
+        working-directory: work
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase3-integration-4r.mjs
+          node --input-type=module <<'TCU_RC_WORLD'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const r=JSON.parse(readFileSync('reports/phase3-integrated-regression-4r-v1.json','utf8'));
+          assert.equal(r.pass,true);
+          assert.equal(r.regularSeason.worldGames,10710);
+          assert.ok(r.postseason.championTeamId);
+          assert.ok(Object.values(r.gates).every(Boolean));
+          console.log('Latest Production v3 2026 world and postseason PASS');
+          TCU_RC_WORLD
+      - name: Write source-bound release candidate report and SHA-256
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          sha256sum dist/THE_CALL_UP_COMPLETE_EDITION_RC.html data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz > dist/RELEASE_CANDIDATE_SHA256.txt
+          node --input-type=module <<'TCU_RC_REPORT'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync,statSync} from 'node:fs';
+          import crypto from 'node:crypto';
+          import {execFileSync} from 'node:child_process';
+          const read=f=>JSON.parse(readFileSync(f,'utf8'));
+          const long=read('reports/phase8-fresh-v3-two-year.json');
+          const smoke=read('reports/phase9-rc-mobile-browser.json');
+          const world=read('reports/phase3-integrated-regression-4r-v1.json');
+          assert.equal(long.pass,true);assert.equal(smoke.pass,true);assert.equal(world.pass,true);
+          const data=readFileSync('data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz');
+          const html=readFileSync('dist/THE_CALL_UP_COMPLETE_EDITION_RC.html');
+          const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const report={schema:'THE_CALL_UP_PHASE8_9_RELEASE_CANDIDATE_V1',pass:true,
+            sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
+            dataSha256:sha(data),htmlSha256:sha(html),htmlBytes:statSync('dist/THE_CALL_UP_COMPLETE_EDITION_RC.html').size,
+            freshWorldYears:long.completedSeasons,freshWorldGames:long.worldGames,
+            worldRegression2026Games:world.regularSeason.worldGames,
+            mobileBrowser:smoke.checks,limitations:['Release candidate, not final COMPLETE','Historical 20-year v59 is not fresh-current-code validation','Chromium smoke is not physical-phone timing']};
+          writeFileSync('reports/phase8-9-release-candidate.json',JSON.stringify(report,null,2)+'\n');
+          console.log(JSON.stringify(report,null,2));
+          TCU_RC_REPORT
+          git diff --check
+      - name: Commit verified scripts and reports from the tested source
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add src/api/seasonApi.js scripts/verify-phase8-fresh-v3-two-year.mjs scripts/browser-phase9-rc-smoke.py reports/phase8-fresh-v3-two-year.json reports/phase9-rc-mobile-browser.json reports/phase8-9-release-candidate.json reports/phase3-integrated-regression-4r-v1.json reports/phase8-save-integrity-bundle.json
+          git diff --cached --check
+          if git diff --cached --quiet; then echo 'No tested report changes to commit' >&2; exit 1; fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase8: synchronize annual contract market clock and validate fresh v3 release candidate'
+          git push origin HEAD:main
+      - name: Upload tested standalone HTML candidate and release report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE_CALL_UP_PHASE8_9_RELEASE_CANDIDATE
+          path: |
+            work/dist/THE_CALL_UP_COMPLETE_EDITION_RC.html
+            work/dist/RELEASE_CANDIDATE_SHA256.txt
+            work/reports/phase8-9-release-candidate.json
+            work/reports/phase8-fresh-v3-two-year.json
+            work/reports/phase9-rc-mobile-browser.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
