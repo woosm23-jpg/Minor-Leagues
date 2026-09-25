@@ -1,0 +1,30 @@
+{
+  "schema": "THE_CALL_UP_PHASE6_CAREER_RECORDS_BUNDLE_V1",
+  "pass": true,
+  "source": "Production v2 historical-ledger scenario; production v3 season gate separately executed",
+  "worldGames2026": 10710,
+  "recordScope": "SIMULATED_MLB_IN_THIS_SAVE_ONLY",
+  "recordedSeasons": [
+    2026
+  ],
+  "hitterPlayers": 407,
+  "pitcherPlayers": 416,
+  "noPreSaveHistoricalStats": true,
+  "teamChangesNoDuplicate": true,
+  "saveUnchangedByReadModel": true,
+  "saveRestoreStable": true,
+  "openingDay2027NoDuplicate": true,
+  "historical20YearBaseline": {
+    "source": "v59 report generated before current Phase 6 changes; not a fresh 20-year test",
+    "seasons": 20,
+    "statDriftFirst3VsLast3": {
+      "AVG": 0.0224,
+      "OBP": 0.03932,
+      "SLG": 0.04835,
+      "KperPA": -0.04047,
+      "BBperPA": 0.02682,
+      "RA9": 1.33444
+    },
+    "meaningfulDriftRequiresFinalCalibration": true
+  }
+}

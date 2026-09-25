@@ -1039,11 +1039,28 @@ function careerFeedView(snapshot) {
   </section>`;
 }
 
+function careerRecordsView(snapshot) {
+  const records = snapshot.retirementHall?.careerRecords ?? null;
+  if (!records?.includedSeasons?.length) return `<section class="card player-detail-card history-card"><div class="section-head"><strong>MLB 커리어 누적 기록</strong><span>아직 기록 없음</span></div><p class="condition-note">이 세이브에서 시뮬레이션한 MLB 시즌이 확정되면 기록이 나타납니다.</p></section>`;
+  const categories = [["H", "안타"], ["HR", "홈런"], ["RBI", "타점"], ["SB", "도루"], ["SO", "투수 탈삼진"], ["IP", "투구 이닝"]];
+  return `<section class="card player-detail-card history-card">
+    <div class="section-head"><strong>MLB 커리어 누적 기록</strong><span>${records.startYear ?? records.includedSeasons[0]}~${records.throughYear}</span></div>
+    <p class="condition-note">이 세이브에서 시뮬레이션한 MLB 기록만 집계합니다. 시작 이전 실존 선수의 과거 기록은 포함하지 않으며 공식 MLB 역대 기록이 아닙니다. 선수의 이적 전후 기록은 한 선수의 누적으로 계산합니다. 이닝 표기는 ⅓·⅔를 .1·.2로 표시합니다.</p>
+    ${categories.map(([key, label]) => {
+      const category = records.categories?.[key];
+      if (!category) return "";
+      return `<div class="player-section-label"><strong>${label}</strong><small>${category.userRank == null ? "" : `내 순위 #${category.userRank}`}</small></div>
+        ${category.leaders.length ? `<div class="career-timeline-list">${category.leaders.map(row => `<div class="career-timeline-row"><span>#${row.rank}</span><div><strong>${esc(row.name)}</strong><small>${esc(row.display)} · ${row.mlbSeasons} MLB 시즌</small></div></div>`).join("")}</div>` : `<p class="season-empty">기록 없음</p>`}`;
+    }).join("")}
+  </section>`;
+}
+
 function historyView(snapshot) {
   const seasons=snapshot.history?.seasons ?? [], rh=snapshot.retirementHall ?? null, user=rh?.user ?? {};
   const latest=rh?.latestBallot, inducted=rh?.inductees ?? [];
   const controls=user.retired ? `<p class="condition-note">이 커리어는 ${user.retiredYear}년에 은퇴했습니다. 은퇴 보고서와 HOF 투표 이력은 계속 보존됩니다.</p>` : `<div class="progress-actions">${!user.finalSeasonAnnounced?`<button type="button" class="secondary" data-season-action="ANNOUNCE_FINAL_SEASON">마지막 시즌 선언</button>`:""}${["COMPLETE","OFFSEASON"].includes(snapshot.status)?`<button type="button" class="secondary" data-season-action="RETIRE_CAREER">현역 은퇴</button>`:""}</div>`;
   return `<section class="card player-detail-card history-card"><div class="section-head"><strong>League History</strong><span>${snapshot.history?.totalSeasons ?? seasons.length} seasons</span></div>${seasons.length===0?`<p class="season-empty">아직 확정된 시즌 아카이브가 없습니다.</p>`:`<div class="career-timeline-list">${seasons.map((row)=>`<div class="career-timeline-row"><span>${row.seasonYear}</span><div><strong>${esc(row.championName ?? row.championTeamId)} 우승</strong><small>Runner-up ${esc(row.runnerUpName ?? row.runnerUpTeamId)} · 내 결과 ${esc(row.user?.championshipStatus ?? "NONE")} · 수상 ${(row.user?.awards ?? []).map(esc).join(", ") || "없음"}</small></div></div>`).join("")}</div>`}</section>
+  ${careerRecordsView(snapshot)}
   <section class="card player-detail-card history-card"><div class="section-head"><strong>Hall of Fame</strong><span>${inducted.length} inducted</span></div><p class="condition-note">BBWAA: MLB 10시즌 · 은퇴 후 5 full seasons 대기 · 75% 당선 · 5% 유지 · 최대 10년 · 투표자당 최대 10명. 평가는 실제 커리어/피크/수상/마일스톤/포스트시즌 기록만 사용하며 OVR은 HOF 투표에 쓰지 않습니다.</p>${latest?`<div class="career-timeline-list">${(latest.results??[]).slice().sort((a,b)=>b.votePct-a.votePct).slice(0,10).map(r=>`<div class="career-timeline-row"><span>${latest.electionYear}</span><div><strong>${esc(r.name)} · ${(r.votePct*100).toFixed(1)}%</strong><small>${esc(r.status)} · ballot ${r.yearsOnBallot}</small></div></div>`).join("")}</div>`:`<p class="season-empty">아직 HOF 투표가 없습니다.</p>`}${controls}</section>`;
 }
 function settingsView(snapshot, uiState = {}) {
