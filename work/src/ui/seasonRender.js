@@ -383,7 +383,7 @@ function homeCareerFeedPreview(snapshot) {
 
 function homeView(snapshot, uiState = {}) {
   const saveStatus = uiState.saveMessage ? `<p class="home-save-status">${esc(uiState.saveMessage)}</p>` : "";
-  return `${recordCard(snapshot)}${conditionCard(snapshot)}${roleStatusCard(snapshot)}${restRequestCard(snapshot)}${pitchingStaffCard(snapshot)}${postseasonCard(snapshot)}${offseasonCard(snapshot)}${nextGameCard(snapshot)}${progressStopCard(snapshot)}${homeCareerFeedPreview(snapshot)}${recentResults(snapshot)}${saveStatus}
+  return `${recordCard(snapshot)}${conditionCard(snapshot)}${roleStatusCard(snapshot)}${managerDecisionCard(snapshot)}${restRequestCard(snapshot)}${pitchingStaffCard(snapshot)}${postseasonCard(snapshot)}${offseasonCard(snapshot)}${nextGameCard(snapshot)}${progressStopCard(snapshot)}${homeCareerFeedPreview(snapshot)}${recentResults(snapshot)}${saveStatus}
     <p class="status">다른 팀 경기도 동일한 PA/Game 엔진으로 시뮬레이션되어 순위에 반영됩니다. 조직·전체 커리어 피드·저장 관리는 더보기에서 확인할 수 있습니다.</p>`;
 }
 
@@ -846,6 +846,31 @@ function rolePreferenceControls(preference) {
     <div class="training-focus-grid">${options.map(([mode, label]) => `<button type="button" data-role-preference="${mode}" class="${current === mode ? "active" : ""}">${label}</button>`).join("")}</div>
     <p class="condition-note">${esc(reasons[preference?.reasonCode] ?? reasons.NO_REQUEST)} 선호는 이미 부여된 역할·수비 가능 범위 안에서 접전 라인업 선택에만 소폭 고려됩니다. 능력치·승격·주전 자리 보장은 없습니다.</p>
   </div>`;
+}
+
+function managerDecisionCard(snapshot) {
+  const last = snapshot.userManagerDecision ?? null;
+  const evaluation = snapshot.organization?.userEvaluation ?? null;
+  if (!last && !evaluation) return "";
+  const reasons = {
+    STARTING_LINEUP: "감독이 선발 라인업에 배치했습니다.",
+    PLAYER_REQUEST_APPROVED: "요청한 휴식이 승인되어 선발 및 벤치에서 제외됐습니다.",
+    INJURY_UNAVAILABLE: "부상으로 라인업에서 제외됐습니다.",
+    FATIGUE_REST: "피로 관리에 따른 휴식입니다.",
+    COMPETITION_DIRECT: "다른 선수와의 경기별 선발 경쟁 결과입니다.",
+    UTILITY_COVER: "수비 포지션 재배치로 다른 선수가 기용됐습니다.",
+    BENCH_ROLE: "현재 벤치 역할로 경기를 시작했습니다.",
+    OTHER_LINEUP_DECISION: "감독의 경기별 선수 구성에 따라 비선발로 배치됐습니다."
+  };
+  const appearances = {
+    STARTED: "선발", BENCH_PA: "비선발 타석 출전", NOT_STARTED: "비선발"
+  };
+  const lastRow = last ? `<div class="role-status-grid"><div><span>${esc(dateLabel(last.date))} 기용</span><b>${esc(appearances[last.appearance] ?? "비선발")}</b><small>${esc(levelLabel(last.level))}</small></div><div><span>감독 판단</span><b>${esc(reasons[last.reasonCode] ?? "기용 기록 확인")}</b><small>실제 완료 경기의 라인업 기준</small></div></div>` : "";
+  const decision = evaluation?.decision === "PROMOTE" ? "승격 검토"
+    : evaluation?.decision === "DEMOTE" ? "강등 검토"
+      : "현 배치 유지 또는 검토";
+  const orgRow = evaluation ? `<p class="condition-note"><strong>최근 조직 평가 · ${esc(decision)}</strong> ${esc((evaluation.reasonCodes ?? []).map(orgReasonLabel).join(" · ") || "경기 표본 확인 중")} · ${esc(dateLabel(evaluation.date))}. 정기 평가 사유이며 내부 점수·숨겨진 실제 잠재력은 표시하지 않습니다.</p>` : "";
+  return `<section class="card role-status-card"><div class="section-head"><strong>지난 경기 기용 · 조직 평가</strong><span>실제 기록 기반</span></div>${lastRow}${orgRow}</section>`;
 }
 
 function roleStatusCard(snapshot) {

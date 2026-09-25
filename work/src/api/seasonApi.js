@@ -23,6 +23,7 @@ import { getPositionPlayingTimeView } from "../engine/season/playingTimeReadMode
 import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
 import { getTrainingCoachFeedback } from "../engine/season/coachingFeedback.js";
 import { setPlayerRolePreference, getRolePreferenceView } from "../engine/season/rolePreference.js";
+import { completedUserManagerDecision, getUserManagerDecisionPublicView } from "../engine/season/managerDecisionReadModel.js";
 import { setSecondaryPositionTraining as chooseSecondaryPositionTraining, advanceSecondaryPositionTraining } from "../engine/season/secondaryPositionTraining.js";
 import { createPlayerRestRequest, settlePlayerRestRequest, getPlayerRestRequestPublicView } from "../engine/season/playerRestRequest.js";
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
@@ -764,6 +765,19 @@ function recordResult(session, level, game, { awayRuns, homeRuns, userBattingLin
   }));
 }
 
+function recordCompletedUserManagerDecision(session, level, game, fixture, battingBySide) {
+  const userPlayerId = session.fixture.userPlayerId;
+  const result = completedUserManagerDecision({
+    fixture, game, level, battingBySide, userPlayerId,
+    userTeamId: userTeamIdForLevel(session, level)
+  });
+  if (!result || !session.playerStates?.[userPlayerId]) return;
+  session.playerStates = { ...session.playerStates,
+    [userPlayerId]: Object.freeze({
+      ...session.playerStates[userPlayerId], lastManagerDecision: result
+    }) };
+}
+
 function finalizeSimulatedFixture(session, level, game, fixture, result) {
   const battingBySide = { away: battingMapFromResult(result, "away"), home: battingMapFromResult(result, "home") };
   const pitchingBySide = { away: pitchingMapFromResult(result, "away"), home: pitchingMapFromResult(result, "home") };
@@ -776,6 +790,7 @@ function finalizeSimulatedFixture(session, level, game, fixture, result) {
   applyCompletedGamePlayerStates(session, fixture, battingBySide, game.date, result.state);
   applyCompletedGameRoleStates(session, fixture, battingBySide, game.date, result.state);
   applyCompletedGamePitcherStates(session, fixture, pitchingBySide, game.date);
+  recordCompletedUserManagerDecision(session, level, game, fixture, battingBySide);
 }
 
 function canRequestNextGameRest(session, level, game) {
@@ -1443,6 +1458,7 @@ function finalizeInteractiveGameIfNeeded(session, gameSnapshot) {
   applyCompletedGamePlayerStates(session, fixture, battingBySide, game.date, gameSnapshot);
   applyCompletedGameRoleStates(session, fixture, battingBySide, game.date, gameSnapshot);
   applyCompletedGamePitcherStates(session, fixture, pitchingBySide, game.date);
+  recordCompletedUserManagerDecision(session, level, game, fixture, battingBySide);
   simulateWorldDate(session, game.date, { excludeLevel: level, excludeGameId: game.gameId });
   runOrganizationReviewIfDue(session, game.date);
   applySeasonEndAgingIfNeeded(session);
@@ -2374,6 +2390,7 @@ function snapshot(session) {
           session.playerStates?.[session.fixture.userPlayerId] ?? null, userRoleState, playingTime)
       };
     })(),
+    userManagerDecision: getUserManagerDecisionPublicView(session.playerStates?.[session.fixture.userPlayerId]?.lastManagerDecision ?? null),
     userRestRequest: Object.freeze({
       ...getPlayerRestRequestPublicView(session.playerStates?.[session.fixture.userPlayerId]?.restRequest ?? null),
       canRequest: canRequestNextGameRest(session, level, nextGame)

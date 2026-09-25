@@ -11,6 +11,7 @@ import { CAREER_EVENT_TYPES } from "../engine/career/careerEvents.js";
 import { validatePlayerRestRequest } from "../engine/season/playerRestRequest.js";
 import { validateSecondaryPositionTraining } from "../engine/season/secondaryPositionTraining.js";
 import { validatePlayerRolePreference } from "../engine/season/rolePreference.js";
+import { validateUserManagerDecision } from "../engine/season/managerDecisionReadModel.js";
 
 const SAVE_FORMAT = "THE_CALL_UP_SEASON_SAVE";
 const SAVE_SCHEMA_VERSION = 2;
@@ -140,6 +141,7 @@ function validateCommon(payload) {
   assertObject(payload.pitcherStates, "payload.pitcherStates");
   for (const [playerId, playerState] of Object.entries(payload.playerStates)) {
     validatePlayerRolePreference(playerState.rolePreference ?? null, `payload.playerStates.${playerId}.rolePreference`);
+    validateUserManagerDecision(playerState.lastManagerDecision ?? null, `payload.playerStates.${playerId}.lastManagerDecision`);
     validateSecondaryPositionTraining(playerState.positionTraining ?? null, `payload.playerStates.${playerId}.positionTraining`);
     if (playerState.positionTraining?.targetPosition &&
         (playerState.positionTraining.targetPosition === playerState.primaryPosition ||

@@ -1,0 +1,9 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_CONSOLIDATED_PLAYER_DECISIONS_V1",
+  "pass": true,
+  "authoritativeManagerExplanation": true,
+  "organizationReasonsOnHome": true,
+  "trainingRestRoleAndSecondaryReplay": true,
+  "legacySaveCompatibility": true,
+  "rejectsInvalidSave": true
+}
