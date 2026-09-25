@@ -123,21 +123,34 @@ function startSeasonApp(root) {
     }
   };
 
-  const autosave = async ({ milestone = null } = {}) => {
-    if (!snapshot || !currentSaveId) return false;
+  const autosave = async ({ milestone = null, context = null } = {}) => {
+    const seasonId = context?.seasonId ?? snapshot?.seasonId;
+    const saveId = context?.saveId ?? currentSaveId;
+    if (!seasonId || !saveId) return false;
     try {
-      const meta = await seasonSaveService.autosaveSeason(snapshot.seasonId, { saveId: currentSaveId });
-      currentSaveLabel = meta.label;
+      const meta = milestone && context?.payload
+        ? await seasonSaveService.saveSeasonPayload(context.payload, { saveId })
+        : await seasonSaveService.autosaveSeason(seasonId, { saveId });
       if (milestone) {
-        await seasonBackupService.createMilestoneBackup(snapshot.seasonId, { saveId: currentSaveId, milestone });
-        await refreshBackups();
-        saveMessage = `자동 저장됨 · ${milestoneLabel(milestone)} 백업`;
-      } else {
-        saveMessage = "자동 저장됨";
+        if (context?.payload) {
+          await seasonBackupService.createMilestoneBackupFromPayload(context.payload, { saveId, milestone });
+        } else {
+          await seasonBackupService.createMilestoneBackup(seasonId, { saveId, milestone });
+        }
+      }
+      // An older career's queued write must not overwrite the new career's UI.
+      if (currentSaveId === saveId) {
+        currentSaveLabel = meta.label;
+        if (milestone) {
+          await refreshBackups();
+          saveMessage = `자동 저장됨 · ${milestoneLabel(milestone)} 백업`;
+        } else {
+          saveMessage = "자동 저장됨";
+        }
       }
       return true;
     } catch (error) {
-      saveMessage = `자동 저장 실패: ${error?.message ?? error}`;
+      if (currentSaveId === saveId) saveMessage = `자동 저장 실패: ${error?.message ?? error}`;
       return false;
     }
   };
@@ -150,7 +163,18 @@ function startSeasonApp(root) {
     } else resolve();
   });
   const saveQueue = createCoalescedSaveQueue({save: autosave, waitForIdle: waitForAutosaveIdle});
-  const queueAutosave = saveQueue.request;
+  const queueAutosave = ({ milestone = null } = {}) => {
+    if (!snapshot || !currentSaveId) return Promise.resolve(false);
+    let payload = null;
+    try {
+      // This is the exact state when season-end/opening-day was announced.
+      if (milestone) payload = seasonApi.serializeSeason(snapshot.seasonId);
+    } catch (error) {
+      saveMessage = `마일스톤 저장 준비 실패: ${error?.message ?? error}`;
+      return Promise.resolve(false);
+    }
+    return saveQueue.request({milestone,context:{seasonId:snapshot.seasonId,saveId:currentSaveId,payload}});
+  };
 
   let careerRenderTimer = null;
   const scheduleCareerCreationRender = () => {
@@ -530,9 +554,8 @@ function startSeasonApp(root) {
         }
         if (action === "SAVE") {
           try {
-            await autosaveQueue.catch(() => false);
-            const meta = await seasonSaveService.saveSeason(snapshot.seasonId, { saveId: currentSaveId });
-            currentSaveLabel = meta.label;
+            const saved = await queueAutosave();
+            if (!saved) throw new Error("저장에 실패했습니다. 현재 커리어는 메모리에 유지됩니다.");
             saveMessage = "수동 저장 완료";
           } catch (error) {
             saveMessage = `저장 실패: ${error?.message ?? error}`;

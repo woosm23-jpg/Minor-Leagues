@@ -1,0 +1,14 @@
+{
+  "schema": "THE_CALL_UP_PHASE8_SAVE_INTEGRITY_V1",
+  "pass": true,
+  "previousMobileSaveGate": true,
+  "capturedBoundaryPayloadPreserved": true,
+  "atomicSaveMetadataAndPayload": true,
+  "milestoneBackupRestoresAsCopy": true,
+  "corruptImportLeavesOriginalUntouched": true,
+  "differentCareerSavesNeverCoalesce": true,
+  "manualSaveUsesQueueWithoutUndefinedReference": true,
+  "fullSaveRestoreDeterministic": true,
+  "productionV3Gate": "RERUN_IN_WORKFLOW",
+  "historical20YearGate": "BASELINE_ONLY_NOT_FRESH"
+}

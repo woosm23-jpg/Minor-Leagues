@@ -52,8 +52,11 @@ function createSeasonBackupService({
 
   return Object.freeze({
     async createMilestoneBackup(seasonId, { saveId = seasonId, milestone, label = null } = {}) {
+      return this.createMilestoneBackupFromPayload(api.serializeSeason(seasonId), { saveId, milestone, label });
+    },
+
+    async createMilestoneBackupFromPayload(payload, { saveId = payload?.seasonId, milestone, label = null } = {}) {
       assertMilestone(milestone);
-      const payload = api.serializeSeason(seasonId);
       validateSeasonSavePayload(payload, { mode: "FULL" });
       const createdAt = now();
       const currentDate = payload.season.currentDate;

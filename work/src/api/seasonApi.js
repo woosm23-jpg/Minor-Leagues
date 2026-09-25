@@ -2582,6 +2582,12 @@ function createSessionFromFixture(fixture, { seed, startDate, dataUniverse = nul
   };
   if (fixture.worldMode === "PRODUCTION_REAL") { session.amateurAcquisitionState=createAmateurAcquisitionState({seed:fixture.seed ?? "THE_CALL_UP",startYear:Number(String(fixture.startDate ?? startDate).slice(0,4))}); session.retirementHallState=createRetirementHallState({seed:fixture.seed ?? "THE_CALL_UP",userPlayerId:fixture.userPlayerId,startYear:Number(String(fixture.startDate ?? startDate).slice(0,4))}); }
   reconcileCurrentMlbServiceDate(session, startDate);
+  // The opening-day service credit is applied after initial market creation.
+  // Refresh the derived market clock now so a reload cannot silently add
+  // one service day to every MLB player's market eligibility.
+  session.contractMarketStates = normalizeContractMarketStatesForFixture(
+    session.fixture, session.contractStates, session.contractMarketStates, { currentDate: startDate }
+  );
   sessions.set(seasonId, session);
   return snapshot(session);
 }
