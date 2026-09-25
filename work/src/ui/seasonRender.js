@@ -1167,7 +1167,8 @@ function playerDetailSheet(detail) {
 
 function renderSeason(root, snapshot, handlers, tab = "HOME", uiState = {}) {
   const content = tab === "PLAYER" ? playerView(snapshot, uiState) : tab === "ORG" ? organizationView(snapshot, uiState) : tab === "LEAGUE" ? leagueView(snapshot, uiState) : tab === "MORE" ? moreView(snapshot, uiState) : homeView(snapshot, uiState);
-  root.innerHTML = `<main class="season-screen">
+  root.innerHTML = `<main class="season-screen"${uiState.simBusy ? ' aria-busy="true"' : ""}>
+    ${uiState.simBusy ? `<div class="sim-progress-overlay" role="status" aria-live="polite"><div class="sim-progress-card"><span class="sim-progress-spinner" aria-hidden="true"></span><strong>경기 진행 및 저장 중</strong><p>날짜·시리즈 결과와 저장을 처리하고 있습니다. 중복 실행을 막는 중입니다.</p></div></div>` : ""}
     ${topbar(snapshot, tab)}
     <div class="season-content">${content}</div>
     ${bottomNav(tab)}

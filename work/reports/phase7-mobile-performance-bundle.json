@@ -1,0 +1,16 @@
+{
+  "schema": "THE_CALL_UP_PHASE7_MOBILE_PERFORMANCE_BUNDLE_V1",
+  "pass": true,
+  "baseline": "v55.1 warm snapshot diagnostic retained; simulated burst is a save-queue workload, not a real-phone speed claim",
+  "simulationActionsShowPrePaintBusyState": true,
+  "inputActionsBlockedWhileSimulating": true,
+  "touchTargetsAtLeast44Css": true,
+  "fullWorldSaveOnEveryExecutedWrite": true,
+  "burstRequestedAutoSaves": 81,
+  "burstActualSaveSerializations": 2,
+  "burstRedundantWritesAvoided": 79,
+  "latestProgressedSavePreserved": true,
+  "orderedMilestoneTests": true,
+  "oldSaveSchemaUnchanged": true,
+  "baselineGetSeasonWarmAverageMs": 3.92
+}

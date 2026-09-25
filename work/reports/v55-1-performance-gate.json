@@ -9,13 +9,13 @@
   },
   "timingsMs": {
     "getSeasonWarm": [
-      5.469,
-      3.338,
-      3.405,
-      3.59,
-      3.125
+      5.123,
+      3.701,
+      3.593,
+      3.731,
+      3.455
     ],
-    "getSeasonWarmAverage": 3.785,
-    "simulateCurrentGame": 1884.65
+    "getSeasonWarmAverage": 3.92,
+    "simulateCurrentGame": 2498.216
   }
 }

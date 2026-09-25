@@ -517,3 +517,20 @@ table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nu
 .major-event-card > strong { display: block; margin-top: 12px; font-size: 14px; }
 .major-event-card > p:not(.major-event-kicker) { min-height: 36px; margin: 8px 0 18px; color: #8c9aa8; font-size: 10px; line-height: 1.6; }
 .major-event-continue { width: 100%; min-height: 48px; }
+
+/* Phase 7: mobile input and non-blocking progress feedback. */
+button, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+button:focus-visible, [role="button"]:focus-visible { outline: 2px solid #bac8d9; outline-offset: 2px; }
+.sim-progress-overlay { position: fixed; inset: 0; z-index: 160; display: grid; place-items: center; padding: 18px; background: rgba(6,10,15,.82); backdrop-filter: blur(4px); }
+.sim-progress-card { width: min(100%, 340px); padding: 24px 18px; border: 1px solid #405062; border-radius: 18px; background: #131b25; text-align: center; box-shadow: 0 20px 70px rgba(0,0,0,.5); }
+.sim-progress-card strong { display: block; margin-top: 11px; color: #f3f6f9; font-size: 17px; }
+.sim-progress-card p { margin: 8px 0 0; color: #a4b2c1; line-height: 1.5; font-size: 12px; }
+.sim-progress-spinner { width: 24px; height: 24px; display: block; margin: 0 auto; border: 3px solid #526174; border-top-color: #eef3f8; border-radius: 50%; animation: sim-progress-spin 1s linear infinite; }
+@keyframes sim-progress-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .sim-progress-spinner { animation: none; border-top-color: #eef3f8; } }
+@media (max-width: 430px) {
+  .season-screen, .season-content, .season-content > *, .season-hero-head > div { min-width: 0; max-width: 100%; }
+  .season-player strong, .career-timeline-row strong { overflow-wrap: anywhere; }
+  .table-scroll { max-width: 100%; }
+  .progress-actions > button, .time-progress-actions > button, .training-focus-grid button { min-height: 44px; }
+}

@@ -1,4 +1,5 @@
 import { seasonApi } from "../api/seasonApi.js";
+import { createCoalescedSaveQueue } from "../services/coalescedSaveQueue.js";
 import { seasonBackupService } from "../services/seasonBackupService.js";
 import { seasonSaveService } from "../services/seasonSaveService.js";
 import { seasonTransferService } from "../services/seasonTransferService.js";
@@ -58,6 +59,25 @@ function defaultCareerDraft(catalog) {
   };
 }
 
+function waitForProgressPaint() {
+  return new Promise(resolve => {
+    let done = false;
+    let timeout = null;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (timeout !== null) globalThis.clearTimeout?.(timeout);
+      resolve();
+    };
+    if (typeof globalThis.requestAnimationFrame === "function" && globalThis.document?.visibilityState !== "hidden") {
+      if (typeof globalThis.setTimeout === "function") timeout = globalThis.setTimeout(finish, 700);
+      globalThis.requestAnimationFrame(() => globalThis.requestAnimationFrame(finish));
+    } else if (typeof globalThis.setTimeout === "function") {
+      globalThis.setTimeout(finish, 0);
+    } else finish();
+  });
+}
+
 function startSeasonApp(root) {
   let seedIndex = 1;
   let tab = "HOME";
@@ -70,6 +90,7 @@ function startSeasonApp(root) {
   let playerDetail = null;
   let majorEvent = null;
   let saveMessage = "";
+  let simBusy = false;
   let launcherMessage = "";
   let backups = [];
   let saves = [];
@@ -82,7 +103,7 @@ function startSeasonApp(root) {
   let creationDraft = null;
   let creationMessage = "";
 
-  const saveUi = () => ({ saveMessage, currentSaveId, backups, playerSection, leagueSection, moreSection, leaderCategory, orgPosition, playerDetail, majorEvent });
+  const saveUi = () => ({ saveMessage, currentSaveId, backups, playerSection, leagueSection, moreSection, leaderCategory, orgPosition, playerDetail, majorEvent, simBusy });
 
   const refreshSaves = async () => {
     saves = await seasonSaveService.listSaves();
@@ -121,21 +142,15 @@ function startSeasonApp(root) {
     }
   };
 
-  let autosaveQueue = Promise.resolve(true);
-  const waitForAutosaveIdle = () => new Promise((resolve) => {
+  const waitForAutosaveIdle = () => new Promise(resolve => {
     if (typeof globalThis.requestIdleCallback === "function") {
-      globalThis.requestIdleCallback(() => resolve(), { timeout: 750 });
-    } else {
+      globalThis.requestIdleCallback(resolve, { timeout: 750 });
+    } else if (typeof globalThis.setTimeout === "function") {
       globalThis.setTimeout(resolve, 0);
-    }
+    } else resolve();
   });
-  const queueAutosave = ({ milestone = null } = {}) => {
-    autosaveQueue = autosaveQueue.catch(() => false).then(async () => {
-      await waitForAutosaveIdle();
-      return autosave({ milestone });
-    });
-    return autosaveQueue;
-  };
+  const saveQueue = createCoalescedSaveQueue({save: autosave, waitForIdle: waitForAutosaveIdle});
+  const queueAutosave = saveQueue.request;
 
   let careerRenderTimer = null;
   const scheduleCareerCreationRender = () => {
@@ -450,6 +465,14 @@ function startSeasonApp(root) {
         renderHome();
       },
       async onAction(action) {
+        if (simBusy) return;
+        const isSimulation = ["SIM_GAME", "SIM_SERIES", "SIM_DAY", "SIM_7_DAYS", "SIM_IMPORTANT"].includes(action);
+        if (isSimulation) {
+          simBusy = true;
+          renderHome();
+          await waitForProgressPaint();
+        }
+        try {
         if (action === "CAREERS") {
           await goToCareerSelect();
           return;
@@ -575,6 +598,12 @@ function startSeasonApp(root) {
           renderHome();
         } else {
           void queueAutosave();
+        }
+        } finally {
+          if (isSimulation) {
+            simBusy = false;
+            renderHome();
+          }
         }
       }
     }, tab, saveUi());
