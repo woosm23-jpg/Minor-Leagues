@@ -1,0 +1,250 @@
+name: THE CALL-UP Phase 8 Save Integrity and Milestone Restore Bundle
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE8_SAVE_INTEGRITY_BUNDLE.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  phase8-save-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 115
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install captured milestone saves and import recovery guards
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          test -f scripts/verify-phase3-integration-4r.mjs
+          test -f src/services/seasonBackupService.js
+          mkdir -p "$(dirname 'src/services/coalescedSaveQueue.js')"
+          cat <<'TCU_PHASE8_ASSET_1' | base64 -d | gzip -d > 'src/services/coalescedSaveQueue.js'
+          H4sIAAAAAAAC/31VTW/bMAy951dwOQQ25ibrtYHXQ7EBPQzbsAE7DDvINp2oc6RMkpumqf/7KMuS5SydgQAxv/n4SK9W8AnVBkGK5gis
+          emAlCgOsNVKzR9RQYCPFhosNGAlmi6DZDqFkClGtYccb1EYKhEK2omKKo56tVlavjsB3u9awoiEnVJw1/Bkr2LNjI1mlyWZvWkWS4tgH
+          LlnToFrO6laUhksBpUJm8E4yylFi9Y3q+dpii8kJbG0ZHBg3H6W6ryhDDkwfRQlJCvl7OHXQkejUpXCaAfAaEnPco6x7T3iT5zD3eebw
+          8gKDNo44NXKBgCpV8gACD/CdXD4oJVUy74MyUU38bT8FK39rILBA4Z+WU7fzdE1xOvqVUmgDexSVRTeHn7+spkGSKVmi1k5cs0aj19go
+          BDiBlsM7L2TG4G5Pwh+KGxpZpCo9eLGwZjS1IAlw28HeSWHwySQsg8J3rJDGJCBht0uNTEtxX8HtLYi2aQhrAikpLmkWi94bnCMBdNFt
+          KvfQuFGGyirFuEh8PXaYI0LpUN+6102QM6pFJzZExtNQzmFL3VMEh/uyQbEx2zSo/VxoC8gp9/NZ6i2vTZKug5lFUramlDuMp+SeOKF9
+          mCVGzI44Evwzwbc5XMf6MY8LZGGjLQjbd+PKXQZBZruwk/Sa4RW6SV4LZYidD12kniDTKjoitCm3k7YuGsLrsHThXy0VJA5phVo2tD+0
+          fq5W2yIqnXqNLzGU7sJ0UHNBOzYifXlvAmfOJv4oeeWp5ey6gX6BeMO6xVBTZEvVAPDwPjk3Lt/oYi9Jb7RYhDs01c61UVRbf4reBFU6
+          0vLi2Rlj7FoCskCXhaBlIKS4spw6whA66hGiOzLOzhL6nPXMJFfXg+e0pzzqyXn5P8vLRvF5mXAyQBm1O96tsb4OkCYaTHyp0WxCJPdp
+          IA7d0FWFzrPAd7Vv9dbVcAZKf+gsyF+U3HGNieem/aTEeT1HXajBKvDzArPCaRuPGmcbIbXhpU7OTu3n4gFLs6zpG/ts9zxMKzu/FNmI
+          VDaLdzLzzd7AlPdZvCVjWf/PnMXV9l7dDJ/2UhmC/7XPtMX9L7Z+nP5fCAAA
+          TCU_PHASE8_ASSET_1
+          mkdir -p "$(dirname 'src/services/seasonSaveService.js')"
+          cat <<'TCU_PHASE8_ASSET_2' | base64 -d | gzip -d > 'src/services/seasonSaveService.js'
+          H4sIAAAAAAAC/6VWwY7bNhC9+ytmhR5kQKXvNlxj0SbIAg6y6CanxSKhpXHCRBYFkvKuY+g3+gVFTznm1k9qPiJDkaJkrdwkyM3izLyZ
+          eTOPtNiVUhk4gkauZXFZCqhhq+QOIsZmvBSzYGDvdbSYiNOAG77HP7GUWhipDv3YbDMbcxmgbCqRZzfB7zkannHDO6AeSGscQOx5LugY
+          O5Rrfsglzx6DoBLk/JEbIQuHMuH6UKSwrYrUHgI+CG1E8dbmilWoOgFNuFfZFI4TALGF2BxKlFvoXNhbNDYKlsslRC1gNCUXU6lixDP2
+          mAuCTGWhDSh5D0vg91yYgX/f16a/INcAXVR53oEcoXT9z+G1/5UAY2yHDa9Lm8V6+2B7vJjUk0ngIFV4QifRthcpxsdeTQQzNt0EiqaF
+          eArL36DAe/iDoOIpM/Lq5sWNUUQt2WwVx9qRORhAiUrTCPwI49DA0U+AIv0ZcwVckTHnG8zJYolIaIZG8bBJ7vQkZctUqXAvZKUD59+a
+          /qIXvBUFz9c+sStgtQqQKxaO3vxybCveigfiHJmS2lCfK3Y7tFQa1Uvku6vsbsUKvsNzTtc5P6AiN5sievnsCfx+uV7/+uo6quHLv3//
+          98+nL399frM47Zbi9pg9sfw0dDjzViqInc8HPABt9W3k1IXZUxJQlECkMJV7VN2BW5Ls0kR3LaluMzsGbgntDi5IDlWRIfGFpJ/TKpzL
+          MtDWfLuq6l7pNruyo28T0TqfuTl6G+N9wU8vCd/NaOa9CXamqsxcW3O7yfG0szRbNac9pNynTTTqik+3joZit6324XUA8uW5Fl2nj/Re
+          ViZ2LfuN81JtcjtD0ok8kOvw6k7aLzbvMTVsqxA/knxdskZuupG15S7uVNST2E9IK2QfKLl7R7S/hocVTLsSfN5hwtrzUSejvXzHpbFi
+          P9XabAbPRY7ayAJbSA1cIaS8tNrMgBsw75DgeGqAu0ttI2lI3F2PBuiAU3K6AUBkuQ3N8w1PPzCf5OyD1m9sJzOcQ/T01XodBV7Ocf+I
+          kB/h10a2k+o9giPq/NbD1V4RF365h+9Xr4FuW5RlW7W74iKZb2isXF4Z+b3rfW51zTuh2f+DjFNFnNt5aXrjjiMPv7XH08VpUIY50rAp
+          rON3JNa5BTobndsi6ombgh6+19TauZecwvDB/30645OMANL98hUcBLSaMAoAAA==
+          TCU_PHASE8_ASSET_2
+          mkdir -p "$(dirname 'tests/phase8SaveIntegrity.test.js')"
+          cat <<'TCU_PHASE8_ASSET_3' | base64 -d | gzip -d > 'tests/phase8SaveIntegrity.test.js'
+          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
+          TCU_PHASE8_ASSET_3
+          mkdir -p "$(dirname 'scripts/verify-phase8-save-integrity.mjs')"
+          cat <<'TCU_PHASE8_ASSET_4' | base64 -d | gzip -d > 'scripts/verify-phase8-save-integrity.mjs'
+          H4sIAAAAAAAC/51V72/aSBD9zl+B9pNRzY/QUy8iohIhJOGOQg5DorR3sjb2GLa1d93dNRGH+N9v1muMQ5u2OilSlMzMm/fejGdZkgqp
+          61QpwF+RFEmdcBFCz/6nrbRkgSYXNWYTdxJoeM1i8LY8cJ8l03D4a18tj1SlRgFVgg9SdkhptdpKBm2asnYZa32ulmxozEKqwcvDHt3A
+          Hd3GgoYnEEhywwJQBY4HkmHlv1QzwV8iBsi8iufZyp/gHRMtWiC40nURh/0/vNm0lVKpwKl64hAJpqFqp2uq4PdmIp4w1ExBRkImlAfQ
+          fMp4GBtAwYlLMh2dk0bjomYtb8HXjMYOtkB0pVwtM2gcGkcS1Lp/9MyKuoJEWGEOeg1hj+S9z5sK6TcZ17DCQW2JqzSV+goreqTb6b5r
+          dn5rds7IvoR/AuQIFXxV+Fn45uT9WzY+Dk85vzo0xwK7u8TsBrleTibY9SAtBl1XGuNhn2dxfCBTjKL/yuCcnTFaMSzc9na1Ou4w2l9f
+          gf4AmjoNDOtM8noOuXdtNM20I8VzY1f0w/XOAkyDcBgLDnmsTEaoI4wtKGMxU5Xgp3/KQAgoB44ho/FiX9u7XDz3nEb/vXX+rNPsdBed
+          Ti//+ZjPgD5TVspuqVyqEX1qoomMyyHbUjuGECAd5aOwdHGD8lLXlmJiZbQsyWI0dphJCVzf0AS+Ha+dBI00yP+xFVzoq5JRDnIk8suM
+          f3HDLPz3F8yqQJLF0Eshxb8KGafLUFA45XDAKQW7r+mviHvVu2/QGkfpB97mnvR3KlhDQntkcTvyh4PJxF/e+Xe3A2907nuD+5E/ni5G
+          N/Px4tG/PyOuuR09o9/FTyOVsGEiUx/yW2RsuzFHoLwxmBLQNJd+KfA4UbktfL1DfriQeFMOWFSLhAUGw3xnOAw64GGRXSYl2AZ1cbik
+          wZcsnVuRaqCGIt2WWYGQMkv1OL/QE0BINZNsxTiNl1yLDAUfIUMWRWA2dUglgDQE1BQ2IIeCYrMAjs0pR89NwlKB+iuDDB6YXotML3kI
+          EeMQziHHqhRFeCZMSUH1Cj9imTCOnzkLKj6KEFcE35b7t7mDZD6aL6dovf8wm/95PZk9EJO3ZgaEBTTudh6BSpt7ibOajKcjfzadPPrT
+          2cK/no+8W7K/qL14SE+ekNMz/vL5yJ8h80rzFYu2jq10zdFzu4035G9OikUSWBKLlfPDAsz9D4RHgL4SCAAA
+          TCU_PHASE8_ASSET_4
+          python3 - <<'TCU_PHASE8_PATCH'
+          from pathlib import Path
+          
+          def once(path,before,after):
+              p=Path(path);txt=p.read_text(encoding='utf-8')
+              if txt.count(before)!=1: raise RuntimeError(f'{path}: expected one anchor {before[:100]!r}, got {txt.count(before)}')
+              p.write_text(txt.replace(before,after,1),encoding='utf-8')
+          
+          p='src/services/seasonBackupService.js'
+          needle='''    async createMilestoneBackup(seasonId, { saveId = seasonId, milestone, label = null } = {}) {
+                assertMilestone(milestone);
+                const payload = api.serializeSeason(seasonId);
+                validateSeasonSavePayload(payload, { mode: "FULL" });'''
+          replacement='''    async createMilestoneBackup(seasonId, { saveId = seasonId, milestone, label = null } = {}) {
+                return this.createMilestoneBackupFromPayload(api.serializeSeason(seasonId), { saveId, milestone, label });
+              },
+          
+              async createMilestoneBackupFromPayload(payload, { saveId = payload?.seasonId, milestone, label = null } = {}) {
+                assertMilestone(milestone);
+                validateSeasonSavePayload(payload, { mode: "FULL" });'''
+          once(p,needle,replacement)
+          
+          p='src/app/seasonApp.js'
+          needle='''  const autosave = async ({ milestone = null } = {}) => {
+              if (!snapshot || !currentSaveId) return false;
+              try {
+                const meta = await seasonSaveService.autosaveSeason(snapshot.seasonId, { saveId: currentSaveId });
+                currentSaveLabel = meta.label;
+                if (milestone) {
+                  await seasonBackupService.createMilestoneBackup(snapshot.seasonId, { saveId: currentSaveId, milestone });
+                  await refreshBackups();
+                  saveMessage = `자동 저장됨 · ${milestoneLabel(milestone)} 백업`;
+                } else {
+                  saveMessage = "자동 저장됨";
+                }
+                return true;
+              } catch (error) {
+                saveMessage = `자동 저장 실패: ${error?.message ?? error}`;
+                return false;
+              }
+            };'''
+          replacement='''  const autosave = async ({ milestone = null, context = null } = {}) => {
+              const seasonId = context?.seasonId ?? snapshot?.seasonId;
+              const saveId = context?.saveId ?? currentSaveId;
+              if (!seasonId || !saveId) return false;
+              try {
+                const meta = milestone && context?.payload
+                  ? await seasonSaveService.saveSeasonPayload(context.payload, { saveId })
+                  : await seasonSaveService.autosaveSeason(seasonId, { saveId });
+                if (milestone) {
+                  if (context?.payload) {
+                    await seasonBackupService.createMilestoneBackupFromPayload(context.payload, { saveId, milestone });
+                  } else {
+                    await seasonBackupService.createMilestoneBackup(seasonId, { saveId, milestone });
+                  }
+                }
+                // An older career's queued write must not overwrite the new career's UI.
+                if (currentSaveId === saveId) {
+                  currentSaveLabel = meta.label;
+                  if (milestone) {
+                    await refreshBackups();
+                    saveMessage = `자동 저장됨 · ${milestoneLabel(milestone)} 백업`;
+                  } else {
+                    saveMessage = "자동 저장됨";
+                  }
+                }
+                return true;
+              } catch (error) {
+                if (currentSaveId === saveId) saveMessage = `자동 저장 실패: ${error?.message ?? error}`;
+                return false;
+              }
+            };'''
+          once(p,needle,replacement)
+          needle='''  const saveQueue = createCoalescedSaveQueue({save: autosave, waitForIdle: waitForAutosaveIdle});
+            const queueAutosave = saveQueue.request;'''
+          replacement='''  const saveQueue = createCoalescedSaveQueue({save: autosave, waitForIdle: waitForAutosaveIdle});
+            const queueAutosave = ({ milestone = null } = {}) => {
+              if (!snapshot || !currentSaveId) return Promise.resolve(false);
+              let payload = null;
+              try {
+                // This is the exact state when season-end/opening-day was announced.
+                if (milestone) payload = seasonApi.serializeSeason(snapshot.seasonId);
+              } catch (error) {
+                saveMessage = `마일스톤 저장 준비 실패: ${error?.message ?? error}`;
+                return Promise.resolve(false);
+              }
+              return saveQueue.request({milestone,context:{seasonId:snapshot.seasonId,saveId:currentSaveId,payload}});
+            };'''
+          once(p,needle,replacement)
+          needle='''            await autosaveQueue.catch(() => false);
+                      const meta = await seasonSaveService.saveSeason(snapshot.seasonId, { saveId: currentSaveId });
+                      currentSaveLabel = meta.label;
+                      saveMessage = "수동 저장 완료";'''
+          replacement='''            const saved = await queueAutosave();
+                      if (!saved) throw new Error("저장에 실패했습니다. 현재 커리어는 메모리에 유지됩니다.");
+                      saveMessage = "수동 저장 완료";'''
+          once(p,needle,replacement)
+          print('Phase 8: captured milestone state, same-snapshot backups, career-isolated queue and manual-save repair')
+          TCU_PHASE8_PATCH
+          node --check src/services/coalescedSaveQueue.js
+          node --check src/services/seasonSaveService.js
+          node --check src/services/seasonBackupService.js
+          node --check src/app/seasonApp.js
+          node --check tests/phase8SaveIntegrity.test.js
+          node --check scripts/verify-phase8-save-integrity.mjs
+          git diff --check
+      - name: Test save queue, captured backups and corrupted import isolation
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
+          node scripts/verify-phase8-save-integrity.mjs
+          node --input-type=module <<'TCU_PHASE8_GATES'
+          import assert from "node:assert/strict";
+          import {readFileSync} from "node:fs";
+          const r=JSON.parse(readFileSync("reports/phase8-save-integrity-bundle.json","utf8"));
+          assert.equal(r.pass,true);
+          assert.equal(r.capturedBoundaryPayloadPreserved,true);
+          assert.equal(r.corruptImportLeavesOriginalUntouched,true);
+          console.log("Phase 8 integrity gate PASS");
+          TCU_PHASE8_GATES
+      - name: Verify production v3 full world and postseason with new save protections
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase3-integration-4r.mjs
+          node --input-type=module <<'TCU_PHASE8_WORLD'
+          import assert from "node:assert/strict";
+          import {readFileSync} from "node:fs";
+          const world=JSON.parse(readFileSync("reports/phase3-integrated-regression-4r-v1.json","utf8"));
+          assert.equal(world.pass,true);
+          assert.equal(world.regularSeason.worldGames,10710);
+          assert.ok(world.postseason.championTeamId);
+          assert.ok(Object.values(world.gates).every(Boolean));
+          console.log("Phase 8 v3 world regression PASS");
+          TCU_PHASE8_WORLD
+          git diff --check
+      - name: Commit only after Phase 8 and production regression pass
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add src/services/coalescedSaveQueue.js src/services/seasonSaveService.js src/services/seasonBackupService.js src/app/seasonApp.js tests/phase8SaveIntegrity.test.js scripts/verify-phase8-save-integrity.mjs reports/phase8-save-integrity-bundle.json reports/phase3-integrated-regression-4r-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No verified Phase 8 changes; refusing empty commit.' >&2
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase8: preserve exact milestone saves and isolate career backup recovery'
+          git push origin HEAD:main
