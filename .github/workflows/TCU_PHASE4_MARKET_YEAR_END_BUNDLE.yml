@@ -1,0 +1,343 @@
+name: THE CALL-UP Phase 4 Annual Market Resolution and FA Safety Bundle
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE4_MARKET_YEAR_END_BUNDLE.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  phase4-annual-market-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install annual request resolution FA safety and 2027 scenario
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e tests/phase4MarketYearEndBundle.test.js
+          test ! -e scripts/verify-phase4-trade-request-rollover.mjs
+          cat > tests/phase4MarketYearEndBundle.test.js <<'TCU_MARKET_TEST'
+          import assert from "node:assert/strict";
+          import test from "node:test";
+          import { createTradeState, requestTradeState, cancelTradeRequestState,
+            expireTradeRequestState, recordTrade, validateTradeState }
+            from "../src/engine/career/tradeState.js";
+          import { createContractState } from "../src/engine/career/contractState.js";
+          import { createContractMarketState, generateFreeAgentOffers,
+            counterFreeAgentOffer, acceptFreeAgentOffer }
+            from "../src/engine/career/contractMarket.js";
+
+          const tradeBase = () => createTradeState({ startDate: "2026-04-01", userPlayerId: "user" });
+          const fakeOfferInput = { date: "2026-11-06", player: { age: 29,
+            projectedValue: .72, durability: .74, trackRecord: .7,
+            reputation: .6, positionDemand: .75 },
+            teamProfiles: [{ organizationId: "109", organizationName: "A",
+              needScore: .9, budgetScore: .8, competitiveScore: .7, playingTimeScore: .8 }],
+            seed: "phase4-year-end-gate" };
+
+          test("unfulfilled player trade request resolves once at offseason review, never fabricates a trade", () => {
+            const base = tradeBase();
+            const pending = requestTradeState(base, { date: "2026-07-15",
+              preferences: { preferPlayingTime: true } });
+            const done = expireTradeRequestState(pending, { date: "2027-01-15" });
+            assert.equal(done.agentRequest.status, "EXPIRED");
+            assert.equal(done.agentRequest.resolvedDate, "2027-01-15");
+            assert.equal(done.agentRequest.resolutionReason, "NO_TRADE_AT_OFFSEASON_REVIEW");
+            assert.equal(done.reviews, pending.reviews + 1);
+            assert.deepEqual(done.trades, base.trades);
+            assert.deepEqual(done.rumors, base.rumors);
+            assert.strictEqual(expireTradeRequestState(done, { date: "2027-01-15" }), done);
+            assert.throws(() => cancelTradeRequestState(done, { date: "2027-01-15" }), /요청/);
+            assert.equal(requestTradeState(done, { date: "2027-04-02",
+              preferences: { preferContender: true } }).agentRequest.status, "REQUESTED");
+            assert.equal(validateTradeState(done), true);
+            assert.throws(() => expireTradeRequestState(pending, { date: "2026-07-14" }), /이전/);
+            const invalid = structuredClone(done);
+            invalid.agentRequest.resolvedDate = "2026-07-14";
+            assert.throws(() => validateTradeState(invalid), /종료일|검토일/);
+            const malformed = structuredClone(done);
+            malformed.agentRequest.resolutionReason = "INSTANT_PROMOTION";
+            assert.throws(() => validateTradeState(malformed), /결과/);
+          });
+
+          test("cancelled or satisfied requests are never re-expired by offseason processing", () => {
+            const pending = requestTradeState(tradeBase(), { date: "2026-07-15" });
+            const cancelled = cancelTradeRequestState(pending, { date: "2026-07-16" });
+            assert.strictEqual(expireTradeRequestState(cancelled, { date: "2027-01-15" }), cancelled);
+            const satisfied = recordTrade(pending, { proposal: {
+              tradeId: "test-trade", date: "2026-07-20", buyerOrganizationId: "110",
+              sellerOrganizationId: "109", buyerAssets: [], sellerAssets: [], userInvolved: true
+            } });
+            assert.equal(satisfied.agentRequest.status, "SATISFIED");
+            assert.strictEqual(expireTradeRequestState(satisfied, { date: "2027-01-15" }), satisfied);
+            assert.equal(satisfied.trades.length, 1);
+            assert.equal(validateTradeState(createTradeState({ startDate: "2026-04-01", userPlayerId: "legacy" })), true);
+          });
+
+          test("FA offers require eligibility and a matching player; a signed offer cannot be signed twice", () => {
+            const market = createContractMarketState({ playerId: "fa", startDate: "2026-10-01" });
+            assert.throws(() => generateFreeAgentOffers(market, fakeOfferInput), /자유계약|자격/);
+            market.status = "FREE_AGENT_ELIGIBLE";
+            const offered = generateFreeAgentOffers(market, fakeOfferInput);
+            assert.equal(offered.status, "FREE_AGENT_OPEN");
+            assert.equal(offered.freeAgency.offers.length, 1);
+            const offerId = offered.freeAgency.offers[0].offerId;
+            const other = createContractState({ playerId: "other", startDate: "2026-03-25", initialLevel: "MLB", isUser: true });
+            assert.throws(() => acceptFreeAgentOffer(offered, other,
+              { offerId, date: "2026-11-08" }), /선수/);
+            const contract = createContractState({ playerId: "fa", startDate: "2026-03-25", initialLevel: "MLB", isUser: true });
+            const negotiation = counterFreeAgentOffer(offered, { offerId, date: "2026-11-07", request: "AAV" });
+            const signed = acceptFreeAgentOffer(negotiation.marketState, contract,
+              { offerId, date: "2026-11-08" });
+            assert.equal(signed.marketState.status, "SIGNED");
+            assert.equal(signed.contractState.terms.kind, "MLB_GUARANTEED");
+            assert.throws(() => acceptFreeAgentOffer(signed.marketState, signed.contractState,
+              { offerId, date: "2026-11-08" }), /시장|이미/);
+            const closed = structuredClone(offered);
+            closed.freeAgency.offers[0].status = "CLOSED";
+            assert.throws(() => acceptFreeAgentOffer(closed, contract,
+              { offerId, date: "2026-11-08" }), /제안/);
+          });
+          TCU_MARKET_TEST
+          cat > scripts/verify-phase4-trade-request-rollover.mjs <<'TCU_MARKET_SCENARIO'
+          import assert from "node:assert/strict";
+          import { readFileSync, writeFileSync } from "node:fs";
+          import { gunzipSync } from "node:zlib";
+          import { seasonApi } from "../src/api/seasonApi.js";
+          import { validateSeasonSavePayload } from "../src/services/seasonSerialization.js";
+          import { renderSeason } from "../src/ui/seasonRender.js";
+
+          const source = JSON.parse(gunzipSync(readFileSync(
+            "data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz")).toString("utf8"));
+          const org = seasonApi.getCareerCreationCatalog({ masterSnapshot: source }).organizations[0];
+          let view = seasonApi.createCareerSeason({ seed: "phase4-year-end-market-2026",
+            input: { name: "Phase4 Annual QA", nationality: "대한민국", hometown: "구미",
+              age: 21, heightCm: 180, weightKg: 78, bodyType: "ATHLETIC",
+              bats: "R", throws: "R", primaryPosition: "CF", archetype: "HIT_FIRST",
+              visibleTraits: ["QUICK_BAT", "SOFT_HANDS"],
+              organizationMode: "FAVORITE", favoriteOrganizationId: String(org.id) },
+            masterSnapshot: source });
+          const id = view.seasonId;
+          view = seasonApi.setAgentStrategy(id, "BET_ON_MYSELF");
+          view = seasonApi.requestTrade(id, { preferences: { preferPlayingTime: true } });
+          const initialPayload = seasonApi.serializeSeason(id);
+          const userId = initialPayload.fixture.userPlayerId;
+          assert.equal(view.userPlayer.trade.agentRequest.status, "REQUESTED");
+          assert.equal(initialPayload.tradeState.trades.length, 0);
+          assert.equal(view.userPlayer.contractMarket.agentStrategy, "BET_ON_MYSELF");
+          view = seasonApi.simulateToSeasonEnd(id);
+          assert.equal(view.status, "COMPLETE");
+          assert.equal(view.progress.worldLeagueGamesCompleted, 10710);
+          assert.equal(view.userPlayer.trade.agentRequest.status, "REQUESTED",
+            "a request must not silently be marked as an actual transaction");
+          view = seasonApi.startOffseason(id);
+          assert.equal(view.status, "OFFSEASON");
+          let safety = 0;
+          while (view.offseason.currentPhase !== "FREE_AGENCY_TRADES") {
+            view = seasonApi.advanceOffseasonPhase(id);
+            if (++safety > 8) throw new Error("offseason market review was not reached");
+          }
+          const pending = seasonApi.serializeSeason(id);
+          assert.equal(pending.tradeState.agentRequest.status, "REQUESTED");
+          const first = seasonApi.advanceOffseasonPhase(id);
+          assert.equal(first.userPlayer.trade.agentRequest.status, "EXPIRED");
+          assert.equal(first.userPlayer.trade.agentRequest.resolutionReason, "NO_TRADE_AT_OFFSEASON_REVIEW");
+          assert.equal(first.userPlayer.trade.agentRequest.resolvedDate, "2027-01-15");
+          assert.equal(first.offseason.lastResult.unfilledUserRequest, true);
+          assert.equal(first.offseason.lastResult.userTradeRequest, "EXPIRED");
+          const finalized = seasonApi.serializeSeason(id);
+          assert.equal(finalized.tradeState.trades.length, 0);
+          assert.equal(finalized.tradeState.reviews, pending.tradeState.reviews + 1);
+          assert.deepEqual(finalized.rosterControlStates[userId], pending.rosterControlStates[userId],
+            "unfulfilled request must not change the player's roster assignment");
+          assert.equal(validateSeasonSavePayload(finalized, { mode: "FULL" }), true);
+          const html = { innerHTML: "", querySelectorAll: () => [], querySelector: () => null };
+          renderSeason(html, first, {}, "PLAYER", { playerSection: "CONTRACT" });
+          assert.match(html.innerHTML, /오프시즌 검토 종료/);
+          assert.match(html.innerHTML, /data-season-action="REQUEST_TRADE_PLAYING_TIME"/);
+          seasonApi.restoreSeason(structuredClone(pending));
+          const replay = seasonApi.advanceOffseasonPhase(id);
+          assert.deepEqual(replay.userPlayer.trade, first.userPlayer.trade);
+          assert.deepEqual(replay.offseason.lastResult, first.offseason.lastResult);
+          assert.equal(seasonApi.serializeSeason(id).tradeState.reviews, finalized.tradeState.reviews);
+          view = seasonApi.advanceToNextSeason(id);
+          assert.equal(view.seasonYear, 2027);
+          assert.equal(view.status, "REGULAR_SEASON");
+          assert.equal(view.userPlayer.trade.agentRequest.status, "EXPIRED");
+          assert.equal(view.userPlayer.contractMarket.agentStrategy, "BET_ON_MYSELF");
+          const year2027 = seasonApi.serializeSeason(id);
+          assert.equal(validateSeasonSavePayload(year2027, { mode: "FULL" }), true);
+          view = seasonApi.restoreSeason(structuredClone(year2027));
+          assert.equal(view.userPlayer.trade.agentRequest.status, "EXPIRED");
+          view = seasonApi.requestTrade(id, { preferences: { preferContender: true } });
+          assert.equal(view.userPlayer.trade.agentRequest.status, "REQUESTED");
+          assert.deepEqual(view.userPlayer.trade.agentRequest.preferences, { preferContender: true });
+          assert.equal(seasonApi.serializeSeason(id).tradeState.trades.length, 0);
+
+          const report = { schema: "THE_CALL_UP_PHASE4_MARKET_YEAR_END_BUNDLE_V1", pass: true,
+            source: "2026 production v2 baseline; production v3 whole-world gate is separate",
+            regularSeason2026WorldGames: 10710,
+            unfulfilledRequestExplicitlyResolved: true, noForcedTradeOrRosterChange: true,
+            offseasonMarketReviewIdempotent: true, contractStrategyPreservedAcross2027: true,
+            requestCanBeRenewedIn2027: true, fullSaveAndUiVerified: true };
+          writeFileSync("reports/phase4-market-year-end-bundle.json", JSON.stringify(report, null, 2) + "\n");
+          console.log(JSON.stringify(report, null, 2));
+          TCU_MARKET_SCENARIO
+          python3 - <<'TCU_MARKET_PATCH'
+          from pathlib import Path
+
+          def once(path, before, after):
+              p=Path(path)
+              text=p.read_text(encoding="utf-8")
+              n=text.count(before)
+              if n!=1: raise RuntimeError(f"{path}: expected one anchor, found {n}: {before[:90]!r}")
+              p.write_text(text.replace(before,after),encoding="utf-8")
+
+          p="src/engine/career/tradeState.js"
+          before='if(!state.agentRequest||!["NONE","REQUESTED","SATISFIED","CANCELLED"].includes(state.agentRequest.status)) throw new RangeError("trade request status가 잘못되었습니다.");return true;}'
+          after='''if(!state.agentRequest||!["NONE","REQUESTED","SATISFIED","CANCELLED","EXPIRED"].includes(state.agentRequest.status)) throw new RangeError("trade request status가 잘못되었습니다.");
+          if(state.agentRequest.status==="EXPIRED") {
+            assertDate(state.agentRequest.requestedDate, `${label}.agentRequest.requestedDate`);
+            assertDate(state.agentRequest.resolvedDate, `${label}.agentRequest.resolvedDate`);
+            if(state.agentRequest.resolvedDate < state.agentRequest.requestedDate) throw new RangeError("트레이드 요청 검토 종료일이 요청일 이전입니다.");
+            if(state.agentRequest.resolutionReason !== "NO_TRADE_AT_OFFSEASON_REVIEW") throw new RangeError("트레이드 요청 결과가 잘못되었습니다.");
+          }
+          return true;}'''
+          once(p,before,after)
+          once(p,'function addTradeRumor(state,{proposal}={})', '''// One explicit offseason market review settles a still-pending player request.
+          // This is a status update, never a fabricated transaction or GM decision.
+          function expireTradeRequestState(state, { date } = {}) {
+            validateTradeState(state);
+            if (state.agentRequest.status !== "REQUESTED") return state;
+            assertDate(date, "trade review date");
+            if (date < state.agentRequest.requestedDate) throw new RangeError("트레이드 요청일 이전에 검토를 종료할 수 없습니다.");
+            const next = clone(state);
+            next.agentRequest = { ...next.agentRequest, status: "EXPIRED",
+              resolvedDate: date, resolutionReason: "NO_TRADE_AT_OFFSEASON_REVIEW" };
+            next.reviews += 1;
+            next.lastReviewDate = date;
+            return next;
+          }
+          function addTradeRumor(state,{proposal}={})''')
+          once(p,'normalizeTradeState, requestTradeState, cancelTradeRequestState, addTradeRumor',
+            'normalizeTradeState, requestTradeState, cancelTradeRequestState, expireTradeRequestState, addTradeRumor')
+
+          p="src/engine/career/contractMarket.js"
+          once(p,'  validateContractMarketState(state);\n  assertIsoDate(date, "free-agent market date");',
+            '  validateContractMarketState(state);\n  if (state.status !== "FREE_AGENT_ELIGIBLE") throw new RangeError("자유계약 제안 생성 자격이 없습니다.");\n  assertIsoDate(date, "free-agent market date");')
+          once(p,'  validateContractMarketState(state);\n  validateContractState(contractState);\n  assertIsoDate(date, "offer accept date");',
+            '  validateContractMarketState(state);\n  validateContractState(contractState);\n  if (state.status !== "FREE_AGENT_OPEN") throw new RangeError("자유계약 시장이 열려 있지 않습니다.");\n  if (contractState.playerId !== state.playerId) throw new RangeError("계약 제안과 계약 대상 선수가 다릅니다.");\n  assertIsoDate(date, "offer accept date");')
+          once(p,'  const offer = state.freeAgency.offers.find((x) => x.offerId === offerId);\n  if (!offer) throw new RangeError(`offer를 찾을 수 없습니다: ${offerId}`);\n  if (date > offer.expiresDate) throw new RangeError("offer가 만료되었습니다.");',
+            '  const offer = state.freeAgency.offers.find((x) => x.offerId === offerId);\n  if (!offer) throw new RangeError(`offer를 찾을 수 없습니다: ${offerId}`);\n  if (!["OPEN", "REVISED"].includes(offer.status)) throw new RangeError("유효한 계약 제안이 아닙니다.");\n  if (date > offer.expiresDate) throw new RangeError("offer가 만료되었습니다.");')
+
+          p="src/api/seasonApi.js"
+          once(p,
+            'normalizeTradeState, requestTradeState, cancelTradeRequestState, addTradeRumor, recordTrade, getTradePublicView } from "../engine/career/tradeState.js";',
+            'normalizeTradeState, requestTradeState, cancelTradeRequestState, expireTradeRequestState, addTradeRumor, recordTrade, getTradePublicView } from "../engine/career/tradeState.js";')
+          once(p,
+            '  else if(phase==="FREE_AGENCY_TRADES") {\n    const user=session.contractMarketStates?.[session.fixture.userPlayerId] ?? null;\n    result={marketStatusCounts:marketStatusCounts(session),userStatus:user?.status ?? null,tradeReviews:session.tradeState?.reviews ?? 0,userTradeRequest:session.tradeState?.agentRequest?.status ?? "NONE"};\n  }',
+            '''  else if(phase==="FREE_AGENCY_TRADES") {
+              const unfilledUserRequest = session.tradeState?.agentRequest?.status === "REQUESTED";
+              if (unfilledUserRequest) session.tradeState = expireTradeRequestState(session.tradeState, { date });
+              const user=session.contractMarketStates?.[session.fixture.userPlayerId] ?? null;
+              result={marketStatusCounts:marketStatusCounts(session),userStatus:user?.status ?? null,
+                tradeReviews:session.tradeState?.reviews ?? 0,
+                userTradeRequest:session.tradeState?.agentRequest?.status ?? "NONE",
+                unfilledUserRequest};
+            }''')
+
+          p="src/ui/seasonRender.js"
+          once(p,'    : status === "CANCELLED" ? "이전 요청 철회됨"',
+            '    : status === "EXPIRED" ? "오프시즌 검토 종료 · 거래 성사 안 됨"\n    : status === "CANCELLED" ? "이전 요청 철회됨"')
+          print('Verified Phase 4 annual trade resolution and FA offer guards installed')
+          TCU_MARKET_PATCH
+          node --check src/engine/career/tradeState.js
+          node --check src/engine/career/contractMarket.js
+          node --check src/api/seasonApi.js
+          node --check src/ui/seasonRender.js
+          node --check tests/phase4MarketYearEndBundle.test.js
+          node --check scripts/verify-phase4-trade-request-rollover.mjs
+          git diff --check
+      - name: Run all unit tests and existing FA signing rules
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
+          node scripts/verify-v53-arbitration-free-agency.mjs
+          node --input-type=module <<'TCU_FA_GATE'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const r=JSON.parse(readFileSync('reports/v53-arbitration-free-agency-gate.json','utf8'));
+          assert.equal(r.pass,true);
+          assert.equal(r.freeAgency.signing,true);
+          console.log('FA eligibility, negotiation and signing guard PASS');
+          TCU_FA_GATE
+      - name: Verify 2026 production request 2027 rollover and save replay
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase4-trade-request-rollover.mjs
+          node --input-type=module <<'TCU_ANNUAL_GATE'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const r=JSON.parse(readFileSync('reports/phase4-market-year-end-bundle.json','utf8'));
+          assert.equal(r.pass,true);
+          assert.equal(r.regularSeason2026WorldGames,10710);
+          for(const key of ['unfulfilledRequestExplicitlyResolved','noForcedTradeOrRosterChange',
+             'offseasonMarketReviewIdempotent','contractStrategyPreservedAcross2027',
+             'requestCanBeRenewedIn2027','fullSaveAndUiVerified']) assert.equal(r[key],true,key);
+          console.log('Phase 4 annual market and 2027 save roundtrip PASS');
+          TCU_ANNUAL_GATE
+      - name: Re-run full production offseason and v3 world regression
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-v55-full-offseason.mjs
+          node scripts/verify-phase3-integration-4r.mjs
+          node --input-type=module <<'TCU_WORLD_GATE'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const off=JSON.parse(readFileSync('reports/v55-full-offseason-gate.json','utf8'));
+          const world=JSON.parse(readFileSync('reports/phase3-integrated-regression-4r-v1.json','utf8'));
+          assert.equal(off.pass,true);
+          assert.equal(off.production.worldGames2026,10710);
+          assert.equal(off.production.openingDay2027,true);
+          assert.equal(world.pass,true);
+          assert.equal(world.regularSeason.worldGames,10710);
+          assert.ok(world.postseason.championTeamId);
+          assert.ok(Object.values(world.gates).every(Boolean));
+          console.log('Production 2026/2027 + v3 postseason regression PASS');
+          TCU_WORLD_GATE
+          git diff --check
+      - name: Commit only fully verified market and year-end changes
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add src/engine/career/tradeState.js src/engine/career/contractMarket.js \
+            src/api/seasonApi.js src/ui/seasonRender.js \
+            tests/phase4MarketYearEndBundle.test.js scripts/verify-phase4-trade-request-rollover.mjs \
+            reports/phase4-market-year-end-bundle.json reports/v53-arbitration-free-agency-gate.json \
+            reports/v55-full-offseason-gate.json reports/phase3-integrated-regression-4r-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Refusing empty Phase 4 commit.' >&2
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m 'phase4: settle pending trade requests at market review and guard FA signing'
+          git push origin HEAD:main
