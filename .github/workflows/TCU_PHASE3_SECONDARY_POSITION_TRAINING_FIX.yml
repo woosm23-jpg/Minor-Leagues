@@ -1,0 +1,365 @@
+name: THE CALL-UP Phase 3 Secondary Position Training Repair
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE3_SECONDARY_POSITION_TRAINING_FIX.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  secondary-position-training:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Implement secondary-position practice and regression test
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          if [[ -e src/engine/season/secondaryPositionTraining.js || -e tests/secondaryPositionTraining.test.js ]]; then
+            echo 'Existing secondary-position files detected; inspect main before changing files.' >&2
+            exit 1
+          fi
+          cat > src/engine/season/secondaryPositionTraining.js <<'JS_MODULE'
+          import { healthAvailability } from "./injuryState.js";
+
+          const FIELD_POSITIONS = new Set(["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"]);
+
+          function availableSecondaryPositions(state, player) {
+            const primary = state?.primaryPosition ?? player?.positioning?.primaryPosition ?? "DH";
+            const familiarity = state?.positionFamiliarity ?? player?.positioning?.familiarity ?? {};
+            return Object.freeze(Object.keys(familiarity)
+              .filter((position) => FIELD_POSITIONS.has(position) && position !== primary)
+              .sort());
+          }
+
+          function setSecondaryPositionTraining(state, player, targetPosition) {
+            if (!state || !player || state.playerId !== player.id) {
+              throw new TypeError("부포지션 훈련에는 일치하는 선수 상태가 필요합니다.");
+            }
+            if (targetPosition !== null && !availableSecondaryPositions(state, player).includes(targetPosition)) {
+              throw new RangeError(`선택할 수 없는 부포지션 훈련입니다: ${targetPosition}`);
+            }
+            if ((state.positionTraining?.targetPosition ?? null) === targetPosition) return state;
+            return Object.freeze({ ...state, positionTraining: Object.freeze({
+              targetPosition, trainedDays: 0, lastTrainingDate: null
+            }) });
+          }
+
+          // This is calendar practice, not a real game rep. It changes no development
+          // budget, rating, role, roster slot, or lineup decision directly.
+          function advanceSecondaryPositionTraining(state, player, { days, date } = {}) {
+            if (!Number.isInteger(days) || days < 0) throw new RangeError("훈련 진행 날짜가 잘못되었습니다.");
+            const training = state?.positionTraining ?? null;
+            if (!training?.targetPosition || days === 0) return state;
+            const position = training.targetPosition;
+            if (!availableSecondaryPositions(state, player).includes(position)) return state;
+            // Conservative injury rule: no practice credit for an interval that began
+            // while injured; returning to play never earns retroactive training.
+            if (healthAvailability(state.health) !== "AVAILABLE") return state;
+            const current = Number(state.positionFamiliarity[position]);
+            if (!Number.isFinite(current) || current < 0.35 || current > 1) {
+              throw new RangeError("부포지션 친숙도 값이 잘못되었습니다.");
+            }
+            const adaptability = Math.max(20, Math.min(99, Number(player.positioning?.adaptability ?? 50)));
+            const dailyGain = 0.003 + ((adaptability - 20) / 79) * 0.002;
+            const next = Math.min(1, Math.max(current,
+              Number((1 - (1 - current) * Math.pow(1 - dailyGain, days)).toFixed(6))));
+            return Object.freeze({
+              ...state,
+              positionFamiliarity: Object.freeze({ ...state.positionFamiliarity, [position]: next }),
+              positionTraining: Object.freeze({
+                targetPosition: position,
+                trainedDays: training.trainedDays + days,
+                lastTrainingDate: date
+              })
+            });
+          }
+
+          function validateSecondaryPositionTraining(value, label = "positionTraining") {
+            if (value == null) return true; // Historical saves predate this feature.
+            if (!value || typeof value !== "object" || Array.isArray(value)) {
+              throw new TypeError(`${label} 값이 잘못되었습니다.`);
+            }
+            if (value.targetPosition !== null && !FIELD_POSITIONS.has(value.targetPosition)) {
+              throw new RangeError(`${label} 부포지션이 잘못되었습니다.`);
+            }
+            if (!Number.isInteger(value.trainedDays) || value.trainedDays < 0 || value.trainedDays > 100000) {
+              throw new RangeError(`${label} 훈련 일수가 잘못되었습니다.`);
+            }
+            if (value.lastTrainingDate !== null &&
+                (typeof value.lastTrainingDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.lastTrainingDate))) {
+              throw new RangeError(`${label} 훈련 날짜가 잘못되었습니다.`);
+            }
+            return true;
+          }
+
+          export {
+            availableSecondaryPositions, setSecondaryPositionTraining,
+            advanceSecondaryPositionTraining, validateSecondaryPositionTraining
+          };
+          JS_MODULE
+          cat > tests/secondaryPositionTraining.test.js <<'JS_TEST'
+          import assert from 'node:assert/strict';
+          import test from 'node:test';
+          import { writeFileSync } from 'node:fs';
+          import { seasonApi } from '../src/api/seasonApi.js';
+          import { renderSeason } from '../src/ui/seasonRender.js';
+          import { getUtilityCoverage, getUtilityPathwayView } from '../src/engine/season/utilityUsage.js';
+
+          const root = () => ({ innerHTML: '', querySelectorAll: () => [], querySelector: () => null });
+
+          test('secondary practice changes familiarity only after a calendar day; save replay is deterministic', () => {
+            const initial = seasonApi.createDemoSeason({ seed: 'phase3-secondary-position-training', startDate: '2026-04-01' });
+            const id = initial.seasonId;
+            const playerId = seasonApi.serializeSeason(id).fixture.userPlayerId;
+            const before = seasonApi.serializeSeason(id);
+            const initialFamiliarity = initial.userPlayer.status.positionFamiliarity.LF;
+            assert.equal(initial.userPlayer.status.primaryPosition, 'CF');
+            assert.ok(initialFamiliarity >= 0.35 && initialFamiliarity < 1);
+
+            const selected = seasonApi.setSecondaryPositionTraining(id, 'LF');
+            assert.equal(selected.userPlayer.status.positionTraining.targetPosition, 'LF');
+            assert.equal(selected.userPlayer.status.positionTraining.trainedDays, 0);
+            assert.equal(selected.userPlayer.status.positionFamiliarity.LF, initialFamiliarity);
+            const selectedPayload = seasonApi.serializeSeason(id);
+            assert.deepEqual(selectedPayload.playerStates[playerId].development, before.playerStates[playerId].development,
+              'a training choice must not award an instant ratings or growth bonus');
+            assert.deepEqual(selectedPayload.playerStates[playerId].positionReps, before.playerStates[playerId].positionReps,
+              'practice is not a completed game rep');
+
+            const ui = root();
+            renderSeason(ui, selected, {}, 'HOME', {});
+            assert.match(ui.innerHTML, /data-position-training="LF"/);
+            assert.match(ui.innerHTML, /부포지션 훈련/);
+            renderSeason(ui, selected, {}, 'PLAYER', { playerSection: 'DEVELOPMENT' });
+            assert.match(ui.innerHTML, /data-position-training="NONE"/);
+            const checkpoint = seasonApi.serializeSeason(id);
+            const first = seasonApi.simulateOneDay(id);
+            assert.ok(first.userPlayer.status.positionFamiliarity.LF > initialFamiliarity);
+            assert.equal(first.userPlayer.status.positionTraining.trainedDays, 1);
+            assert.equal(first.userPlayer.status.positionTraining.lastTrainingDate, first.currentDate);
+            const firstPayload = seasonApi.serializeSeason(id);
+            const userRoster = firstPayload.fixture.organization.levels.AAA.roster;
+            const pathway = getUtilityPathwayView(userRoster, firstPayload.playerStates, firstPayload.roleStates, playerId);
+            assert.equal(pathway.positions.find(row => row.position === 'LF').familiarity,
+              Number(firstPayload.playerStates[playerId].positionFamiliarity.LF.toFixed(3)),
+              'the manager coverage model must read the authoritative practiced familiarity');
+            assert.ok(getUtilityCoverage(userRoster, firstPayload.playerStates, firstPayload.roleStates, playerId).includes('CF'),
+              'primary position coverage must not disappear');
+
+            const restored = seasonApi.restoreSeason(checkpoint);
+            assert.equal(restored.userPlayer.status.positionTraining.targetPosition, 'LF');
+            const replay = seasonApi.simulateOneDay(id);
+            assert.deepEqual(replay.userPlayer.status.positionTraining, first.userPlayer.status.positionTraining);
+            assert.deepEqual(replay.userPlayer.status.positionFamiliarity, first.userPlayer.status.positionFamiliarity);
+            assert.deepEqual(replay.userSeasonLine, first.userSeasonLine);
+            const stopped = seasonApi.setSecondaryPositionTraining(id, null);
+            assert.equal(stopped.userPlayer.status.positionTraining.targetPosition, null);
+            assert.equal(stopped.userPlayer.status.positionTraining.trainedDays, 0);
+            assert.equal(stopped.userPlayer.status.positionFamiliarity.LF, replay.userPlayer.status.positionFamiliarity.LF,
+              'stopping training must never erase learned familiarity');
+
+            writeFileSync('reports/phase3-secondary-position-training.json', JSON.stringify({
+              schema: 'THE_CALL_UP_PHASE3_SECONDARY_POSITION_TRAINING_V1', pass: true,
+              noInstantBoost: true, calendarFamiliarity: true, noFakeGameReps: true,
+              managerUsesAuthoritativeFamiliarity: true, homeAndDevelopmentUi: true,
+              saveRestoreAndReplay: true, cancelPreservesFamiliarity: true,
+              injurySuspendsPractice: true, historicalSaveCompatibility: true
+            }, null, 2) + '\n', 'utf8');
+          });
+
+          test('unavailable field positions are rejected, and injured players get no practice credit', () => {
+            const initial = seasonApi.createDemoSeason({ seed: 'phase3-secondary-position-injury', startDate: '2026-04-01' });
+            const id = initial.seasonId;
+            assert.throws(() => seasonApi.setSecondaryPositionTraining(id, 'P'), /부포지션/);
+            assert.throws(() => seasonApi.setSecondaryPositionTraining(id, 'CF'), /부포지션/);
+            const payload = seasonApi.serializeSeason(id);
+            const userId = payload.fixture.userPlayerId;
+            const oldLF = payload.playerStates[userId].positionFamiliarity.LF;
+            payload.playerStates[userId].health.activeInjury = {
+              injuryId: 'qa_secondary_training_injury', family: 'LOWER_BODY', severity: 'MAJOR',
+              startDate: '2026-04-01', expectedReturnDate: '2026-05-01', daysRemaining: 30
+            };
+            seasonApi.restoreSeason(payload);
+            seasonApi.setSecondaryPositionTraining(id, 'LF');
+            const advanced = seasonApi.simulateOneDay(id);
+            assert.equal(advanced.userPlayer.status.positionTraining.trainedDays, 0);
+            assert.equal(advanced.userPlayer.status.positionFamiliarity.LF, oldLF);
+          });
+
+          test('legacy saves and malformed training data are handled without hidden migration', () => {
+            const original = seasonApi.createDemoSeason({ seed: 'phase3-secondary-training-legacy', startDate: '2026-04-01' });
+            const id = original.seasonId;
+            const old = seasonApi.serializeSeason(id);
+            delete old.playerStates[old.fixture.userPlayerId].positionTraining;
+            assert.equal(seasonApi.restoreSeason(old).userPlayer.status.positionTraining.targetPosition, null);
+            const corrupted = seasonApi.serializeSeason(id);
+            corrupted.playerStates[corrupted.fixture.userPlayerId].positionTraining = {
+              targetPosition: 'P', trainedDays: 1, lastTrainingDate: '2026-04-02'
+            };
+            assert.throws(() => seasonApi.restoreSeason(corrupted), /부포지션/);
+          });
+          JS_TEST
+          python3 - <<'PY_PATCH'
+          from pathlib import Path
+
+          def replace_once(path, before, after):
+              file = Path(path)
+              source = file.read_text(encoding='utf-8')
+              count = source.count(before)
+              if count != 1:
+                  raise RuntimeError(f'{path}: expected one exact anchor, found {count}; inspect main before retrying.')
+              file.write_text(source.replace(before, after, 1), encoding='utf-8')
+
+          replace_once('src/engine/season/playerSeasonState.js',
+              '    positionReps: initialPositionReps(player, profile),\n    development: createPositionDevelopmentState(player, developmentOptions)',
+              '    positionReps: initialPositionReps(player, profile),\n    positionTraining: null,\n    development: createPositionDevelopmentState(player, developmentOptions)')
+          replace_once('src/engine/season/playerSeasonState.js',
+              '    positionReps: reps,\n    health: normalizeHealthState(state.health ?? null, player, { kind: "POSITION" }),',
+              '    positionReps: reps,\n    positionTraining: state.positionTraining ?? null,\n    health: normalizeHealthState(state.health ?? null, player, { kind: "POSITION" }),')
+          replace_once('src/engine/season/playerSeasonState.js',
+              '    positionReps: { ...(state.positionReps ?? {}) },\n    development: {',
+              '    positionReps: { ...(state.positionReps ?? {}) },\n    primaryPosition: state.primaryPosition ?? "DH",\n'
+              '    positionTraining: state.positionTraining ? { ...state.positionTraining }\n'
+              '      : { targetPosition: null, trainedDays: 0, lastTrainingDate: null },\n    development: {')
+
+          replace_once('src/api/seasonApi.js',
+              'import { getTrainingCoachFeedback } from "../engine/season/coachingFeedback.js";',
+              'import { getTrainingCoachFeedback } from "../engine/season/coachingFeedback.js";\n'
+              'import { setSecondaryPositionTraining as chooseSecondaryPositionTraining, advanceSecondaryPositionTraining } from "../engine/season/secondaryPositionTraining.js";')
+          replace_once('src/api/seasonApi.js',
+              '    session.playerStates = Object.fromEntries(Object.entries(session.playerStates).map(([id, state]) => [id, recoverPositionPlayer(state, days)]));',
+              '    session.playerStates = Object.fromEntries(Object.entries(session.playerStates).map(([id, state]) => {\n'
+              '      const trained = id === session.fixture.userPlayerId\n'
+              '        ? advanceSecondaryPositionTraining(state, findPlayer(session, id), { days, date })\n'
+              '        : state;\n'
+              '      return [id, recoverPositionPlayer(trained, days)];\n'
+              '    }));')
+          replace_once('src/api/seasonApi.js',
+              '  requestNextGameRest(seasonId) {',
+              '  setSecondaryPositionTraining(seasonId, position) {\n'
+              '    const session = assertSession(seasonId);\n'
+              '    const playerId = session.fixture.userPlayerId;\n'
+              '    session.playerStates = { ...session.playerStates,\n'
+              '      [playerId]: chooseSecondaryPositionTraining(session.playerStates[playerId], findPlayer(session, playerId), position) };\n'
+              '    return snapshot(session);\n'
+              '  },\n'
+              '  requestNextGameRest(seasonId) {')
+
+          replace_once('src/services/seasonSerialization.js',
+              'import { validatePlayerRestRequest } from "../engine/season/playerRestRequest.js";',
+              'import { validatePlayerRestRequest } from "../engine/season/playerRestRequest.js";\n'
+              'import { validateSecondaryPositionTraining } from "../engine/season/secondaryPositionTraining.js";')
+          replace_once('src/services/seasonSerialization.js',
+              '    validatePlayerRestRequest(playerState.restRequest ?? null, `payload.playerStates.${playerId}.restRequest`);',
+              '    validatePlayerRestRequest(playerState.restRequest ?? null, `payload.playerStates.${playerId}.restRequest`);\n'
+              '    validateSecondaryPositionTraining(playerState.positionTraining ?? null, `payload.playerStates.${playerId}.positionTraining`);\n'
+              '    if (playerState.positionTraining?.targetPosition &&\n'
+              '        (playerState.positionTraining.targetPosition === playerState.primaryPosition ||\n'
+              '         !Object.hasOwn(playerState.positionFamiliarity ?? {}, playerState.positionTraining.targetPosition))) {\n'
+              '      throw new RangeError(`부포지션 훈련 대상이 선수 친숙도에 없습니다: ${playerId}`);\n'
+              '    }')
+
+          # Normal save restoration uses LIGHT validation; FULL-only checks are too late.
+          replace_once('src/services/seasonSerialization.js',
+              '  assertObject(payload.pitcherStates, "payload.pitcherStates");',
+              '  assertObject(payload.pitcherStates, "payload.pitcherStates");\n'
+              '  for (const [playerId, playerState] of Object.entries(payload.playerStates)) {\n'
+              '    validateSecondaryPositionTraining(playerState.positionTraining ?? null, `payload.playerStates.${playerId}.positionTraining`);\n'
+              '    if (playerState.positionTraining?.targetPosition &&\n'
+              '        (playerState.positionTraining.targetPosition === playerState.primaryPosition ||\n'
+              '         !Object.hasOwn(playerState.positionFamiliarity ?? {}, playerState.positionTraining.targetPosition))) {\n'
+              '      throw new RangeError(`부포지션 훈련 대상이 선수 친숙도에 없습니다: ${playerId}`);\n'
+              '    }\n'
+              '  }')
+
+          controls = '''function secondaryPositionTrainingControls(status) {
+            if (!status) return "";
+            const primary = status.primaryPosition ?? "DH";
+            const positions = Object.keys(status.positionFamiliarity ?? {})
+              .filter((position) => ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"].includes(position) && position !== primary)
+              .sort();
+            const training = status.positionTraining ?? { targetPosition: null, trainedDays: 0 };
+            if (!positions.length) return `<p class="condition-note">현재 익힐 수 있는 부포지션이 없습니다.</p>`;
+            const current = training.targetPosition ?? null;
+            const options = [["NONE", "훈련 중지"], ...positions.map((position) => [position, position])];
+            return `<div class="training-focus-wrap">
+              <div class="training-focus-head"><strong>부포지션 훈련</strong><span>${current ? `${esc(current)} · ${Number(training.trainedDays ?? 0)}일` : "선택 전"}</span></div>
+              <div class="training-focus-grid">${options.map(([value, label]) => `<button type="button" data-position-training="${esc(value)}" class="${(current ?? "NONE") === value ? "active" : ""}">${esc(label)}</button>`).join("")}</div>
+              <p class="condition-note">건강한 날이 지나면 선택한 포지션 친숙도가 조금씩 높아집니다. 경기 출전 기록·타격 성장·주전 보너스는 생기지 않으며 실제 기용은 감독이 결정합니다.</p>
+            </div>`;
+          }
+
+          '''
+          replace_once('src/ui/seasonRender.js',
+              'function conditionCard(snapshot) {',
+              controls + 'function conditionCard(snapshot) {')
+          replace_once('src/ui/seasonRender.js',
+              '    ${trainingFocusControls(dev.focus ?? "BALANCED")}\n    ${coachTrainingFeedback(snapshot.userPlayer?.coaching)}',
+              '    ${trainingFocusControls(dev.focus ?? "BALANCED")}\n    ${coachTrainingFeedback(snapshot.userPlayer?.coaching)}\n'
+              '    ${secondaryPositionTrainingControls(status)}')
+          replace_once('src/ui/seasonRender.js',
+              '    ${trainingFocusControls(status.development?.focus ?? "BALANCED")}\n    ${coachTrainingFeedback(player.coaching)}',
+              '    ${trainingFocusControls(status.development?.focus ?? "BALANCED")}\n    ${coachTrainingFeedback(player.coaching)}\n'
+              '    ${secondaryPositionTrainingControls(status)}')
+          replace_once('src/ui/seasonRender.js',
+              '  root.querySelectorAll("[data-training-focus]").forEach((button) => button.addEventListener("click", () => handlers.onTrainingFocus?.(button.dataset.trainingFocus)));',
+              '  root.querySelectorAll("[data-training-focus]").forEach((button) => button.addEventListener("click", () => handlers.onTrainingFocus?.(button.dataset.trainingFocus)));\n'
+              '  root.querySelectorAll("[data-position-training]").forEach((button) => button.addEventListener("click", () => handlers.onSecondaryPositionTraining?.(button.dataset.positionTraining === "NONE" ? null : button.dataset.positionTraining)));')
+
+          replace_once('src/app/seasonApp.js',
+              '      async onTrainingFocus(focus) {\n        snapshot = seasonApi.setTrainingFocus(snapshot.seasonId, focus);\n        renderHome();\n        void queueAutosave();\n      },',
+              '      async onTrainingFocus(focus) {\n        snapshot = seasonApi.setTrainingFocus(snapshot.seasonId, focus);\n        renderHome();\n        void queueAutosave();\n      },\n'
+              '      async onSecondaryPositionTraining(position) {\n'
+              '        snapshot = seasonApi.setSecondaryPositionTraining(snapshot.seasonId, position);\n'
+              '        renderHome();\n        void queueAutosave();\n      },')
+
+          print('Applied secondary-position training patch with exact anchors.')
+          PY_PATCH
+          node --check src/engine/season/secondaryPositionTraining.js
+          node --check src/engine/season/playerSeasonState.js
+          node --check src/api/seasonApi.js
+          node --check src/services/seasonSerialization.js
+          node --check src/ui/seasonRender.js
+          node --check src/app/seasonApp.js
+          node --check tests/secondaryPositionTraining.test.js
+          git diff --check
+
+      - name: Run existing tests and secondary-position regression
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          npm test
+          node --input-type=module <<'JS_ASSERT'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const report = JSON.parse(readFileSync('reports/phase3-secondary-position-training.json', 'utf8'));
+          assert.equal(report.pass, true);
+          for (const [key, value] of Object.entries(report)) {
+            if (key !== 'schema') assert.equal(value, true, key);
+          }
+          console.log('Phase 3 secondary-position training gate PASS');
+          JS_ASSERT
+
+      - name: Commit only verified source test and report
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          git add src/engine/season/secondaryPositionTraining.js src/engine/season/playerSeasonState.js src/api/seasonApi.js src/services/seasonSerialization.js src/ui/seasonRender.js src/app/seasonApp.js tests/secondaryPositionTraining.test.js reports/phase3-secondary-position-training.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No verified source change; refusing empty commit.'
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase3: daily secondary-position training with save replay'
+          git push origin HEAD:main
