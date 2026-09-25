@@ -210,6 +210,22 @@ function postseasonCard(snapshot) {
     <p class="condition-note">정규시즌 기록은 동결되어 있으며 postseason 통계는 별도 저장됩니다. 사용자 선수의 26인 roster 포함도 자동 보장되지 않습니다.</p>
   </section>`;
 }
+function springCampPreview(snapshot) {
+  const camp=snapshot.springCamp;
+  if(!camp||snapshot.status!=="OFFSEASON")return "";
+  const labels={LOCKED:"로스터 전망 안정",LIKELY:"로스터 전망 유력",BUBBLE:"로스터 경쟁 중",LONG_SHOT:"도전 필요"};
+  const levels={MLB:"MLB",AAA:"AAA",AA:"AA",HIGH_A:"High-A",A:"A"};
+  const choice=camp.preference??"OPEN";
+  const options=[["OPEN","구단 판단"],["MLB_BENCH","MLB 벤치 선호"],["AAA_EVERYDAY","AAA 주전 선호"]];
+  const controls=snapshot.offseason?.currentPhase==="SPRING_TRAINING"
+    ? `<div class="training-focus-grid">${options.map(([value,label])=>`<button type="button" data-spring-role-preference="${value}" class="${choice===value?"active":""}">${label}</button>`).join("")}</div>` : "";
+  return `<div class="training-focus-wrap spring-camp-preview">
+    <div class="training-focus-head"><strong>스프링 예비평가</strong><span>${esc(camp.targetYear)} · ${esc(labels[camp.rosterSecurity]??"평가 중")}</span></div>
+    <p class="condition-note">현재 ${esc(levels[camp.level]??camp.level)} · ${esc(camp.primaryPosition)} · MLB 동일 주포지션 경쟁 ${camp.directMlbCompetition}명. ${camp.injured?"현재 부상 상태입니다.":"현재 부상 제한은 없습니다."}</p>
+    ${controls}
+    <p class="condition-note">선호는 구단에 전달하는 의견이며 개막 로스터·주전은 보장되지 않습니다. 이 평가는 현재 로스터·역할에 따른 예비 전망으로, 아직 시범경기 성적이나 최종 개막 결정이 아닙니다.</p>
+  </div>`;
+}
 function offseasonCard(snapshot) {
   const off=snapshot.offseason;
   if(snapshot.status!=="OFFSEASON"||!off) return "";
@@ -218,6 +234,7 @@ function offseasonCard(snapshot) {
     <div class="section-head"><strong>Offseason Pipeline</strong><span>${off.completedCount}/${off.totalPhases} · ${pct}%</span></div>
     <div class="matchup-large"><div><span>현재 단계</span><strong>${esc(offseasonPhaseLabel(off.currentPhase))}</strong></div><b>→</b><div class="right"><span>목표</span><strong>Opening Day</strong></div></div>
     <div class="progress-actions"><button type="button" class="primary" data-season-action="OFFSEASON_NEXT">다음 단계</button></div>
+    ${springCampPreview(snapshot)}
     <p class="condition-note">v55는 각 오프시즌 단계를 저장하고 중복 적용을 막습니다. 중간에 앱을 닫아도 저장된 phase에서 이어집니다.</p>
   </section>`;
 }
@@ -1137,6 +1154,7 @@ function renderSeason(root, snapshot, handlers, tab = "HOME", uiState = {}) {
   root.querySelectorAll("[data-training-focus]").forEach((button) => button.addEventListener("click", () => handlers.onTrainingFocus?.(button.dataset.trainingFocus)));
   root.querySelectorAll("[data-position-training]").forEach((button) => button.addEventListener("click", () => handlers.onSecondaryPositionTraining?.(button.dataset.positionTraining === "NONE" ? null : button.dataset.positionTraining)));
   root.querySelectorAll("[data-role-preference]").forEach((button) => button.addEventListener("click", () => handlers.onRolePreference?.(button.dataset.rolePreference)));
+  root.querySelectorAll("[data-spring-role-preference]").forEach((button) => button.addEventListener("click", () => handlers.onSpringRolePreference?.(button.dataset.springRolePreference)));
   root.querySelectorAll("[data-agent-strategy]").forEach((button) => button.addEventListener("click", () => handlers.onAgentStrategy?.(button.dataset.agentStrategy)));
   root.querySelectorAll("[data-backup-restore]").forEach((button) => button.addEventListener("click", () => handlers.onRestoreBackup?.(button.dataset.backupRestore)));
   root.querySelectorAll("[data-player-section]").forEach((button) => button.addEventListener("click", () => handlers.onPlayerSection?.(button.dataset.playerSection)));

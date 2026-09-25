@@ -22,16 +22,16 @@
   },
   "openingDay2027": {
     "populationStable": true,
-    "retired": 83,
-    "activatedFromReserve": 36,
-    "undraftedFallback": 47,
-    "reserveRemaining": 45,
+    "retired": 76,
+    "activatedFromReserve": 34,
+    "undraftedFallback": 42,
+    "reserveRemaining": 47,
     "nextClassPrepared": true,
     "internationalProcessed": true
   },
   "draft2027": {
     "picks": 600,
-    "signed": 552,
+    "signed": 553,
     "reserveBounded": true,
     "draftSlotRatingsInvariant": true
   },

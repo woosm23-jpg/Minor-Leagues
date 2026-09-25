@@ -1,0 +1,16 @@
+{
+  "schema": "THE_CALL_UP_PHASE5_SPRING_AMATEUR_BUNDLE_V1",
+  "pass": true,
+  "source": "Production v2 scenario; v3 whole-world audit separate",
+  "regularSeasonWorldGames2026": 10710,
+  "springOutlookUsesRosterAndRole": true,
+  "springRolePreferenceAdvisory": true,
+  "noFabricatedSpringStats": true,
+  "noEarlyRosterDecision": true,
+  "springPhaseSaveRestoreReplay": true,
+  "savedPreferenceAndOldSaveCompatibility": true,
+  "invalidSaveRejected": true,
+  "draft2027Prepared": true,
+  "internationalReserveNoDuplicates": true,
+  "openingDay2027": true
+}

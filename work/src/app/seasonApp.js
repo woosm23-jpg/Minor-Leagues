@@ -393,6 +393,11 @@ function startSeasonApp(root) {
         renderHome();
         void queueAutosave();
       },
+      async onSpringRolePreference(mode) {
+        snapshot = seasonApi.setSpringRolePreference(snapshot.seasonId, mode);
+        renderHome();
+        void queueAutosave();
+      },
       async onAgentStrategy(strategy) {
         try {
           snapshot = seasonApi.setAgentStrategy(snapshot.seasonId, strategy);

@@ -38,6 +38,7 @@ import { selectPostseasonRosterPlayerIds } from "../engine/career/postseasonRost
 import { selectPostseasonStarter } from "../engine/career/postseasonRotationPolicy.js";
 import { createAmateurAcquisitionState, normalizeAmateurAcquisitionState, prepareAmateurYear, processInternationalSignings, advanceAmateurCalendar, getAmateurAcquisitionPublicView } from "../engine/career/amateurAcquisition.js";
 import { createRetirementHallState, normalizeRetirementHallState, recordMlbSeason, archiveRetiredPlayers, announceUserFinalSeason, retireUserPlayer, processHallOfFameYear, getRetirementHallPublicView } from "../engine/career/retirementHallOfFame.js";
+import { buildSpringCampOutlook, setSpringRolePreference } from "../engine/career/springCamp.js";
 
 const sessions = new Map();
 const heavyReadModelCaches = new WeakMap();
@@ -1352,7 +1353,17 @@ function advanceOffseasonPhaseInternal(session) {
     result={handledByProductionEcologyAtOpeningDay:true,amateurPreparedYear:nextYear,internationalSignings:amateurView?.international?.signingCount ?? 0,reserveCount:amateurView?.reserve?.count ?? 0};
   }
   else if(phase==="PROJECTED_ROSTERS") result={handledByProductionEcologyAtOpeningDay:true};
-  else if(phase==="SPRING_TRAINING") result={mode:"ROSTER_PREP_ONLY_V55",detailedSpringGames:"DEFERRED"};
+  else if(phase==="SPRING_TRAINING") {
+    const userId=session.fixture.userPlayerId;
+    const outlook=buildSpringCampOutlook({
+      organization:session.fixture.organization,playerId:userId,
+      playerState:session.playerStates[userId],roleState:session.roleStates?.[userId],
+      rosterControl:session.rosterControlStates?.[userId],
+      targetYear:offseasonSeasonYear(session)+1,date
+    });
+    result={mode:"SPRING_PREVIEW_V1",outlook,
+      detailedSpringGames:"NOT_YET_IMPLEMENTED",openingDayRosterDecision:"PENDING"};
+  }
   else if(phase==="ROSTER_CUTS") result={mode:"OPENING_DAY_NORMALIZATION",fortyManAndOptionsPreserved:true};
   else if(phase==="OPENING_DAY") {
     const prior=session.offseasonState;
@@ -2414,6 +2425,14 @@ function snapshot(session) {
     dataUniverse: session.dataUniverse ? { schemaVersion: session.dataUniverse.schemaVersion, origin: session.dataUniverse.origin, sourceSnapshot: session.dataUniverse.sourceSnapshot, copiedAtCareerStart: session.dataUniverse.copiedAtCareerStart, snapshotDate: session.dataUniverse.snapshotDate, independent: session.dataUniverse.independent } : null,
     leagueEcology: session.leagueEcologyState ? { year: session.leagueEcologyState.year, totalRetired: session.leagueEcologyState.totalRetired, totalGenerated: session.leagueEcologyState.totalGenerated, lastOffseason: session.leagueEcologyState.lastOffseason } : null,
     offseason: getOffseasonPublicView(session.offseasonState),
+    springCamp: session.offseasonState?.phaseResults?.SPRING_TRAINING?.outlook ??
+      (session.offseasonState?.currentPhase === "SPRING_TRAINING" ? buildSpringCampOutlook({
+        organization:session.fixture.organization,playerId:session.fixture.userPlayerId,
+        playerState:session.playerStates[session.fixture.userPlayerId],
+        roleState:session.roleStates?.[session.fixture.userPlayerId],
+        rosterControl:session.rosterControlStates?.[session.fixture.userPlayerId],
+        targetYear:offseasonSeasonYear(session)+1,date:offseasonPhaseDate(session,"SPRING_TRAINING")
+      }) : null),
     postseason: getPostseasonPublicView(session.postseasonState),
     history: getHistoryPublicView(session.historyState),
     amateur: getAmateurAcquisitionPublicView(session.amateurAcquisitionState),
@@ -2639,6 +2658,17 @@ const seasonApi = Object.freeze({
     if (!current) throw new RangeError("에이전트 계약 시장 데이터가 없습니다.");
     session.contractMarketStates = { ...session.contractMarketStates,
       [playerId]: chooseAgentStrategy(current, strategy) };
+    return snapshot(session);
+  },
+  setSpringRolePreference(seasonId,mode) {
+    const session=assertSession(seasonId);
+    if (session.offseasonState?.status!=="ACTIVE" ||
+        session.offseasonState.currentPhase!=="SPRING_TRAINING")
+      throw new RangeError("스프링 캠프 단계에서만 역할 선호를 선택할 수 있습니다.");
+    const userId=session.fixture.userPlayerId;
+    session.playerStates={...session.playerStates,
+      [userId]:setSpringRolePreference(session.playerStates[userId],mode,
+        offseasonPhaseDate(session,"SPRING_TRAINING"))};
     return snapshot(session);
   },
   requestNextGameRest(seasonId) {
