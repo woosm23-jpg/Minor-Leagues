@@ -1,0 +1,31 @@
+{
+  "schema": "THE_CALL_UP_PHASE8_9_RELEASE_CANDIDATE_V1",
+  "pass": true,
+  "sourceCommit": "791131be28422bf5ae606fee1c1b6358c1319be0",
+  "dataSha256": "8fed585180113f91139406c34e47212f75a511db65e90d867e1bad1a773158a3",
+  "htmlSha256": "49b6dd6feb1c3d8850297f63999c61619c46ad4d2001cb549b4eda0a422ebd23",
+  "htmlBytes": 75214685,
+  "freshWorldYears": 2,
+  "freshWorldGames": 21420,
+  "worldRegression2026Games": 10710,
+  "mobileBrowser": {
+    "saveSelectLoads": true,
+    "realIndexedDB": true,
+    "productionCareerStarts": true,
+    "homeActionsVisible": true,
+    "noHorizontalOverflow320": true,
+    "noHorizontalOverflow390": true,
+    "noHorizontalOverflow430": true,
+    "playerTab": true,
+    "leagueTab": true,
+    "moreTab": true,
+    "hasExportAction": true,
+    "pageErrors": 0,
+    "consoleErrors": 0
+  },
+  "limitations": [
+    "Release candidate, not final COMPLETE",
+    "Historical 20-year v59 is not fresh-current-code validation",
+    "Chromium smoke is not physical-phone timing"
+  ]
+}

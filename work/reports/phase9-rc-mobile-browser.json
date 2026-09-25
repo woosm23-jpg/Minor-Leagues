@@ -1,0 +1,39 @@
+{
+  "schema": "THE_CALL_UP_PHASE9_RC_MOBILE_BROWSER_V2",
+  "pass": true,
+  "widths": {
+    "320": {
+      "screen": 320,
+      "scroll": 320,
+      "body": 320
+    },
+    "390": {
+      "screen": 390,
+      "scroll": 390,
+      "body": 390
+    },
+    "430": {
+      "screen": 430,
+      "scroll": 430,
+      "body": 430
+    }
+  },
+  "checks": {
+    "saveSelectLoads": true,
+    "realIndexedDB": true,
+    "productionCareerStarts": true,
+    "homeActionsVisible": true,
+    "noHorizontalOverflow320": true,
+    "noHorizontalOverflow390": true,
+    "noHorizontalOverflow430": true,
+    "playerTab": true,
+    "leagueTab": true,
+    "moreTab": true,
+    "hasExportAction": true,
+    "pageErrors": 0,
+    "consoleErrors": 0
+  },
+  "errors": [],
+  "consoleErrors": [],
+  "scope": "Chromium via local HTTP; real IndexedDB; production v3 HTML; mobile 320/390/430. Physical-phone speed not measured."
+}

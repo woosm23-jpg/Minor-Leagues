@@ -1,0 +1,42 @@
+{
+  "schema": "THE_CALL_UP_PHASE8_FRESH_V3_TWO_YEAR_V1",
+  "pass": true,
+  "source": "fresh Production v3 current main, not historical 20-year v59 baseline",
+  "sourceDataSha256": "8fed585180113f91139406c34e47212f75a511db65e90d867e1bad1a773158a3",
+  "seed": "phase8-current-v3-two-year",
+  "completedSeasons": 2,
+  "worldGames": 21420,
+  "initialSaveBytes": 114776617,
+  "finalSaveBytes": 118016801,
+  "saveGrowthRatio": 1.028,
+  "totalRuntimeMs": 1469012,
+  "replay2027": true,
+  "fullValidationEachBoundary": true,
+  "checksumCorruptionRejected": true,
+  "results": [
+    {
+      "completedYear": 2026,
+      "worldGames": 10710,
+      "postseasonChampion": "158",
+      "activePlayers": 4218,
+      "historySeasons": 1,
+      "completedSaveBytes": 119437082,
+      "openingDaySaveBytes": 117098111,
+      "simulationMs": 656263,
+      "repeatedRestoreStable": true,
+      "checksumRejectsCorruption": true
+    },
+    {
+      "completedYear": 2027,
+      "worldGames": 10710,
+      "postseasonChampion": "111",
+      "activePlayers": 4218,
+      "historySeasons": 2,
+      "completedSaveBytes": 119581488,
+      "openingDaySaveBytes": 118016801,
+      "simulationMs": 723378,
+      "repeatedRestoreStable": true,
+      "checksumRejectsCorruption": true
+    }
+  ]
+}

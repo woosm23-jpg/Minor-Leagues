@@ -40,6 +40,18 @@ function parseExportItem(raw) {
   if (!m) throw new Error(`지원하지 않는 export item: ${item}`);
   return { local: m[1], publicName: m[2] ?? m[1] };
 }
+function parseImportBindings(names) {
+  // ESM `import { publicName as localName }` is not valid object destructuring.
+  // Standalone CommonJS-style wrappers require `{ publicName: localName }`.
+  const parts = names.split(',').map((part) => part.trim()).filter(Boolean);
+  if (!parts.length) throw new Error('standalone named import list is empty');
+  return parts.map((part) => {
+    const match = part.match(/^([A-Za-z_$][\w$]*)(?:\s+as\s+([A-Za-z_$][\w$]*))?$/);
+    if (!match) throw new Error(`Unsupported standalone named import: ${part}`);
+    return match[2] ? `${match[1]}: ${match[2]}` : match[1];
+  }).join(', ');
+}
+
 function transform(mod) {
   let code = mod.source;
   const exports = [...code.matchAll(EXPORT_DECL_RE)].map((match) => ({ local: match[1], publicName: match[1] }));
@@ -48,7 +60,7 @@ function transform(mod) {
   }
   code = code.replace(IMPORT_RE, (_raw, names, specifier) => {
     const depAbs = resolveImport(mod.absPath, specifier);
-    return `const { ${names.trim()} } = __require('${moduleId(depAbs)}');`;
+    return `const { ${parseImportBindings(names)} } = __require('${moduleId(depAbs)}');`;
   });
   code = code.replace(/^export\s+(?=(?:const|let|var|function|class)\s+)/gm, "");
   code = code.replace(EXPORT_LIST_RE, "");
@@ -62,7 +74,16 @@ function transform(mod) {
 collect(path.resolve(root, entry));
 const css = fs.readFileSync(path.resolve(root, "styles/app.css"), "utf8");
 const moduleBlocks = [...modules.values()].sort((a,b)=>a.id.localeCompare(b.id))
-  .map((mod)=>`__modules[${JSON.stringify(mod.id)}] = function(module, exports, __require) {\n${transform(mod)}\n};`).join("\n");
+  .map((mod) => {
+    const compiled = transform(mod);
+    try {
+      // This catches invalid JS before Chromium tries to boot a 100MB+ HTML.
+      new Function('module', 'exports', '__require', compiled);
+    } catch (error) {
+      throw new SyntaxError(`standalone module syntax ${mod.id}: ${error.message}`);
+    }
+    return `__modules[${JSON.stringify(mod.id)}] = function(module, exports, __require) {\n${compiled}\n};`;
+  }).join("\n");
 
 function readMasterSnapshot(snapshotPath) {
   const bytes = fs.readFileSync(snapshotPath);

@@ -1436,8 +1436,11 @@ function rolloverCompletedProductionSeason(session) {
     { currentDate: nextStartDate }
   );
   const reset = resetSeasonStatesForNewYear({ playerStates: ecology.playerStates, pitcherStates: ecology.pitcherStates, roleStates: session.roleStates, startDate: nextStartDate });
-  session.playerStates = reset.playerStates;
-  session.pitcherStates = reset.pitcherStates;
+  // The new roster is authoritative. Remove out-of-roster state left by old
+  // assignments during rollover, not only when a save is later restored.
+  // Both paths must produce the same active-player map and development data.
+  session.playerStates = normalizePlayerStates(session.fixture, reset.playerStates);
+  session.pitcherStates = normalizePitcherStates(session.fixture, reset.pitcherStates);
   session.roleStates = normalizeRoleStates(reset.roleStates, session.fixture, { startDate: nextStartDate });
   session.scoutingStates = normalizeScoutingStates(session.fixture, session.scoutingStates, session.playerStates, session.pitcherStates, { startDate: nextStartDate });
   session.organizationState = normalizeOrganizationReviewState({
@@ -1451,6 +1454,14 @@ function rolloverCompletedProductionSeason(session) {
   session.state = session.levelStates.AAA;
   session.playerStateDate = nextStartDate;
   reconcileCurrentMlbServiceDate(session, nextStartDate);
+  // The 2028 opening-day service credit can change a known player's
+  // free-agency eligibility. Re-evaluate the market against the same
+  // authoritative contract data before save, rather than mutating it
+  // only when a saved career is restored later.
+  session.contractMarketStates = normalizeContractMarketStatesForFixture(
+    session.fixture, session.contractStates, session.contractMarketStates,
+    { currentDate: nextStartDate }
+  );
   session.lastProgress = null;
   session.activeGameId = null;
   session.activeScheduleGameId = null;
