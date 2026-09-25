@@ -1,0 +1,190 @@
+name: THE CALL-UP Phase 5 Spring Outlook and Amateur Integration Bundle
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE5_SPRING_AMATEUR_BUNDLE.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  phase5-spring-amateur:
+    runs-on: ubuntu-latest
+    timeout-minutes: 105
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Guard production sources and install spring and amateur bundle
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+          test -f data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          test -f scripts/verify-v57-draft-international.mjs
+          mkdir -p "$(dirname 'src/engine/career/springCamp.js')"
+          cat <<'TCU_ASSET_1' | base64 -d | gzip -d > 'src/engine/career/springCamp.js'
+          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
+          TCU_ASSET_1
+          mkdir -p "$(dirname 'tests/phase5SpringCamp.test.js')"
+          cat <<'TCU_ASSET_2' | base64 -d | gzip -d > 'tests/phase5SpringCamp.test.js'
+          H4sIAAAAAAAC/6VWzW7jNhC+5ykInWRAkb3pAosq0AKOoybBJrFhZwsEi0XASCObWUp0ScqF19ChQE899xEK9OHavkOHopTIv02xJ5GamW9+OPORLJsLqQlVCvCTSpERJxcJBPZPV2nJYu2cHjGrqEGtqZn9i3RFJqPx1e3Fw+ByeDWIJh5ZUM4SqmEylyyfjgWHkYQUJOQxeESB3ik4IuSxYDyxwgHN5sNCcyG+bAK2RKREKxuZ73eVjLuQT1kO3ZhKANlVzwb+k8KQj2KRYy5zTpcgSUiGj08Qaz9F5a/grghLAuIUWATHI3OhmGYiR4AAk0SkjMrlqP4bOIMfHFKSsnNag2b8cXQA1xF6toW72oXaBhVySnP2lRoh4rodEr4n7sqEeA0L4IHT7/cdj5u1ClZYDdwHKymUBonwVUAoMAaB3ZVeE8Goln6yKX8uS3MIN9dnOwCq6IPnHHeB2AQR5ah8SUBpPLdW5BbwCuthy7yrAN4MKNezYEVjzRZwlT8VchnkBectYCqnqoXbLlTQ3rgdb8tntZ+YyIIqPtTBxCX2o/25MsuqtA+Tu/74Lho73pRmoO4kjb9AErx5W3q2RAORa9TGAuVvezc0D7QsoKqjxghB3wOVwUnv5J1nGjhwzPK4d3J80nNMLkdmllzH9ikRdVczRZQoZAzHUymKPIGE0DwhucC0SYqziXlRTmorCargGjvL1sI0QV2i0BTJ7ZySppkYDgflIQ54EetCQjLgIgeXYiSNUcqk0uHuSawVLU348FNBuVvp+7YYE4gLyfTSc84+np1dR84+9YRJnI8b/jgQ2Rx0dfTem33aNs8LcwBVtyVe77CqOUXlmYY5HO85xEyh6xuagJdSrmCvPkwLTjFBqkRewffTFFPAWPbY7eUsi9jxTKO0zRKAeVSZUq85Kc+RQBOSIetyEtPcdABuWLoktNAzVMNQcEQaRhOS2MwIuqZ1+f1Wv/t2tPz2ZIWrhC7VGDLKKlL6vtxKZm87bB389RBvgsnl8O61zs0pWc321PrPDBc6SEjODg3LeT5K6yBqV6qyDe3mdXbrVObPCzVzLVfUSTxTQ7UKnYYVNqVtkgi/631LHa8+RNf3jf//l0DYEPo3nePgQ3Ru/LdoKkYbEs8EiwFZx/SLIjRZMCXk8pRklKdCZkhWii4AJdJoPdkpIYI3/xNIKRIWGY6i20OsdXii1l8PbjXsB2Zq443yybHeTXM9nEW3g0tcG76PfozG9+f9e+dzixMV8CqLcM/bxV1r8w0gr83521k12DV1rQP7ZvI38LYh1odsF45nLpEUH0ZJ57U9sfJ9n65flXWkZcefvyDvD84+I6M6y92FazAP1sxrtNroeibFz8p1O+H7/wa/+Ngf92/vouj8wbDJBnz379/++Of3X//685fuHg8HW29lDinY8iGxvDg1kJxvX/xbLm2fxULKYm4azVR/77B6Wxdi8K58TeBtmGdfm8GYef8X+ahBOyIMAAA=
+          TCU_ASSET_2
+          mkdir -p "$(dirname 'scripts/verify-phase5-spring-amateur-bundle.mjs')"
+          cat <<'TCU_ASSET_3' | base64 -d | gzip -d > 'scripts/verify-phase5-spring-amateur-bundle.mjs'
+          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
+          TCU_ASSET_3
+          python3 - <<'TCU_PHASE5_PATCH'
+          from pathlib import Path
+
+          def once(path,before,after):
+              p=Path(path); s=p.read_text(encoding="utf-8"); n=s.count(before)
+              if n!=1:raise RuntimeError(f"{path}: expected one anchor, found {n}: {before[:95]!r}")
+              p.write_text(s.replace(before,after),encoding="utf-8")
+
+          p="src/api/seasonApi.js"
+          needle='import { createRetirementHallState, normalizeRetirementHallState, recordMlbSeason, archiveRetiredPlayers, announceUserFinalSeason, retireUserPlayer, processHallOfFameYear, getRetirementHallPublicView } from "../engine/career/retirementHallOfFame.js";'
+          once(p,needle,needle+'\nimport { buildSpringCampOutlook, setSpringRolePreference } from "../engine/career/springCamp.js";')
+
+          old='  else if(phase==="SPRING_TRAINING") result={mode:"ROSTER_PREP_ONLY_V55",detailedSpringGames:"DEFERRED"};'
+          new='''  else if(phase==="SPRING_TRAINING") {
+              const userId=session.fixture.userPlayerId;
+              const outlook=buildSpringCampOutlook({
+                organization:session.fixture.organization,playerId:userId,
+                playerState:session.playerStates[userId],roleState:session.roleStates?.[userId],
+                rosterControl:session.rosterControlStates?.[userId],
+                targetYear:offseasonSeasonYear(session)+1,date
+              });
+              result={mode:"SPRING_PREVIEW_V1",outlook,
+                detailedSpringGames:"NOT_YET_IMPLEMENTED",openingDayRosterDecision:"PENDING"};
+            }'''
+          once(p,old,new)
+
+          old='    offseason: getOffseasonPublicView(session.offseasonState),'
+          new='''    offseason: getOffseasonPublicView(session.offseasonState),
+              springCamp: session.offseasonState?.phaseResults?.SPRING_TRAINING?.outlook ??
+                (session.offseasonState?.currentPhase === "SPRING_TRAINING" ? buildSpringCampOutlook({
+                  organization:session.fixture.organization,playerId:session.fixture.userPlayerId,
+                  playerState:session.playerStates[session.fixture.userPlayerId],
+                  roleState:session.roleStates?.[session.fixture.userPlayerId],
+                  rosterControl:session.rosterControlStates?.[session.fixture.userPlayerId],
+                  targetYear:offseasonSeasonYear(session)+1,date:offseasonPhaseDate(session,"SPRING_TRAINING")
+                }) : null),'''
+          once(p,old,new)
+
+          old='  requestNextGameRest(seasonId) {'
+          new='''  setSpringRolePreference(seasonId,mode) {
+              const session=assertSession(seasonId);
+              if (session.offseasonState?.status!=="ACTIVE" ||
+                  session.offseasonState.currentPhase!=="SPRING_TRAINING")
+                throw new RangeError("스프링 캠프 단계에서만 역할 선호를 선택할 수 있습니다.");
+              const userId=session.fixture.userPlayerId;
+              session.playerStates={...session.playerStates,
+                [userId]:setSpringRolePreference(session.playerStates[userId],mode,
+                  offseasonPhaseDate(session,"SPRING_TRAINING"))};
+              return snapshot(session);
+            },
+            requestNextGameRest(seasonId) {'''
+          once(p,old,new)
+
+          p="src/services/seasonSerialization.js"
+          needle='import { validatePlayerRolePreference } from "../engine/season/rolePreference.js";'
+          once(p,needle,needle+'\nimport { validateSpringRolePreference } from "../engine/career/springCamp.js";')
+          needle='    validatePlayerRolePreference(playerState.rolePreference ?? null, `payload.playerStates.${playerId}.rolePreference`);'
+          once(p,needle,needle+'\n    validateSpringRolePreference(playerState.springRolePreference ?? null, `payload.playerStates.${playerId}.springRolePreference`);')
+
+          p="src/ui/seasonRender.js"
+          needle='function offseasonCard(snapshot) {'
+          new='''function springCampPreview(snapshot) {
+            const camp=snapshot.springCamp;
+            if(!camp||snapshot.status!=="OFFSEASON")return "";
+            const labels={LOCKED:"로스터 전망 안정",LIKELY:"로스터 전망 유력",BUBBLE:"로스터 경쟁 중",LONG_SHOT:"도전 필요"};
+            const levels={MLB:"MLB",AAA:"AAA",AA:"AA",HIGH_A:"High-A",A:"A"};
+            const choice=camp.preference??"OPEN";
+            const options=[["OPEN","구단 판단"],["MLB_BENCH","MLB 벤치 선호"],["AAA_EVERYDAY","AAA 주전 선호"]];
+            const controls=snapshot.offseason?.currentPhase==="SPRING_TRAINING"
+              ? `<div class="training-focus-grid">${options.map(([value,label])=>`<button type="button" data-spring-role-preference="${value}" class="${choice===value?"active":""}">${label}</button>`).join("")}</div>` : "";
+            return `<div class="training-focus-wrap spring-camp-preview">
+              <div class="training-focus-head"><strong>스프링 예비평가</strong><span>${esc(camp.targetYear)} · ${esc(labels[camp.rosterSecurity]??"평가 중")}</span></div>
+              <p class="condition-note">현재 ${esc(levels[camp.level]??camp.level)} · ${esc(camp.primaryPosition)} · MLB 동일 주포지션 경쟁 ${camp.directMlbCompetition}명. ${camp.injured?"현재 부상 상태입니다.":"현재 부상 제한은 없습니다."}</p>
+              ${controls}
+              <p class="condition-note">선호는 구단에 전달하는 의견이며 개막 로스터·주전은 보장되지 않습니다. 이 평가는 현재 로스터·역할에 따른 예비 전망으로, 아직 시범경기 성적이나 최종 개막 결정이 아닙니다.</p>
+            </div>`;
+          }
+          function offseasonCard(snapshot) {'''
+          once(p,needle,new)
+          needle='    <p class="condition-note">v55는 각 오프시즌 단계를 저장하고 중복 적용을 막습니다. 중간에 앱을 닫아도 저장된 phase에서 이어집니다.</p>'
+          once(p,needle,'    ${springCampPreview(snapshot)}\n'+needle)
+          needle='  root.querySelectorAll("[data-role-preference]").forEach((button) => button.addEventListener("click", () => handlers.onRolePreference?.(button.dataset.rolePreference)));'
+          once(p,needle,needle+'\n  root.querySelectorAll("[data-spring-role-preference]").forEach((button) => button.addEventListener("click", () => handlers.onSpringRolePreference?.(button.dataset.springRolePreference)));')
+
+          p="src/app/seasonApp.js"
+          needle='      async onRolePreference(mode) {\n        snapshot = seasonApi.setRolePreference(snapshot.seasonId, mode);\n        renderHome();\n        void queueAutosave();\n      },'
+          once(p,needle,needle+'''\n      async onSpringRolePreference(mode) {
+                  snapshot = seasonApi.setSpringRolePreference(snapshot.seasonId, mode);
+                  renderHome();
+                  void queueAutosave();
+                },''')
+          print("Phase 5 spring roster outlook, advisory choice, save validation and UI installed")
+          TCU_PHASE5_PATCH
+          node --check src/engine/career/springCamp.js
+          node --check src/api/seasonApi.js
+          node --check src/services/seasonSerialization.js
+          node --check src/ui/seasonRender.js
+          node --check src/app/seasonApp.js
+          node --check tests/phase5SpringCamp.test.js
+          node --check scripts/verify-phase5-spring-amateur-bundle.mjs
+          git diff --check
+      - name: Run full unit suite and spring camp integration with 2027 opening day
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
+          node scripts/verify-phase5-spring-amateur-bundle.mjs
+          node -e 'const r=require("./reports/phase5-spring-amateur-bundle.json");if(!r.pass||r.regularSeasonWorldGames2026!==10710||!r.openingDay2027)process.exit(1);console.log("Spring 2027 scenario PASS")'
+          git diff --check
+      - name: Verify draft international and current production v3 world postseason
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-v57-draft-international.mjs
+          node scripts/verify-phase3-integration-4r.mjs
+          node --input-type=module <<'TCU_PHASE5_GATES'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const read=(name)=>JSON.parse(readFileSync(`reports/${name}`,'utf8'));
+          const camp=read('phase5-spring-amateur-bundle.json');
+          const amateur=read('v57-draft-international-gate.json');
+          const v3=read('phase3-integrated-regression-4r-v1.json');
+          assert.equal(camp.pass,true);
+          assert.equal(amateur.pass,true);
+          assert.equal(amateur.draft2027.picks,600);
+          assert.equal(amateur.draft2027.draftSlotRatingsInvariant,true);
+          assert.equal(v3.pass,true);
+          assert.equal(v3.regularSeason.worldGames,10710);
+          assert.ok(v3.postseason.championTeamId);
+          assert.ok(Object.values(v3.gates).every(Boolean));
+          console.log('Phase 5 bundled gates PASS: spring outlook, draft, international, v3 world/postseason');
+          TCU_PHASE5_GATES
+          git diff --check
+      - name: Commit only after all Phase 5 gates pass
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add src/engine/career/springCamp.js src/api/seasonApi.js src/services/seasonSerialization.js src/ui/seasonRender.js src/app/seasonApp.js tests/phase5SpringCamp.test.js scripts/verify-phase5-spring-amateur-bundle.mjs reports/phase5-spring-amateur-bundle.json reports/v57-draft-international-gate.json reports/phase3-integrated-regression-4r-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No Phase 5 changes to commit' >&2
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase5: spring roster outlook player preference and amateur world gates'
+          git push origin HEAD:main
