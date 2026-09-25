@@ -1,0 +1,189 @@
+name: THE CALL-UP Phase 6 Career Records and History Integrity Bundle
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE6_CAREER_RECORDS_BUNDLE.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  phase6-career-records:
+    runs-on: ubuntu-latest
+    timeout-minutes: 105
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install additive career-record read model and UI
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz
+          test -f data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          test -f reports/v59-long-run-stress-checkpoint.json
+          test -f reports/phase6-value-history-bundle.json
+          mkdir -p "$(dirname 'src/engine/career/careerRecords.js')"
+          cat <<'TCU_PHASE6_ASSET_1' | base64 -d | gzip -d > 'src/engine/career/careerRecords.js'
+          H4sIAAAAAAAC/5VXTW/bRhC9+1dMiDQQUYlxEOSi1DFsR40F2JIhKSkCw3BW5EhivSKF3WUcRREQNDkY6KG99NBD0AI9tIccemhv/UW1
+          8x86+0GJolMBNnwgZ2fnzb55M0uFaSIVdBp77c7j072dXuNJu9NsdGEL2v1vMVTBQCC+xsrxBpQsMzjDaR28fa8KnPWR0/PVTxef3r0l
+          w1mcRHqt2es1OvQuaWOcJmTqM6XiZEi2QYzcOHkw96v/H79TAPj088XlL3/eFKCzHqGz2yxCvHt79euPN4TQIdZidHcLEJc/vL/87Y8b
+          QlCE9QjtlUNcXH33z9Xv75cgR83e3n4JZRKrcFSCaa+HaR4VYS4+/vv3R7j68Nfl9x9uDJVmSnYwTEWEkQbdOPEfboRGkCELRxjZRUli
+          TPAcvkF2dsgmFXLaGGSJCQySDXAvzRJVecl4hj7MKHOBKhMJqOkE0wGYBdja2gIvycZ9FB7cuQMt8xjE8us4iRXm22nF+j/agk0KBbAN
+          h0yNAiUIMveqw+bDjXkhjThJ6GzycSwnnE0r+mQrqby4PTNRBjxNhVmGu3Dfnwe3Z+blC7g/f2FC3r0LvVEsgf4ZDNkYa+ep4BEF0lyA
+          Yn2OVWi1e0BeKhVxyDgtMl47PNgFxnlNxWN07jKw8RA4RkMUkCZ8SsmGPItQgt6hISSE6XjCUWFEizKOEJTOIWRUe0Ecv8RgedYhqj2z
+          4MpzlPV5HD6L8bwiFVOuBvEAKrfMO7x5k5fCvt/SpUiNujw/ZyjJOH/o9jnlUW1E+hqTPCzVZkUXwYhJt7YIs+pAqToHHdpKa4pMaEkd
+          B0GgZdUlH+sUCCfGLjJJvrC9DccnvlFBMIi5QlFZyKaZKCRGff8kkKmgEKwKfR+2HlHZavS0BHTULyaq0ZBLPLAUH1gXwpvNV/EwUWKq
+          o9oHomCpeGMKxrzv8vXhEWwWgDOJohkRcFcJUqdD1NYjEqlZI0TPK2wJyWNIokJZvAHScYOgyFi5dlEEY+pIOcFQ5zgzqdtIIj3XMezh
+          r53G5R7LIz0WNDukCWoxqrJ+MhEDPU1s3+YDxbfkED0adhFt5qw5tuv4a1SpVDEut4NjE97NppP83YylE0OG/XOSWkYHmDji6jmnNnBu
+          9quQUD+VVrVJM132LcZNZWwH5WpcZzZ1qnkU3hytuDOyI6cOljKcWsZoTNPkKo2lxfRyIPa9GG0ppvo6oRW3DGIh1SHvP6e+qrszFm06
+          d93cxT2cXdtSMOU7FhvmeU3m/uf7InAzm+SfC6TUlH3nUgPmnmgqsUUxAp7SHKXjjifUkJX+skpOD1ZYJEh8RcLS4qZMkqipDeVk8r2m
+          ErYJXRSnqOO8VtXyJbuR82PuV+NmnquQ0S31+SJ7uzvdxu7OwcFps9Vqtp50Paqwt9d+2up5Oek6iw5LzuruCF/BJliSITd9Cfdyb9Mn
+          DR4PY7ps6va0HJOhGuUeHFmEgkSymr/xlHQbYGWzCg9806aWnirEphDlrwqawm5d2Px0IlRo1+pz/0RTN/cLQ0qgzLi69olqyZNhOkH9
+          HdM8fHpAY+rxKd1yxMxpb7/ZPe3uPGuctlsHzx0zNBKFsjIsT3Y3LhcePhFWMhF3S2WrkUiz4cgGM5dMwFSlds9fbQB3+UaLNls9hNno
+          +ms5jMteyxXfkLP+4vRLt6LMb8Wqo9Lsd9q0FvMpgq8m1EQwu/7zoLrmI0B3638Kn9KBVgwAAA==
+          TCU_PHASE6_ASSET_1
+          mkdir -p "$(dirname 'tests/phase6CareerRecords.test.js')"
+          cat <<'TCU_PHASE6_ASSET_2' | base64 -d | gzip -d > 'tests/phase6CareerRecords.test.js'
+          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
+          TCU_PHASE6_ASSET_2
+          mkdir -p "$(dirname 'scripts/verify-phase6-career-records.mjs')"
+          cat <<'TCU_PHASE6_ASSET_3' | base64 -d | gzip -d > 'scripts/verify-phase6-career-records.mjs'
+          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
+          TCU_PHASE6_ASSET_3
+          python3 - <<'TCU_PHASE6_RECORD_PATCH'
+          from pathlib import Path
+          
+          def once(path, needle, replacement):
+              target = Path(path)
+              body = target.read_text(encoding="utf-8")
+              occurrences = body.count(needle)
+              if occurrences != 1:
+                  raise RuntimeError(f"Patch refused: {path}: anchor count {occurrences}, expected 1: {needle[:90]}")
+              target.write_text(body.replace(needle, replacement, 1), encoding="utf-8")
+          
+          p = 'src/engine/career/retirementHallOfFame.js'
+          once(p, 'import { SeededRng } from "../rng.js";',
+                  'import { SeededRng } from "../rng.js";\nimport { getCareerRecordsPublicView } from "./careerRecords.js";')
+          once(p, 'latestEraBallot:era?clone(era):null}); }',
+                  'latestEraBallot:era?clone(era):null,careerRecords:getCareerRecordsPublicView(state)}); }')
+          
+          p = 'src/ui/seasonRender.js'
+          helper = '''function careerRecordsView(snapshot) {
+            const records = snapshot.retirementHall?.careerRecords ?? null;
+            if (!records?.includedSeasons?.length) return `<section class="card player-detail-card history-card"><div class="section-head"><strong>MLB 커리어 누적 기록</strong><span>아직 기록 없음</span></div><p class="condition-note">이 세이브에서 시뮬레이션한 MLB 시즌이 확정되면 기록이 나타납니다.</p></section>`;
+            const categories = [["H", "안타"], ["HR", "홈런"], ["RBI", "타점"], ["SB", "도루"], ["SO", "투수 탈삼진"], ["IP", "투구 이닝"]];
+            return `<section class="card player-detail-card history-card">
+              <div class="section-head"><strong>MLB 커리어 누적 기록</strong><span>${records.startYear ?? records.includedSeasons[0]}~${records.throughYear}</span></div>
+              <p class="condition-note">이 세이브에서 시뮬레이션한 MLB 기록만 집계합니다. 시작 이전 실존 선수의 과거 기록은 포함하지 않으며 공식 MLB 역대 기록이 아닙니다. 선수의 이적 전후 기록은 한 선수의 누적으로 계산합니다. 이닝 표기는 ⅓·⅔를 .1·.2로 표시합니다.</p>
+              ${categories.map(([key, label]) => {
+                const category = records.categories?.[key];
+                if (!category) return "";
+                return `<div class="player-section-label"><strong>${label}</strong><small>${category.userRank == null ? "" : `내 순위 #${category.userRank}`}</small></div>
+                  ${category.leaders.length ? `<div class="career-timeline-list">${category.leaders.map(row => `<div class="career-timeline-row"><span>#${row.rank}</span><div><strong>${esc(row.name)}</strong><small>${esc(row.display)} · ${row.mlbSeasons} MLB 시즌</small></div></div>`).join("")}</div>` : `<p class="season-empty">기록 없음</p>`}`;
+              }).join("")}
+            </section>`;
+          }
+          
+          '''
+          once(p, 'function historyView(snapshot) {', helper + 'function historyView(snapshot) {')
+          needle = '  <section class="card player-detail-card history-card"><div class="section-head"><strong>Hall of Fame</strong>'
+          once(p, needle, '  ${careerRecordsView(snapshot)}\n' + needle)
+          print('Phase 6 career records, immutable cached read model and history UI patched')
+          TCU_PHASE6_RECORD_PATCH
+          node --check src/engine/career/careerRecords.js
+          node --check src/engine/career/retirementHallOfFame.js
+          node --check src/ui/seasonRender.js
+          node --check tests/phase6CareerRecords.test.js
+          node --check scripts/verify-phase6-career-records.mjs
+          git diff --check
+      - name: Run all unit tests and record UI tests
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
+          git diff --check
+      - name: Verify full 2026 season records and 2027 opening-day save replay
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase6-career-records.mjs
+          node scripts/verify-phase3-integration-4r.mjs
+          node --input-type=module <<'TCU_PHASE6_RECORD_GATE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const read=name=>JSON.parse(readFileSync(`reports/${name}`,'utf8'));
+          const r=read('phase6-career-records-bundle.json');
+          const world=read('phase3-integrated-regression-4r-v1.json');
+          assert.equal(r.pass,true);
+          assert.equal(r.worldGames2026,10710);
+          assert.equal(r.saveRestoreStable,true);
+          assert.equal(r.openingDay2027NoDuplicate,true);
+          assert.equal(world.pass,true);
+          assert.equal(world.regularSeason.worldGames,10710);
+          assert.ok(world.postseason.championTeamId);
+          assert.ok(Object.values(world.gates).every(Boolean));
+          console.log('Phase 6 career records + production v3 world/postseason PASS');
+          TCU_PHASE6_RECORD_GATE
+          git diff --check
+      - name: Commit only after all career-record and world gates pass
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add src/engine/career/careerRecords.js src/engine/career/retirementHallOfFame.js src/ui/seasonRender.js tests/phase6CareerRecords.test.js scripts/verify-phase6-career-records.mjs reports/phase6-career-records-bundle.json reports/phase3-integrated-regression-4r-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No verified Phase 6 changes; refusing empty commit.' >&2
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase6: verified MLB career record leaderboards and immutable history read model'
+          git push origin HEAD:main
