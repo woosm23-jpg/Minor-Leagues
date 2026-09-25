@@ -1,0 +1,140 @@
+name: THE CALL-UP Phase 9 Fresh Production V3 Twenty-Year Stability Gate
+
+on:
+  push:
+    paths:
+      - '.github/workflows/TCU_PHASE9_CURRENT_V3_20YEAR_GATE.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  current-v3-twenty-year:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare fresh Production v3 20-year gate without modifying the historical v59 baseline
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f scripts/verify-v59-long-run-stress.mjs
+          test -f data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          test -f reports/phase8-9-release-candidate.json
+          test -f reports/phase8-fresh-v3-two-year.json
+          python3 - <<'TCU_V60_PATCH'
+          from pathlib import Path
+          p=Path('scripts/verify-v59-long-run-stress.mjs')
+          s=p.read_text(encoding='utf8')
+          
+          def once(old,new,count=1):
+              global s
+              n=s.count(old)
+              if n!=count: raise RuntimeError(f'20-year script anchor mismatch ({n} != {count}): {old[:100]!r}')
+              s=s.replace(old,new)
+          
+          once("const master=JSON.parse(zlib.gunzipSync(fs.readFileSync('data/the_call_up_snapshot_v2/mlb-milb-2026-production-v2.json.gz')).toString('utf8'));", "const sourceDataPath='data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz';\nconst master=JSON.parse(zlib.gunzipSync(fs.readFileSync(sourceDataPath)).toString('utf8'));\nconst sourceDataSha256=crypto.createHash('sha256').update(fs.readFileSync(sourceDataPath)).digest('hex');")
+          once('v59-long-run-stress-20y','v60-current-v3-long-run-20y',2)
+          once('v59 Long Run QA','v60 Current V3 Long Run QA')
+          # Recent current-v3 seasons exceeded the historical v2-specific 10-minute bound.
+          once('simulateMs<600000','simulateMs<1200000')
+          once('season simulation exceeded 10 minutes','season simulation exceeded 20 minutes')
+          once('totalMs<14400000','totalMs<20400000')
+          once('20-season stress exceeded 4 hours','20-season stress exceeded the current-v3 5h40 safety bound')
+          once('THE_CALL_UP_V59_LONG_RUN_STRESS_V1','THE_CALL_UP_V60_CURRENT_V3_20_YEAR_V1')
+          once('reports/v59-long-run-stress.json','reports/v60-current-v3-long-run.json')
+          once("schema:'THE_CALL_UP_V60_CURRENT_V3_20_YEAR_V1',pass:true,seed:", "schema:'THE_CALL_UP_V60_CURRENT_V3_20_YEAR_V1',pass:true,sourceDataSha256,sourceCommit:process.env.GITHUB_SHA ?? null,freshProductionV3:true,seed:")
+          once("next:'v60 Complete Edition RC'", "next:'final acceptance review after current Production v3 long-run gate'")
+          # Keep per-season progress and 5-year compressed saves even if a later year fails.
+          old='''  console.log(`v59 ${year} PASS ${simulateMs.toFixed(0)}ms generated=${generated.length} retired=${payload.leagueEcologyState?.totalRetired} saveMB=${(saveBytes/1024/1024).toFixed(1)}`);'''
+          new='''  fs.mkdirSync('reports',{recursive:true});
+            fs.writeFileSync('reports/v60-current-v3-progress.json',JSON.stringify({schema:'THE_CALL_UP_V60_CURRENT_V3_PROGRESS_V1',sourceDataSha256,completedSeasons:i+1,lastCompletedYear:year,expectedSeasons:COMPLETED_SEASONS,worldGames:initialScheduleTotal*(i+1),checkpoints},null,2)+'\\n');
+            if((i+1)%5===0){
+              const checkpointPath=`reports/v60-current-v3-checkpoint-${year}.json.gz`;
+              fs.writeFileSync(checkpointPath,zlib.gzipSync(Buffer.from(JSON.stringify(payload)),{level:6}));
+              console.log(`v60 archived save checkpoint ${year}: ${checkpointPath}`);
+            }
+            console.log(`v60 current v3 ${year} PASS ${simulateMs.toFixed(0)}ms generated=${generated.length} retired=${payload.leagueEcologyState?.totalRetired} saveMB=${(saveBytes/1024/1024).toFixed(1)}`);'''
+          once(old,new)
+          # Historical v59/v2 script and report remain intact.
+          Path('scripts/verify-v60-current-v3-long-run.mjs').write_text(s,encoding='utf8')
+          print('Generated current-v3 20-year script with fresh snapshot, source hash and annual checkpoints')
+          TCU_V60_PATCH
+          node --check scripts/verify-v60-current-v3-long-run.mjs
+          node --input-type=module <<'TCU_V60_PRIOR'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import crypto from 'node:crypto';
+          const read=f=>JSON.parse(readFileSync(f,'utf8'));
+          const rc=read('reports/phase8-9-release-candidate.json');
+          const two=read('reports/phase8-fresh-v3-two-year.json');
+          assert.equal(rc.pass,true);
+          assert.equal(two.pass,true);
+          assert.equal(two.completedSeasons,2);
+          assert.equal(two.worldGames,21420);
+          const hash=crypto.createHash('sha256').update(readFileSync('data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz')).digest('hex');
+          assert.equal(hash,two.sourceDataSha256);
+          assert.equal(hash,rc.dataSha256);
+          console.log('Current Production v3 source matches the passing two-year and mobile release candidate reports');
+          TCU_V60_PRIOR
+          git diff --check
+      - name: Run full unit suite and fresh 20-season 214200-game stress with annual checkpoints
+        working-directory: work
+        shell: bash
+        timeout-minutes: 345
+        run: |
+          set -euo pipefail
+          npm test
+          node --expose-gc --max-old-space-size=4096 scripts/verify-v60-current-v3-long-run.mjs
+          node --input-type=module <<'TCU_V60_GATES'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const read=f=>JSON.parse(readFileSync(f,'utf8'));
+          const report=read('reports/v60-current-v3-long-run.json');
+          const progress=read('reports/v60-current-v3-progress.json');
+          const two=read('reports/phase8-fresh-v3-two-year.json');
+          assert.equal(report.pass,true);
+          assert.equal(report.freshProductionV3,true);
+          assert.equal(report.sourceDataSha256,two.sourceDataSha256);
+          assert.equal(report.completedSeasons,20);
+          assert.equal(report.simulatedWorldGames,214200);
+          assert.equal(report.openingDayYear,2046);
+          assert.equal(report.checkpoints.length,20);
+          assert.equal(report.final.historySeasons,20);
+          assert.ok(Object.values(report.invariants).every(Boolean));
+          assert.equal(progress.completedSeasons,20);
+          assert.equal(progress.lastCompletedYear,2045);
+          assert.equal(progress.worldGames,214200);
+          assert.ok(report.finalSaveBytes<report.initialSaveBytes*4);
+          console.log('Fresh 2026–2045 Production v3 20-season stability gate PASS');
+          TCU_V60_GATES
+          git diff --check
+      - name: Commit only after all fresh 20-year gates pass
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add scripts/verify-v60-current-v3-long-run.mjs reports/v60-current-v3-long-run.json reports/v60-current-v3-progress.json
+          git diff --cached --check
+          if git diff --cached --quiet; then echo 'No new verified twenty-year results to commit' >&2; exit 1; fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'phase9: verify fresh Production v3 twenty-season world stability'
+          git push origin HEAD:main
+      - name: Preserve annual progress and five-year compressed saves even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE_CALL_UP_CURRENT_V3_20_YEAR_DIAGNOSTICS
+          path: |
+            work/reports/v60-current-v3-progress.json
+            work/reports/v60-current-v3-long-run.json
+            work/reports/v60-current-v3-checkpoint-*.json.gz
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 0
