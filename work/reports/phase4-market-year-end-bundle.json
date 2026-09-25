@@ -1,0 +1,12 @@
+{
+  "schema": "THE_CALL_UP_PHASE4_MARKET_YEAR_END_BUNDLE_V1",
+  "pass": true,
+  "source": "2026 production v2 baseline; production v3 whole-world gate is separate",
+  "regularSeason2026WorldGames": 10710,
+  "unfulfilledRequestExplicitlyResolved": true,
+  "noForcedTradeOrRosterChange": true,
+  "offseasonMarketReviewIdempotent": true,
+  "contractStrategyPreservedAcross2027": true,
+  "requestCanBeRenewedIn2027": true,
+  "fullSaveAndUiVerified": true
+}

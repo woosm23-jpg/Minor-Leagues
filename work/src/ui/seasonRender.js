@@ -672,6 +672,7 @@ function playerMarketActionControls(player, market, trade) {
   const status = trade.agentRequest?.status ?? "NONE";
   const request = status === "REQUESTED";
   const requestText = status === "REQUESTED" ? "요청 전달됨 · 구단 판단 대기"
+    : status === "EXPIRED" ? "오프시즌 검토 종료 · 거래 성사 안 됨"
     : status === "CANCELLED" ? "이전 요청 철회됨"
       : status === "SATISFIED" ? "이적 요청에 따른 거래 완료" : "신청 내역 없음";
   return `<div class="training-focus-wrap market-actions-wrap">

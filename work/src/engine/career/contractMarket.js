@@ -319,6 +319,7 @@ function generateFreeAgentOffers(state, {
   seed = "v53"
 }) {
   validateContractMarketState(state);
+  if (state.status !== "FREE_AGENT_ELIGIBLE") throw new RangeError("자유계약 제안 생성 자격이 없습니다.");
   assertIsoDate(date, "free-agent market date");
   if (!Array.isArray(teamProfiles) || teamProfiles.length === 0) throw new TypeError("teamProfiles가 필요합니다.");
   const market = projectFreeAgentMarket({ ...player, agentStrategy: state.agentStrategy });
@@ -405,9 +406,12 @@ function counterFreeAgentOffer(state, {
 function acceptFreeAgentOffer(state, contractState, { offerId, date }) {
   validateContractMarketState(state);
   validateContractState(contractState);
+  if (state.status !== "FREE_AGENT_OPEN") throw new RangeError("자유계약 시장이 열려 있지 않습니다.");
+  if (contractState.playerId !== state.playerId) throw new RangeError("계약 제안과 계약 대상 선수가 다릅니다.");
   assertIsoDate(date, "offer accept date");
   const offer = state.freeAgency.offers.find((x) => x.offerId === offerId);
   if (!offer) throw new RangeError(`offer를 찾을 수 없습니다: ${offerId}`);
+  if (!["OPEN", "REVISED"].includes(offer.status)) throw new RangeError("유효한 계약 제안이 아닙니다.");
   if (date > offer.expiresDate) throw new RangeError("offer가 만료되었습니다.");
   const nextMarket = clone(state);
   nextMarket.status = "SIGNED";

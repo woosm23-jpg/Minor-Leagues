@@ -30,7 +30,7 @@ import { applyScoutingReview, buildScoutingReport, createScoutingState, markScou
 import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
 import { createRosterControlState, normalizeRosterControlState, advanceRosterControlToDate, getRosterControlPublicView, knownFortyManCount, prepareAaaMlbEmergencyInjuryMove, prepareAaaMlbEmergencyInjuryReturn, prepareAaaMlbRosterMove } from "../engine/career/rosterControlState.js";
 import { createContractMarketState, normalizeContractMarketState, refreshContractMarketState, prepareArbitrationCase, resolveArbitration, getContractMarketPublicView, setAgentStrategy as chooseAgentStrategy } from "../engine/career/contractMarket.js";
-import { createTradeState, normalizeTradeState, requestTradeState, cancelTradeRequestState, addTradeRumor, recordTrade, getTradePublicView } from "../engine/career/tradeState.js";
+import { createTradeState, normalizeTradeState, requestTradeState, cancelTradeRequestState, expireTradeRequestState, addTradeRumor, recordTrade, getTradePublicView } from "../engine/career/tradeState.js";
 import { executeTrade } from "../services/tradeService.js";
 import { OFFSEASON_PHASES, createOffseasonState, normalizeOffseasonState, completeOffseasonPhase, getOffseasonPublicView } from "../engine/career/offseasonPipeline.js";
 import { POSTSEASON_RULESET_2026, POSTSEASON_ROUND_ORDER, createPostseasonState, normalizePostseasonState, getPostseasonPublicView, createHistoryState, normalizeHistoryState, appendSeasonHistory, getHistoryPublicView } from "../engine/career/postseasonHistory.js";
@@ -1326,8 +1326,13 @@ function advanceOffseasonPhaseInternal(session) {
   }
   else if(phase==="NON_TENDER_ARBITRATION") result=settleOffseasonArbitration(session,date);
   else if(phase==="FREE_AGENCY_TRADES") {
+    const unfilledUserRequest = session.tradeState?.agentRequest?.status === "REQUESTED";
+    if (unfilledUserRequest) session.tradeState = expireTradeRequestState(session.tradeState, { date });
     const user=session.contractMarketStates?.[session.fixture.userPlayerId] ?? null;
-    result={marketStatusCounts:marketStatusCounts(session),userStatus:user?.status ?? null,tradeReviews:session.tradeState?.reviews ?? 0,userTradeRequest:session.tradeState?.agentRequest?.status ?? "NONE"};
+    result={marketStatusCounts:marketStatusCounts(session),userStatus:user?.status ?? null,
+      tradeReviews:session.tradeState?.reviews ?? 0,
+      userTradeRequest:session.tradeState?.agentRequest?.status ?? "NONE",
+      unfilledUserRequest};
   }
   else if(phase==="ORGANIZATIONAL_CLEANUP") result={mode:"ATOMIC_OPENING_DAY_ROLLOVER",populationProtected:true};
   else if(phase==="DEVELOPMENT_AGING") result=applySeasonEndAgingIfNeeded(session);
