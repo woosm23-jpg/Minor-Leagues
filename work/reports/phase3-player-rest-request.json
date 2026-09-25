@@ -1,0 +1,11 @@
+{
+  "schema": "THE_CALL_UP_PHASE3_PLAYER_REST_REQUEST_V1",
+  "pass": true,
+  "playerRequestedAndManagerApprovedWithCoverage": true,
+  "noForcedPlayerAppearance": true,
+  "requestSaveRestore": true,
+  "deterministicDayReplay": true,
+  "cancellation": true,
+  "noCoverageDeclinedWithoutInjuryMutation": true,
+  "historicalSaveCompatibility": true
+}

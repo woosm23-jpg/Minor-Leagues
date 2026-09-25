@@ -204,6 +204,34 @@ function offseasonCard(snapshot) {
   </section>`;
 }
 
+function restRequestCard(snapshot) {
+  const next = snapshot.nextGame;
+  const request = snapshot.userRestRequest ?? { status: "NONE" };
+  if (!next && request.status === "NONE") return "";
+  const pending = request.status === "PENDING";
+  const results = {
+    COVER_AVAILABLE: "대체 선수가 있어 감독이 휴식을 승인했습니다.",
+    NO_AVAILABLE_COVER: "해당 포지션을 맡을 건강한 대체 선수가 없어 감독이 거절했습니다.",
+    NOT_STARTER: "현재 선발 예정이 아니어서 휴식 요청이 적용되지 않았습니다.",
+    NOT_ON_ROSTER: "로스터 이동으로 휴식 요청이 적용되지 않았습니다.",
+    INJURED_OR_REPLACED: "부상 또는 기존 라인업 변경으로 휴식 요청이 적용되지 않았습니다.",
+    USER_CANCELLED: "휴식 요청을 취소했습니다."
+  };
+  const message = pending ? "감독 판단 대기 중 · 다음 경기 라인업을 구성할 때 결정됩니다."
+    : request.status === "NONE" ? "다음 경기 선발 휴식을 요청할 수 있습니다. 감독은 대체 선수와 수비 커버를 확인합니다."
+    : results[request.reasonCode] ?? "다음 경기 휴식 신청을 확인할 수 있습니다.";
+  const canCancel = pending;
+  const canRequest = Boolean(next && request.canRequest && !pending);
+  return `<section class="card next-game-card player-rest-request-card">
+    <div class="section-head"><strong>선수·감독 상담 · 다음 경기 휴식</strong><span>${dateLabel(next?.date ?? request.date)}</span></div>
+    <p class="condition-note">${esc(message)} 휴식 신청은 부상이 아니며, 성적·성장·승격 보너스를 주지 않습니다.</p>
+    <div class="progress-actions">
+      ${canCancel ? `<button type="button" class="secondary" data-season-action="CANCEL_REST">휴식 요청 취소</button>` : ""}
+      ${canRequest ? `<button type="button" class="secondary" data-season-action="REQUEST_REST">다음 경기 휴식 요청</button>` : ""}
+    </div>
+  </section>`;
+}
+
 function nextGameCard(snapshot) {
   if (snapshot.status === "OFFSEASON" || snapshot.status === "POSTSEASON") return "";
   const userLevel = snapshot.organization?.userLevel ?? "AAA";
@@ -337,7 +365,7 @@ function homeCareerFeedPreview(snapshot) {
 
 function homeView(snapshot, uiState = {}) {
   const saveStatus = uiState.saveMessage ? `<p class="home-save-status">${esc(uiState.saveMessage)}</p>` : "";
-  return `${recordCard(snapshot)}${conditionCard(snapshot)}${roleStatusCard(snapshot)}${pitchingStaffCard(snapshot)}${postseasonCard(snapshot)}${offseasonCard(snapshot)}${nextGameCard(snapshot)}${progressStopCard(snapshot)}${homeCareerFeedPreview(snapshot)}${recentResults(snapshot)}${saveStatus}
+  return `${recordCard(snapshot)}${conditionCard(snapshot)}${roleStatusCard(snapshot)}${restRequestCard(snapshot)}${pitchingStaffCard(snapshot)}${postseasonCard(snapshot)}${offseasonCard(snapshot)}${nextGameCard(snapshot)}${progressStopCard(snapshot)}${homeCareerFeedPreview(snapshot)}${recentResults(snapshot)}${saveStatus}
     <p class="status">다른 팀 경기도 동일한 PA/Game 엔진으로 시뮬레이션되어 순위에 반영됩니다. 조직·전체 커리어 피드·저장 관리는 더보기에서 확인할 수 있습니다.</p>`;
 }
 

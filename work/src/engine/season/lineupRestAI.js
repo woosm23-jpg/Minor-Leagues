@@ -950,7 +950,8 @@ function buildDailyLineup(
   roleStates = {},
   {
     opposingPitcher = null,
-    scheduleContext = null
+    scheduleContext = null,
+    voluntaryRestPlayerId = null
   } = {}
 ) {
   if (
@@ -1168,6 +1169,36 @@ function buildDailyLineup(
       usedBenchIds.add(
         emergency.playerId
       );
+    }
+  }
+
+  // A player's request is considered only after injury coverage, and only if
+  // a healthy reserve can cover the position. There is no synthetic injury,
+  // performance boost, or automatic override of the manager's roster.
+  let voluntaryRest = null;
+  if (voluntaryRestPlayerId) {
+    const requestedSlot = slots.find((slot) => slot.starterId === voluntaryRestPlayerId);
+    if (!requestedSlot) {
+      voluntaryRest = { approved: false, reasonCode: "NOT_STARTER" };
+    } else if (!available(playerStates, voluntaryRestPlayerId) || requestedSlot.playerId !== voluntaryRestPlayerId) {
+      voluntaryRest = { approved: false, reasonCode: "INJURED_OR_REPLACED" };
+    } else {
+      const cover = roster.bench.find((bench) =>
+        !usedBenchIds.has(bench.playerId)
+        && available(playerStates, bench.playerId)
+        && directBenchCoverage(roster, playerStates, roleStates, bench.playerId, requestedSlot.position)
+      );
+      if (!cover) {
+        voluntaryRest = { approved: false, reasonCode: "NO_AVAILABLE_COVER" };
+      } else {
+        requestedSlot.playerId = cover.playerId;
+        usedBenchIds.add(cover.playerId);
+        usedBenchIds.add(voluntaryRestPlayerId);
+        rested.push(voluntaryRestPlayerId);
+        replacements.push({ kind: "PLAYER_REST_REQUEST", playerId: cover.playerId,
+          forPlayerId: voluntaryRestPlayerId, position: requestedSlot.position });
+        voluntaryRest = { approved: true, reasonCode: "COVER_AVAILABLE" };
+      }
     }
   }
 
@@ -1471,7 +1502,7 @@ function buildDailyLineup(
       lineup,
       playerStates,
       roleStates
-    );
+    ).filter((row) => !voluntaryRest?.approved || row.playerId !== voluntaryRestPlayerId);
 
   return freeze({
     lineup,
@@ -1484,6 +1515,7 @@ function buildDailyLineup(
     replacements,
     utilityAssignments,
     competitionDecisions,
+    ...(voluntaryRestPlayerId ? { voluntaryRest } : {}),
     positionAssignments:
       optimized.changes,
     scheduleContext:

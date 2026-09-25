@@ -388,7 +388,7 @@ function buildBullpenMeta(
   );
 }
 
-function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = null, pitcherStates = null, roleStates = null, level = "AAA" }) {
+function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = null, pitcherStates = null, roleStates = null, level = "AAA", voluntaryRestPlayerId = null }) {
   const league = seasonFixture.levelLeagues?.[level] ?? { rosters: seasonFixture.rosters, userTeamId: seasonFixture.userTeamId };
   const awayRoster = league.rosters[scheduleGame.awayTeamId];
   const homeRoster = league.rosters[scheduleGame.homeTeamId];
@@ -416,7 +416,8 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
         league,
         scheduleGame,
         scheduleGame.awayTeamId
-      )
+      ),
+      voluntaryRestPlayerId: awayRoster.players?.[voluntaryRestPlayerId] ? voluntaryRestPlayerId : null
     }
   );
   const homeDaily = buildDailyLineup(
@@ -429,7 +430,8 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
         league,
         scheduleGame,
         scheduleGame.homeTeamId
-      )
+      ),
+      voluntaryRestPlayerId: homeRoster.players?.[voluntaryRestPlayerId] ? voluntaryRestPlayerId : null
     }
   );
   const awayBullpen = orderAvailableBullpen(awayRoster, pitcherStates).filter((id) => id !== awayPitcherId);
@@ -463,6 +465,9 @@ function createSeasonGameFixture({ seasonFixture, scheduleGame, playerStates = n
     userTeam: userInAway ? "away" : userInHome ? "home" : null,
     teams: Object.freeze({ away: awayRoster.team, home: homeRoster.team }), players, names, park,
     dailyLineups: Object.freeze({ away: awayDaily, home: homeDaily }),
+    ...(voluntaryRestPlayerId ? { voluntaryRest: awayRoster.players?.[voluntaryRestPlayerId]
+      ? awayDaily.voluntaryRest : homeRoster.players?.[voluntaryRestPlayerId]
+        ? homeDaily.voluntaryRest : { approved: false, reasonCode: "NOT_ON_ROSTER" } } : {}),
     benchPlans: Object.freeze({
       away: Object.freeze((awayDaily.bench ?? awayRoster.bench ?? []).filter((row) => healthAvailability(playerStates?.[row.playerId]?.health) !== "INJURED").map((row) => Object.freeze({
         playerId: row.playerId,

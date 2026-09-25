@@ -428,6 +428,20 @@ function startSeasonApp(root) {
           await goToCareerSelect();
           return;
         }
+        if (action === "REQUEST_REST" || action === "CANCEL_REST") {
+          try {
+            snapshot = action === "REQUEST_REST"
+              ? seasonApi.requestNextGameRest(snapshot.seasonId)
+              : seasonApi.cancelNextGameRest(snapshot.seasonId);
+            saveMessage = action === "REQUEST_REST" ? "휴식 요청을 전달했습니다." : "휴식 요청을 취소했습니다.";
+            renderHome();
+            void queueAutosave();
+          } catch (error) {
+            saveMessage = `휴식 요청 처리 실패: ${error?.message ?? error}`;
+            renderHome();
+          }
+          return;
+        }
         if (action === "PLAY") {
           saveMessage = "";
           const previousStatus = snapshot.status;

@@ -8,6 +8,7 @@ import { validatePostseasonState, validateHistoryState } from "../engine/career/
 import { validateAmateurAcquisitionState } from "../engine/career/amateurAcquisition.js";
 import { validateRetirementHallState } from "../engine/career/retirementHallOfFame.js";
 import { CAREER_EVENT_TYPES } from "../engine/career/careerEvents.js";
+import { validatePlayerRestRequest } from "../engine/season/playerRestRequest.js";
 
 const SAVE_FORMAT = "THE_CALL_UP_SEASON_SAVE";
 const SAVE_SCHEMA_VERSION = 2;
@@ -246,6 +247,7 @@ function validateFull(payload) {
   if (payload.tradeState) validateTradeState(payload.tradeState, "payload.tradeState");
   for (const [playerId, playerState] of Object.entries(payload.playerStates ?? {})) {
     validateHealthState(playerState.health, `payload.playerStates.${playerId}.health`);
+    validatePlayerRestRequest(playerState.restRequest ?? null, `payload.playerStates.${playerId}.restRequest`);
     validateAgingState(playerState.aging, `payload.playerStates.${playerId}.aging`, { allowMigration: true });
     validateDevelopmentState(playerState.development, `payload.playerStates.${playerId}.development`, { positionPlayer: true });
     if (playerState.positionFamiliarity !== undefined) {

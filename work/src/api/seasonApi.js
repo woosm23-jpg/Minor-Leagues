@@ -22,6 +22,7 @@ import { getUtilityPathwayView } from "../engine/season/utilityUsage.js";
 import { getPositionPlayingTimeView } from "../engine/season/playingTimeReadModel.js";
 import { getRoleFitFeedback } from "../engine/season/roleFitFeedback.js";
 import { getTrainingCoachFeedback } from "../engine/season/coachingFeedback.js";
+import { createPlayerRestRequest, settlePlayerRestRequest, getPlayerRestRequestPublicView } from "../engine/season/playerRestRequest.js";
 import { applyScoutingReview, buildScoutingReport, createScoutingState, markScoutingReviewProcessed, normalizeScoutingState, prospectRankingScore } from "../engine/season/scoutingState.js";
 import { createContractState, normalizeContractState, getMlbServiceWindow, advanceContractStateToDate, creditContractServiceDate, getContractPublicView } from "../engine/career/contractState.js";
 import { createRosterControlState, normalizeRosterControlState, advanceRosterControlToDate, getRosterControlPublicView, knownFortyManCount, prepareAaaMlbEmergencyInjuryMove, prepareAaaMlbEmergencyInjuryReturn, prepareAaaMlbRosterMove } from "../engine/career/rosterControlState.js";
@@ -770,9 +771,35 @@ function finalizeSimulatedFixture(session, level, game, fixture, result) {
   applyCompletedGamePitcherStates(session, fixture, pitchingBySide, game.date);
 }
 
+function canRequestNextGameRest(session, level, game) {
+  if (!game || session.activeGameId) return false;
+  const userId = session.fixture.userPlayerId;
+  const roster = levelLeague(session, level)?.rosters?.[userTeamIdForLevel(session, level)];
+  return Boolean(roster?.lineupSlots?.some((slot) => slot.starterId === userId))
+    && healthAvailability(session.playerStates?.[userId]?.health) === "AVAILABLE";
+}
+
+function prepareRequestedGameFixture(session, level, game) {
+  const playerId = session.fixture.userPlayerId;
+  const request = session.playerStates?.[playerId]?.restRequest ?? null;
+  const pending = request?.status === "PENDING" && request.gameId === game.gameId && request.level === level;
+  const fixture = createSeasonGameFixture({ seasonFixture: session.fixture, scheduleGame: game,
+    playerStates: session.playerStates, pitcherStates: session.pitcherStates,
+    roleStates: session.roleStates, level, voluntaryRestPlayerId: pending ? playerId : null });
+  if (pending) {
+    const verdict = fixture.voluntaryRest ?? { approved: false, reasonCode: "NOT_ON_ROSTER" };
+    session.playerStates = { ...session.playerStates, [playerId]: Object.freeze({
+      ...session.playerStates[playerId], restRequest: settlePlayerRestRequest(request, {
+        approved: verdict.approved, reasonCode: verdict.reasonCode, date: game.date
+      })
+    }) };
+  }
+  return fixture;
+}
+
 function simulateScheduledGame(session, level, game, { skipRecovery = false } = {}) {
   if (!skipRecovery) recoverAllPlayersToDate(session, game.date);
-  const fixture = createSeasonGameFixture({ seasonFixture: session.fixture, scheduleGame: game, playerStates: session.playerStates, pitcherStates: session.pitcherStates, roleStates: session.roleStates, level });
+  const fixture = prepareRequestedGameFixture(session, level, game);
   const result = simulateSeasonFixtureGame(fixture, { seed: level === "AAA" ? `${session.fixture.seed}:${game.gameId}` : `${session.fixture.seed}:${level}:${game.gameId}` });
   finalizeSimulatedFixture(session, level, game, fixture, result);
   return result;
@@ -2338,6 +2365,10 @@ function snapshot(session) {
         roleFit: getRoleFitFeedback(userRoleState, playingTime, { currentDate: session.state.currentDate })
       };
     })(),
+    userRestRequest: Object.freeze({
+      ...getPlayerRestRequestPublicView(session.playerStates?.[session.fixture.userPlayerId]?.restRequest ?? null),
+      canRequest: canRequestNextGameRest(session, level, nextGame)
+    }),
     nextGame: scheduleGameView(session, nextGame, level), currentSeries: currentSeriesView(session, nextGame, level), standings, leaders, organization: cachedOrganizationView(session), worldProspectRankings: cachedWorldProspectRankings(session), careerTimeline: getCareerTimelinePublicView(session.careerEventState),
     levelStandings: Object.fromEntries(SIMULATED_LEVELS.map((itemLevel) => [itemLevel, getStandingsTable(stateForLevel(session, itemLevel))])),
     pitchingStaff: userPitchingStaffView(session, level), recentResults: recentResultsView(session, level),
@@ -2361,7 +2392,7 @@ function startCurrentGameInternal(session) {
     recoverAllPlayersToDate(session, game.date);
     if (session.activeGameId && session.activeScheduleGameId === game.gameId && session.activeLevel === level) return gameApi.getGame(session.activeGameId);
     if (session.activeGameId) gameApi.closeGame(session.activeGameId);
-    const fixture = createSeasonGameFixture({ seasonFixture: session.fixture, scheduleGame: game, playerStates: session.playerStates, pitcherStates: session.pitcherStates, roleStates: session.roleStates, level });
+    const fixture = prepareRequestedGameFixture(session, level, game);
     if (!fixture.userPlayerId) {
       const result = simulateSeasonFixtureGame(fixture, { seed: level === "AAA" ? `${session.fixture.seed}:${game.gameId}` : `${session.fixture.seed}:${level}:${game.gameId}` });
       finalizeSimulatedFixture(session, level, game, fixture, result);
@@ -2547,6 +2578,31 @@ const seasonApi = Object.freeze({
     const session = assertSession(seasonId);
     const playerId = session.fixture.userPlayerId;
     session.playerStates = { ...session.playerStates, [playerId]: setPositionPlayerTrainingFocus(session.playerStates[playerId], focus) };
+    return snapshot(session);
+  },
+  requestNextGameRest(seasonId) {
+    const session = assertSession(seasonId);
+    const level = currentUserLevel(session);
+    const game = nextUserGame(session);
+    if (!canRequestNextGameRest(session, level, game)) throw new RangeError("현재 다음 경기 휴식을 신청할 수 없습니다.");
+    const playerId = session.fixture.userPlayerId;
+    const current = session.playerStates[playerId];
+    const requested = current.restRequest;
+    if (requested?.status === "PENDING" && requested.gameId === game.gameId && requested.level === level) return snapshot(session);
+    const restRequest = createPlayerRestRequest({ gameId: game.gameId, level, date: game.date,
+      requestedDate: session.state.currentDate });
+    session.playerStates = { ...session.playerStates, [playerId]: Object.freeze({ ...current, restRequest }) };
+    return snapshot(session);
+  },
+  cancelNextGameRest(seasonId) {
+    const session = assertSession(seasonId);
+    const playerId = session.fixture.userPlayerId;
+    const current = session.playerStates[playerId];
+    const request = current?.restRequest;
+    if (!request || request.status !== "PENDING") throw new RangeError("취소할 휴식 요청이 없습니다.");
+    session.playerStates = { ...session.playerStates, [playerId]: Object.freeze({ ...current,
+      restRequest: settlePlayerRestRequest(request, { reasonCode: "USER_CANCELLED", date: session.state.currentDate })
+    }) };
     return snapshot(session);
   },
   serializeSeason(seasonId) {
