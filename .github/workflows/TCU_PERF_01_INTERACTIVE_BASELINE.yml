@@ -1,0 +1,156 @@
+name: THE CALL-UP Interactive Play Latency Baseline (No Game Code Changes)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/TCU_PERF_01_INTERACTIVE_BASELINE.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  interactive-latency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare isolated production play profiler
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz
+          test -f reports/phase8-9-release-candidate.json
+          cat > scripts/perf01-interactive-baseline.mjs <<'TCU_PERF_01_SCRIPT'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import zlib from 'node:zlib';
+          import crypto from 'node:crypto';
+          import { performance } from 'node:perf_hooks';
+          import { seasonApi } from '../src/api/seasonApi.js';
+          import { validateSeasonSavePayload } from '../src/services/seasonSerialization.js';
+          import { renderSeason } from '../src/ui/seasonRender.js';
+
+          // Diagnostic only: do not change the world, seed, or production game code.
+          const report = {
+            schema: 'THE_CALL_UP_PERF_01_INTERACTIVE_BASELINE_V1',
+            pass: false,
+            scope: 'Production v3 one interactive PA and one user game; CI host, NOT physical phone',
+            sourceCommit: process.env.GITHUB_SHA ?? null,
+            timingsMs: [],
+            limits: ['No IndexedDB timing in Node', 'No physical Android timing', 'Does not represent 20-year stress']
+          };
+          function timed(name, fn) {
+            const start = performance.now();
+            const before = process.memoryUsage();
+            try {
+              const value = fn();
+              const after = process.memoryUsage();
+              report.timingsMs.push({name, ms: Number((performance.now()-start).toFixed(2)),
+                heapDeltaMb: Number(((after.heapUsed-before.heapUsed)/1048576).toFixed(2)),
+                rssMb: Number((after.rss/1048576).toFixed(1))});
+              return value;
+            } catch (error) {
+              report.timingsMs.push({name, failed: String(error?.message ?? error),
+                ms: Number((performance.now()-start).toFixed(2))});
+              throw error;
+            }
+          }
+          function saveMeasure(label, seasonId, {fullValidation = false} = {}) {
+            let payload = timed(`${label}.serializeSeason`, () => seasonApi.serializeSeason(seasonId));
+            if (fullValidation) timed(`${label}.validateFULL`, () => assert.equal(validateSeasonSavePayload(payload,{mode:'FULL'}),true));
+            let raw = timed(`${label}.JSON.stringify`, () => JSON.stringify(payload));
+            const bytes = Buffer.byteLength(raw, 'utf8');
+            report[`${label}SaveBytes`] = bytes;
+            payload = null; raw = null;
+            if (global.gc) global.gc();
+            return bytes;
+          }
+          function mockRoot() {
+            return {innerHTML:'', querySelectorAll:()=>[], querySelector:()=>null};
+          }
+          try {
+            const path = 'data/the_call_up_snapshot_v3/mlb-milb-2026-production-v3.json.gz';
+            const source = fs.readFileSync(path);
+            report.sourceDataSha256 = crypto.createHash('sha256').update(source).digest('hex');
+            const release = JSON.parse(fs.readFileSync('reports/phase8-9-release-candidate.json','utf8'));
+            assert.equal(report.sourceDataSha256, release.dataSha256,'Expected same Production v3 as passing release candidate');
+            const master = timed('startup.gunzipAndParseMasterSnapshot', () => JSON.parse(zlib.gunzipSync(source).toString('utf8')));
+            const catalog = timed('startup.getCareerCreationCatalog', () => seasonApi.getCareerCreationCatalog({masterSnapshot:master}));
+            assert.equal(catalog.organizations.length,30);
+            const input = {name:'속도 측정',nationality:'대한민국',hometown:'서울',age:18,heightCm:180,weightKg:78,
+              bodyType:'ATHLETIC',bats:'R',throws:'R',primaryPosition:'SS',archetype:'BALANCED',
+              visibleTraits:['QUICK_BAT','SOFT_HANDS'],organizationMode:'FAVORITE',
+              favoriteOrganizationId:String(catalog.organizations[0].id)};
+            let snap = timed('startup.createProductionCareer', () => seasonApi.createCareerSeason({seed:'perf01-current-v3-interactive',input,masterSnapshot:master}));
+            const id = snap.seasonId;
+            assert.ok(id);
+            saveMeasure('openingDay',id);
+            for (let i=1;i<=3;i++) {
+              snap = timed(`home.getSeason.warm${i}`, () => seasonApi.getSeason(id));
+              const root=mockRoot();
+              timed(`home.renderSeason.warm${i}`, () => renderSeason(root,snap,{},'HOME',{}));
+              assert.match(root.innerHTML,/season-screen/);
+            }
+            snap=timed('game.startCurrentGame',()=>seasonApi.startCurrentGame(id));
+            assert.ok(snap.activeGame,'Expected an active game before first PA');
+            report.startedGameId=String(snap.activeScheduleGameId??snap.activeGame?.gameId??'');
+            snap=timed('pa.playUserPA.withSnapshot',()=>seasonApi.playUserPA(id,'BALANCED'));
+            assert.ok(snap.activeGame,'Expected an active game after PA action');
+            report.afterPaGameStatus=snap.activeGame.status;
+            saveMeasure('afterPA',id,{fullValidation:true});
+            snap=timed('game.simulateCurrentGame.withWorldAndSnapshot',()=>seasonApi.simulateCurrentGame(id));
+            assert.ok(snap.progress.worldLeagueGamesCompleted>0,'World progress did not advance');
+            report.worldGamesAfterFirstGame=snap.progress.worldLeagueGamesCompleted;
+            saveMeasure('afterGame',id);
+            for (let i=1;i<=2;i++) {
+              snap=timed(`afterGame.getSeason.warm${i}`,()=>seasonApi.getSeason(id));
+              const root=mockRoot();
+              timed(`afterGame.renderHome.warm${i}`,()=>renderSeason(root,snap,{},'HOME',{}));
+            }
+            report.pass=true;
+          } catch(error) {
+            report.error=String(error?.stack??error);
+            console.error(report.error);
+            process.exitCode=1;
+          } finally {
+            fs.mkdirSync('reports',{recursive:true});
+            fs.writeFileSync('reports/perf01-interactive-baseline.json', JSON.stringify(report,null,2)+'\n');
+            console.log('PERF01_REPORT', JSON.stringify({pass:report.pass,timingsMs:report.timingsMs.map(x=>({name:x.name,ms:x.ms,failed:x.failed})),
+              openingDaySaveBytes:report.openingDaySaveBytes,afterPASaveBytes:report.afterPASaveBytes,afterGameSaveBytes:report.afterGameSaveBytes,
+              error:report.error?.slice(0,300)}));
+          }
+          TCU_PERF_01_SCRIPT
+          node --check scripts/perf01-interactive-baseline.mjs
+      - name: Run existing regression tests unchanged
+        working-directory: work
+        run: npm test
+      - name: Measure one PA and one game on current Production v3
+        working-directory: work
+        run: node --expose-gc --max-old-space-size=4096 scripts/perf01-interactive-baseline.mjs
+      - name: Verify source-bound benchmark report
+        working-directory: work
+        shell: bash
+        run: |
+          node --input-type=module <<'TCU_PERF_01_GATE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync('reports/perf01-interactive-baseline.json','utf8'));
+          assert.equal(r.pass,true);
+          assert.ok(r.timingsMs.length>=15);
+          assert.ok(r.afterPASaveBytes>0);
+          assert.ok(r.worldGamesAfterFirstGame>0);
+          console.log('Production interactive latency baseline captured without changing gameplay or saves');
+          TCU_PERF_01_GATE
+      - name: Keep raw measurements and profiler even if a gate fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE_CALL_UP_PERF01_INTERACTIVE_BASELINE
+          path: |
+            work/scripts/perf01-interactive-baseline.mjs
+            work/reports/perf01-interactive-baseline.json
+          if-no-files-found: warn
+          retention-days: 30
