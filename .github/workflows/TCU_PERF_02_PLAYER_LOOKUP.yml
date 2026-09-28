@@ -1,0 +1,145 @@
+name: THE CALL-UP PERF 02 Immutable Roster Lookup and Identical Save Gate
+on:
+  push:
+    paths:
+      - .github/workflows/TCU_PERF_02_PLAYER_LOOKUP.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: tcu-perf02-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  measured-lookup-repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install a fixed-seed Production v3 before and after profiler
+        shell: bash
+        working-directory: work
+        run: |
+          set -euo pipefail
+          mkdir -p "$(dirname 'scripts/perf02-fixture-index.mjs')"
+          cat <<'TCU_PERF02_JS' | base64 -d | gzip -d > 'scripts/perf02-fixture-index.mjs'
+          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
+          AAA=
+          TCU_PERF02_JS
+          mkdir -p "$(dirname 'scripts/perf02-patch-player-lookup.py')"
+          cat <<'TCU_PERF02_PATCH' | base64 -d | gzip -d > 'scripts/perf02-patch-player-lookup.py'
+          H4sIAAAAAAAC/91WQY8bNRS+51c8JNSZSOmEckKsolVBrcShYhWQOFQV9Y7fZNyd2IPtSTasckOoYrm3B7gBZy7cEH9o8yP4PHZmU7KVAHHiksT28+fvvfd9
+          diprltQKXzfqnNSyNdbTGYajdha+8szZcipaNXUsnNEPW1W8cNl45GZtYVnILz1f+px1aaTSi1nW+eoDLJtGzrIsK412nhw7p/CLZqR5TU9Em49PRnGtZrHa
+          zAH0xEhuPhZlzfu4L1hcxFggjTDzHyKOplM6a8SGLSnJ2iu/IeWoUpcsaa18rTSJMPSd5YI+r5lYL5Rmstw2ogSkx1wKCGjrmrFFk7ELodXXwoMflbXQC8Tm
+          3grJbkItym3CEn4LrTvRkDVNY1ZsxxNyhkTASjzpgjckOm+WQCtF04CjXolGSeETAdQZAM6HPLTky5676TwFkmhIQJNs1QppYZdAlDfkxAr7jY38EIYYQCyV
+          Vg4n0UIsQ5abIpU0pRkL9kk45y1NEs4xBOSK0nTa52A3ns0eTLLUr2kZuoHEyxqHS6sqn0FJrkhFDRsmQJ08GBRUdbrsS1khv0ggT2iTkGQgJMd0NSKqgJlH
+          wqkkpiJU7XFkP+/n3H53kZIaj0lVlMcdRUR0p8XTPfazMVqOQE1vhtwGnODseOxh7+dcGitRpcPJmEBcuiONgBTIHOMMJI6XEqGw19fWrPu2zIPuHllrbP58
+          d/3D7pfvk9xvfv6ddr/+sfvxG9q9fE27V9/uvvvt5vrlzfVPH9K7V3sq2+cgsz3w3T/oAyT3EHTLIOoNVLchb7rehUGaTmjpQmdSHQv6qFNNuDyOexXBsIFc
+          CbeEGO5BPQvcWuhwBKG1cPRVJ6QNRoHGe2+sjYU7WtN2TV+uIsKdWYZIVxz9YxX0DxdWyjp/P7b4/lrhammMuehaRMigpAgJg3iF6EAnwDXsk+9md5qkWLA/
+          Ety+y+/0O2PNaIA5uM/C9L8WdUR9A+CpkvtePQswn56/4NIXuP6sYvcXC9DpKV1tD4Ai6VTwe/co0i9q4XIlg4v6oUPCt8ekJIi2o9vPOwvljgs1iZA9xnbw
+          WIWbJdgqHhfq+xno60U+iHAocB86OKcf/b+9+rbr99azf+/ubYu1VZ7j2+4mR697i4L7PDt7NH/83vv417DsvDhvhudw78ooaXjJQ7AsT/YKTicuIbzhhTx4
+          8nDAn7LU4xmWCAAA
+          TCU_PERF02_PATCH
+          mkdir -p "$(dirname 'scripts/perf02-compare.mjs')"
+          cat <<'TCU_PERF02_COMPARE' | base64 -d | gzip -d > 'scripts/perf02-compare.mjs'
+          H4sIAAAAAAAC/5VUbVMaMRD+7q/Ih3YC7XEgnXbas9ZBBKEFYTit07EOhrs9SL1L0iSnRcf/3uQCglaY6Se4fXn22d0nSzPBpUZEKTA/ieQZwozHEDhLVWlJ
+          I433dqgLTNR6UKKMJ+JMaTSBhEvY/xoOTnxBpIJSonwJJG7TFMI5i0pYgoVQVQEyqdUrLsP/pTjDHs518hGXy0s4kmiQ/4NWJPwD5rrw4XdO0tKioDBGT8sc
+          yntP3A5hzftituK5jOCIaBLOSP39B8+lPTevsmMA0VorENMpKK28Bd7yEw8lj/NIU87QLZdpXFXkBlA0I2wKsZsHSjm/zgXiQtOM3hEbjDdXKmCOSQaPxdYs
+          +Nz+R1PzgSKeM70stQXQMjqc6xXeyoBDkJSk9M5wLYhPrHkd0+1VaSJ1LkIBEOdi/yTPJiBLy+GatkD11QW2tPwiFl9WXfEXfWVf8zb9A3Hp3Uo7Thn79yqa
+          QUYCfNppjZuNXm98NhwPW6N2rT4e9ho/WqNxbzD4Zozfd7Fn9x7YvXtulU2eZVQHQvIIlPKB3fjH3dPO2eE47DQODliept7zpQebNDIhClLKwI4+tMz7KtjW
+          srfYMMTrGVvm4E2XcYvJBk8H7dEYmKYRSduGeGgWdOR051p+9J4vBdK0klh4c7ZYo80L3VALx7KtZ72s2D+l7KXGqgvVquACN7voxBwRZGPZVCEiATGukZjN
+          leVSETPOwGxT5alW5lV3WQxm1UeH6FZSqy5pmFCGEtNSpZA2Iix+xMmAqFwaPc5Agkk3GxUpaECtmBbPbNREndN+zx00ISmXSOYMxdxAWwCjJm3x9YwqJIiO
+          ZvjyYW/HXKKi/sZTJFIyB1lxj3VxkopLZo8pm9JkXnIZXqGievkt/smWT4Sn4Kd8WsILpTYH/WFj1DXpG0DWzhy/Lm3RyOdtintT8z95V3bzlcKCzL2X/AYy
+          Iwxz21N+i3ZrrwP06n4bygOqfDEhW0g8XBm6fwEBTFhBdQYAAA==
+          TCU_PERF02_COMPARE
+          node --check scripts/perf02-fixture-index.mjs
+          node --check scripts/perf02-compare.mjs
+          python3 -m py_compile scripts/perf02-patch-player-lookup.py
+      - name: Measure original game start and exact save bytes
+        shell: bash
+        working-directory: work
+        timeout-minutes: 18
+        run: |
+          set -euo pipefail
+          node --expose-gc --max-old-space-size=4096 scripts/perf02-fixture-index.mjs --out=reports/perf02-before.json
+      - name: Patch only repeated player lookup for immutable fixture identity
+        shell: bash
+        working-directory: work
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          python3 scripts/perf02-patch-player-lookup.py
+          node --check src/api/seasonApi.js
+          git diff --check
+      - name: Verify unchanged gameplay, save and regression suite
+        shell: bash
+        working-directory: work
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          npm test
+          node scripts/verify-phase8-save-integrity.mjs
+      - name: Re-measure and require identical full saves and a faster game start
+        shell: bash
+        working-directory: work
+        timeout-minutes: 18
+        run: |
+          set -euo pipefail
+          node --expose-gc --max-old-space-size=4096 scripts/perf02-fixture-index.mjs --out=reports/perf02-after.json
+          node scripts/perf02-compare.mjs
+      - name: Verify full 2026 Production v3 10710 games and postseason
+        shell: bash
+        working-directory: work
+        timeout-minutes: 32
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase3-integration-4r.mjs
+          node --input-type=module <<'TCU_PERF02_WORLD'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync('reports/phase3-integrated-regression-4r-v1.json','utf8'));
+          assert.equal(r.pass,true);assert.equal(r.regularSeason.worldGames,10710);assert.ok(r.postseason.championTeamId);assert.ok(Object.values(r.gates).every(Boolean));
+          console.log('PERF02 production full-world 2026 and postseason PASS');
+          TCU_PERF02_WORLD
+      - name: Commit only measured source and reports after all gates pass
+        shell: bash
+        working-directory: work
+        timeout-minutes: 4
+        run: |
+          set -euo pipefail
+          git add src/api/seasonApi.js scripts/perf02-fixture-index.mjs scripts/perf02-compare.mjs reports/perf02-before.json reports/perf02-after.json reports/perf02-player-lookup.json reports/phase3-integrated-regression-4r-v1.json
+          git diff --cached --check
+          if git diff --cached --quiet; then echo 'No optimized source to commit' >&2; exit 1; fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'perf: cache fixture player lookup and verify exact Production v3 saves'
+          git push origin HEAD:main
+      - name: Preserve performance measurements if a gate fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE_CALL_UP_PERF02_LOOKUP_RESULTS
+          path: |
+            work/reports/perf02-before.json
+            work/reports/perf02-after.json
+            work/reports/perf02-player-lookup.json
+            work/scripts/perf02-fixture-index.mjs
+          if-no-files-found: warn
+          retention-days: 30
